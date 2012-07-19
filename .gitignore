@@ -1,0 +1,8 @@
+*.hmm
+*.h3?
+*.{mpa,tpl}
+*.pdb.seq
+Testfam.{aln,cma,dft,nwk}
+Testfam/*.{aln,cma}
+Testfam/{CAMK,CMGC,STE}/*.{aln,cma}
+
