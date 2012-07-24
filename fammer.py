@@ -21,7 +21,8 @@ from Bio import AlignIO
 # from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from esbglib import biocma, consensus, alnutils
+from biocma import biocma
+from biofrills import consensus, alnutils
 
 from tasks import Task, ext, noext, sh
 
