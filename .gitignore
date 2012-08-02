@@ -1,3 +1,4 @@
+*.pyc
 *.hmm
 *.h3?
 *.{mpa,tpl}

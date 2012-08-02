@@ -751,7 +751,6 @@ def cmd_refine(args):
                                            )[seq_id]
                 # Scan the unclassified seqs w/ the "lean" HMM
                 # Keep the top evalue only; that's our threshold
-                # XXX TODO: scale evals by sequence length, or use e-value
                 db_evals = get_hmm_evalues(tempseqfile.name + '.hmm',
                                            unclass_fa)
                 try:
@@ -876,7 +875,7 @@ if __name__ == '__main__':
     # Global options
     AP.add_argument('--quiet',
             action='store_true',
-            help='Shaddap.')
+            help="Don't print status messages, only warnings and errors.")
     AP_subparsers = AP.add_subparsers(
             help='sub-commands (use with -h for more info)')
     # Subcommand: build
@@ -898,7 +897,7 @@ if __name__ == '__main__':
     P_build.add_argument('--mapgaps',
             action='store_true',
             help='Build profiles for MAPGAPS.')
-    P_build.add_argument('--tree', # XXX needed? only to speed up HMM, I think
+    P_build.add_argument('--tree',
             action='store_true',
             help='Write a Newick tree indicating the directory structure.')
     P_build.set_defaults(func=cmd_build)
