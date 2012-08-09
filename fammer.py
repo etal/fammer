@@ -25,6 +25,7 @@ from biocma import biocma
 from biofrills import consensus, alnutils
 
 from tasks import Task, ext, noext, sh
+import tmalign
 
 
 # === Build ===========================================
@@ -215,7 +216,8 @@ def align_fasta(task):
 
 def align_pdbs(task):
     """Create a structure-based sequence alignment from PDB files."""
-    sh("structalign.py %s -o %s" % (' '.join(task.depends), task.target))
+    records = tmalign.align_structs(task.depends)
+    SeqIO.write(records, task.target, 'fasta')
 
 
 def align_profiles(task, use_pdb=False):
