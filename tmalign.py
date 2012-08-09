@@ -2,21 +2,24 @@
 
 """Use TMalign for multiple structure alignment.
 
-Run all-vs-all pairwise alignments w/ TMalign; keep the alignments and also the
-metric of similarity/distance.
+Procedure:
 
-Build a graph of similarities between structs. Determine the minimum spanning
-tree (MST) for the graph. Take the pairwise alignments corresponding to the
-edges (connected nodes) of the MST, use them as seeds in MAFFT (--localpair).
+1. Run all-vs-all pairwise alignments w/ TMalign; keep the alignments and also
+   the TM-score (a metric of structural similarity/alignability).
+2. Build a graph of structure similarities based on TM-scores. Determine the
+   minimum spanning tree (MST) for the graph.
+3. Take the pairwise alignments corresponding to the edges (connected nodes) of
+   the MST, and use them as seeds in MAFFT (--localpair).
+4. Remove duplicated sequences and all-gap columns from the resulting alignment.
 
-In degenerate cases (1 or 2 structs), skip the graph part.
 
 Depends:
-    - TMalign
-    - MAFFT
-    - networkx
-    - Biopython
-    - biofrills
+
+- TMalign
+- MAFFT
+- networkx
+- Biopython
+- biofrills
 """
 
 import itertools
@@ -36,28 +39,28 @@ from biofrills import alnutils
 
 
 def align_structs(pdb_fnames):
-    # Align each other PDB against the "reference" PDB
+    """Align multiple PDB structures using TM-align.
+
+    Returns a list of aligned SeqRecords.
+    """
+    # 1. Align all-v-all structure pairs with TM-align
     allpairs = []
-    # 1. Align all-v-all pairs
     for idx, ref_pdbfn in enumerate(pdb_fnames):
         assert ' ' not in ref_pdbfn
         for eqv_pdbfn in pdb_fnames[idx+1:]:
             assert eqv_pdbfn != ref_pdbfn
             logging.info("Aligning %s to %s", eqv_pdbfn, ref_pdbfn)
             tm_output = subprocess.check_output(['TMalign', ref_pdbfn, eqv_pdbfn])
-            # Convert the TMalign output into a FASTA sequence pair
             tm_seqpair = read_tmalign_as_seqrec_pair(tm_output, ref_pdbfn, eqv_pdbfn)
             allpairs.append(tm_seqpair)
-            # pairfafname = eqv_pdbfn + '.tm.fa'
-            # SeqIO.write(tm_seqpair, pairfafname, 'fasta')
-            # seedfnames.append(pairfafname)
+
+    # TODO: In cases of 1 or 2 structs, finish here.
 
     # 2. Resolve MST pairs & write seed tempfiles
     seedfnames = []
     for seedpair in mst_pairs(allpairs):
-        # seedpair is a tuple of 2 SeqRecords
         seedfn = tempfile.mkstemp(text=True)[1]
-        SeqIO.write(list(seedpair), seedfn, 'fasta')
+        SeqIO.write(seedpair, seedfn, 'fasta')
         seedfnames.append(seedfn)
 
     # 3. Use MAFFT to combine TMalign'd pairs into a multiple alignment;
@@ -84,7 +87,6 @@ def align_structs(pdb_fnames):
 def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
     """Create a pair of SeqRecords from TMalign output."""
     lines = tm_output.splitlines()
-    # TODO - extract TM-score; larger means a better fit
     # Extract the TM-score (measure of structure similarity)
     for line in lines:
         if line.startswith('Aligned'):

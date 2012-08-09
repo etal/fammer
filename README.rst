@@ -12,7 +12,7 @@ Installation
 Dependencies:
 
 - Python_ 2.7
-- Python libraries Biopython_, biofrills_, biocma_
+- Python libraries Biopython_, biofrills_, biocma_, networkx_
 - MAFFT_
 - HMMer_ 3.0
 - MAPGAPS_ (optional)
@@ -22,6 +22,7 @@ Dependencies:
 .. _Biopython: http://biopython.org/wiki/Download
 .. _biofrills: https://github.com/etal/biofrills
 .. _biocma: https://github.com/etal/biocma
+.. _networkx: http://networkx.lanl.gov/
 .. _MAFFT: http://mafft.cbrc.jp/alignment/software/
 .. _HMMer: http://hmmer.janelia.org/
 .. _MAPGAPS: http://mapgaps.igs.umaryland.edu/
