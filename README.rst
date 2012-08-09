@@ -16,7 +16,7 @@ Dependencies:
 - MAFFT_
 - HMMer_ 3.0
 - MAPGAPS_ (optional)
-- TMalign_ or MUSTANG_ (optional) -- for structural alignments
+- TMalign_ (optional) -- for structural alignments
 
 .. _Python: http://www.python.org/download/
 .. _Biopython: http://biopython.org/wiki/Download
@@ -26,7 +26,6 @@ Dependencies:
 .. _HMMer: http://hmmer.janelia.org/
 .. _MAPGAPS: http://mapgaps.igs.umaryland.edu/
 .. _TMalign: http://cssb.biology.gatech.edu/skolnick/webservice/TM-align/index.shtml
-.. _MUSTANG: http://www.csse.monash.edu.au/~karun/Site/mustang.html/
 
 
 I recommend creating a symbolic link to ``fammer.py`` in your ``$PATH``, e.g.::
