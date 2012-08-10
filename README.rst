@@ -291,3 +291,24 @@ from the profile. This is easy enough to spot in the logged output. One way to
 avoid it is to first use the ``add`` command with  ``-Unclassified.fasta`` as
 the target, to catch and classify such sequences beforehand.
 
+
+Bundled modules
+---------------
+
+tasks
+`````
+
+Serves the basic purpose of a build tool like Make or Rake: compare the time
+stamps of input and output files at each step of the `build`_ process, and only
+rebuild the outputs that are out of date. Also track intermediate files to clean
+up after the process successfully completes. See `this blog post about it
+<http://etalog.blogspot.com/2012/01/building-analysis-how-to-avoid.html>`_.
+
+tmalign
+```````
+
+Align multiple structures using TMalign_ for pairwise alignments and a minimum
+spanning tree constructed from the pairwise TM-scores to assemble the pairwise
+alignments into a multiple sequence alignment. This module can also be used as a
+command-line script.
+
