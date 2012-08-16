@@ -427,7 +427,7 @@ def cmd_scan(args):
     assert isfile(args.target)
 
     # ENH?: remove table ([target].tbl) with option --clean
-    tblfname = args.target + '.tbl'
+    tblfname = basename(args.target) + '.tbl'
     sh(('hmmsearch -E %s --domE %s --noali ' \
         '--tblout %s %s %s > /dev/null')
         % (args.evalue, args.evalue, tblfname, hmmdb, args.target))
@@ -532,7 +532,7 @@ def write_seqsets(scanhits, sourcefname, align=False):
         profiles[prof_score[0]].append(seqname)
     # For each entry there, fetch all seq ids from the file & write
     for profname, seqnames in sorted(profiles.iteritems()):
-        outfname = "%s.%s.fasta" % (sourcefname, profname)
+        outfname = "%s.%s.fasta" % (basename(sourcefname), profname)
         with open(outfname, 'w+') as outfile:
             for rec in seqnames:
                 block = seq_idx.get_raw(rec)
