@@ -54,7 +54,10 @@ def align_structs(pdb_fnames):
             tm_seqpair = read_tmalign_as_seqrec_pair(tm_output, ref_pdbfn, eqv_pdbfn)
             allpairs.append(tm_seqpair)
 
-    # TODO: In cases of 1 or 2 structs, finish here.
+    # In case of 2 structs, no need to combine alignments -- we're done
+    if len(allpairs) == 1:
+        recs = allpairs[0][:2]
+        return alnutils.remove_empty_cols(recs)
 
     # 2. Resolve MST pairs & write seed tempfiles
     seedfnames = []
@@ -78,7 +81,7 @@ def align_structs(pdb_fnames):
     for sfn in seedfnames:
         os.remove(sfn)
 
-    # Emit the aligned sequences
+    # 4. Emit the aligned sequences
     recs = SeqIO.parse(StringIO(mafft_output), 'fasta')
     recs = clean_and_dedupe_seqs(recs)
     return alnutils.remove_empty_cols(recs)
@@ -88,20 +91,21 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
     """Create a pair of SeqRecords from TMalign output."""
     lines = tm_output.splitlines()
     # Extract the TM-score (measure of structure similarity)
+    # Take the mean of the (two) given TM-scores -- not sure which is reference
+    tmscores = []
     for line in lines:
-        if line.startswith('Aligned'):
-            for token in line.split():
-                if token.startswith('TM-score='):
-                    tmscore = float(token[:-1].split('=')[1])
-                    break
-            break
+        if line.startswith('TM-score'):
+            tmscores.append(float(line.split(None, 2)[1]))
+    tmscore = sum(tmscores) / len(tmscores)
     # Extract the sequence alignment
     lastlines = lines[-5:]
     assert lastlines[0].startswith('(":"') # (":" denotes the residues pairs
     assert not lastlines[-1].strip()
     refseq, eqvseq = lastlines[1].strip(), lastlines[3].strip()
-    return (SeqRecord(Seq(refseq), id=ref_id, description="TMalign"),
-            SeqRecord(Seq(eqvseq), id=eqv_id, description="TMalign"),
+    return (SeqRecord(Seq(refseq), id=ref_id,
+                      description="TMalign TM-score=%f" % tmscore),
+            SeqRecord(Seq(eqvseq), id=eqv_id,
+                      description="TMalign TM-score=%f" % tmscore),
             tmscore)
 
 
@@ -122,19 +126,38 @@ def mst_pairs(pairs):
     return list(mst)
 
 
-def clean_and_dedupe_seqs(records):
+def tmscore_from_description(text):
+    for token in text.split():
+        if token.startswith('TM-score'):
+            return float(token.split('=', 1)[1])
+
+
+def clean_and_dedupe_seqs(records, best_score=False):
     """Remove the _seed_ prefix and omit duplicated records."""
-    seen = set()
+    if best_score:
+        seen = {}
+    else:
+        seen = set()
     for record in records:
         # Remove the _seed_ prefix from each sequence ID
         if record.id.startswith('_seed_'):
             record.id = record.id[len('_seed_'):]
-        # Skip exact duplicates. The same PDB can be aligned differently to
-        # other PDBs, so also check the aligned sequence.
-        ident = (record.id, str(record.seq))
-        if ident not in seen:
+        # Check for duplicates.
+        if best_score:
+            # If a previously seen PDB was aligned better (per the TM-score),
+            # defer to that one
+            tmscore = tmscore_from_description(record.description)
+            if record.id in seen and seen[record.id] >= tmscore:
+                # This PDB was aligned better previously; skip
+                continue
+            seen[record.id] = tmscore
+        else:
+            # Keep a duplicate sequence if it was aligned differently
+            ident = (record.id, str(record.seq))
+            if ident in seen:
+                continue
             seen.add(ident)
-            yield record
+        yield record
 
 
 # --- command line ------------------------------------------------------
