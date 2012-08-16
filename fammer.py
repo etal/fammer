@@ -118,7 +118,7 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
     # Each subtask pair: (HMM, CMA)-making tasks for the subdir
     # Groups with their own families within -- recurse
     subtask_group_results = [taskify_subdirs(sd, hmmer, mapgaps, use_pdb, level+1)
-            for sd in sorted(subdirs)]
+                             for sd in sorted(subdirs)]
     # Families / tips of the profile tree -- build from scratch
     subtask_family_results = []
     subfamily_fastas = glob(join(topdir, '*.fasta'))
@@ -443,6 +443,8 @@ def cmd_scan(args):
         write_table(scanhits)
     else:
         write_summary(scanhits)
+    if args.seqout:
+        write_seqout(scanhits, args.target, args.seqout)
     if args.seqsets:
         write_seqsets(scanhits, args.target)
 
@@ -510,15 +512,25 @@ def write_table(scanhits):
         print "%s\t%s" % (seqname, profname)
 
 
+def write_seqout(scanhits, sourcefname, outfname):
+    """Write a single FASTA file containing all hits to any profiles."""
+    seq_idx = SeqIO.index(sourcefname, 'fasta')
+    with open(outfname, 'w+') as outfile:
+        for acc in scanhits:
+            block = seq_idx.get_raw(acc)
+            outfile.write(block)
+    logging.info("Wrote %s", outfname)
+
+
 def write_seqsets(scanhits, sourcefname, align=False):
-    """Write a FASTA file of matching seqs for each profile."""
+    """Write FASTA files of the seqs matching each profile."""
     seq_idx = SeqIO.index(sourcefname, 'fasta')
     # NB: scanhits looks like {seq_id: (profile_name, score)}
-    # 1. flip to: {profile_name: [sequence ids...]}
+    # Flip to: {profile_name: [sequence ids...]}
     profiles = collections.defaultdict(list)
     for seqname, prof_score in scanhits.iteritems():
         profiles[prof_score[0]].append(seqname)
-    # 2. for each entry there, fetch all seq ids from the file & write
+    # For each entry there, fetch all seq ids from the file & write
     for profname, seqnames in sorted(profiles.iteritems()):
         outfname = "%s.%s.fasta" % (sourcefname, profname)
         with open(outfname, 'w+') as outfile:
@@ -916,9 +928,11 @@ if __name__ == '__main__':
     P_scan.add_argument('--table',
             action='store_true',
             help='Print a table of sequence-to-profile assignments.')
+    P_scan.add_argument('-o', '--seqout',
+            help='Write a FASTA file of all sequences matching any profile.')
     P_scan.add_argument('-O', '--seqsets',
             action='store_true',
-            help='Write a FASTA file of sequences matching each profile.')
+            help='Write FASTA files of the sequences matching each profile.')
     P_scan.add_argument('-A', '--align',
             action='store_true',
             help='Make a FASTA alignment of sequences matching each profile.')
