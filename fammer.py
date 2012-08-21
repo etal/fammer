@@ -152,8 +152,6 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
         these_pdb = subprocess.check_output(
                 ['find', topdir, '-name', '*.pdb']
                 ).splitlines()
-        logging.info("Found PDBs under %s: %s",
-                     topdir, ' '.join(these_pdb))
         if len(these_pdb) > 1:
             subtask_pdb_result = Task(this + '.pdb.seq',
                     action=align_pdbs,
