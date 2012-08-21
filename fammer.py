@@ -10,6 +10,7 @@ import collections
 import itertools
 import logging
 import os
+import subprocess
 import sys
 import tempfile
 import time
@@ -146,9 +147,13 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
 
     subtask_family_results.sort(key=str)    # Needed? We sort FASTAs above
 
-    # Structural alignment of any PDBs found here
+    # Structural alignment of any PDBs found here or in any subdirectories
     if use_pdb:
-        these_pdb = glob(join(topdir, '*.pdb'))
+        these_pdb = subprocess.check_output(
+                ['find', topdir, '-name', '*.pdb']
+                ).splitlines()
+        logging.info("Found PDBs under %s: %s",
+                     topdir, ' '.join(these_pdb))
         if len(these_pdb) > 1:
             subtask_pdb_result = Task(this + '.pdb.seq',
                     action=align_pdbs,
