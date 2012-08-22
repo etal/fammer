@@ -62,15 +62,18 @@ def align_structs(pdb_fnames):
     # 2. Resolve MST pairs & write seed tempfiles
     seedfnames = []
     for seedpair in mst_pairs(allpairs):
-        seedfn = tempfile.mkstemp(text=True)[1]
-        SeqIO.write(seedpair, seedfn, 'fasta')
-        seedfnames.append(seedfn)
+        # fd, seedfn = tempfile.mkstemp(text=True)
+        # SeqIO.write(seedpair, seedfn, 'fasta')
+        # SeqIO.write(seedpair, os.fdopen(fd), 'fasta')
+        with tempfile.NamedTemporaryFile('w+', delete=False) as handle:
+            SeqIO.write(seedpair, handle, 'fasta')
+            seedfnames.append(handle.name)
 
     # 3. Use MAFFT to combine TMalign'd pairs into a multiple alignment;
-    seq_fname = tempfile.mkstemp(text=True)[1]
-    with open(seq_fname, 'w') as handle:
-        # Create a blank file to appease MAFFT
-        pass
+    seq_fd, seq_fname = tempfile.mkstemp(text=True)
+    # Create a blank file to appease MAFFT
+    os.write(seq_fd, '')
+    os.close(seq_fd)
     mafft_output = subprocess.check_output(['mafft',
         '--quiet', '--amino', '--localpair',
         '--maxiterate', '1000']
