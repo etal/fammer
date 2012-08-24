@@ -19,7 +19,7 @@ from os.path import abspath, basename, isdir, isfile, join
 
 from Bio import SeqIO
 from Bio import AlignIO
-# from Bio.Seq import Seq
+from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from biocma import biocma
@@ -347,15 +347,18 @@ def mg_aln2cma(task, level=None):
     # Add consensus back to the subfamily-consensus seq set (.aln)
     # to produce a CMA (.cons.cma)
     aln = AlignIO.read(str(task.depends[0]), 'clustal')
-    cons_rec = SeqRecord(consensus.consensus(aln, trim_ends=False),
-            id=name,
-            description=name + ' consensus')
+    cons_rec = SeqRecord(Seq(consensus.consensus(aln, trim_ends=False)),
+                         id=name, description=name + ' consensus')
     aln._records.insert(0, cons_rec)
-    biocma.write([aln], ext(task.target, 'cons.cma'))
+    # Tidy up the CMA
+    cmaln = biocma.ChainMultiAlignment(aln, level=level)
+    # TODO - iron
+    # sh("tweakcma %s.cons -iron" % base)  # => %s-cons_iron.cma
+    biocma.write([cmaln], task.target)
 
     # -------------
     ### OR (HMMer only):
-    ### hmmemeit consensus & reuse the .stk (done for .hmm) directly
+    ### hmmemit consensus & reuse the .stk (done for .hmm) directly
     ###   see hmmalign --mapali option to include original .stk
     ###   .stk is no longer for 'clean'; original must be retained
     # stk = ext(task.target, 'stk')
@@ -366,12 +369,6 @@ def mg_aln2cma(task, level=None):
     # sh("press < %s > %s" % (cons_fa, cons_seq))
     # sh("fa2cma %s > %s" % (cons_seq, base + '.cons.cma'))
     # -------------
-
-    # Tidy up the CMA
-    sh("tweakcma %s.cons -iron" % base)  # => %s-cons_iron.cma
-    time.sleep(0.5)  # Andy doesn't flush properly?
-    sh("tweakcma %s.cons_iron -level=%d > %s"
-            % (base, level, task.target))
 
 
 def mg_cat_cma(task):
