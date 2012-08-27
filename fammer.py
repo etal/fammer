@@ -352,9 +352,7 @@ def mg_aln2cma(task, level=None):
     aln._records.insert(0, cons_rec)
     # Tidy up the CMA
     cmaln = biocma.ChainMultiAlignment(aln, level=level)
-    # TODO - iron
-    # sh("tweakcma %s.cons -iron" % base)  # => %s-cons_iron.cma
-    biocma.write([cmaln], task.target)
+    biocma.write([cmaln], task.target, do_iron=True)
 
     # -------------
     ### OR (HMMer only):
