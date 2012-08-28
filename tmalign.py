@@ -38,7 +38,7 @@ from Bio.SeqRecord import SeqRecord
 from biofrills import alnutils
 
 
-def align_structs(pdb_fnames):
+def align_structs(pdb_fnames, seed_fnames=None):
     """Align multiple PDB structures using TM-align.
 
     Returns a list of aligned SeqRecords.
@@ -60,14 +60,14 @@ def align_structs(pdb_fnames):
         return alnutils.remove_empty_cols(recs)
 
     # 2. Resolve MST pairs & write seed tempfiles
-    seedfnames = []
+    tmp_seed_fnames = []
     for seedpair in mst_pairs(allpairs):
         # fd, seedfn = tempfile.mkstemp(text=True)
         # SeqIO.write(seedpair, seedfn, 'fasta')
         # SeqIO.write(seedpair, os.fdopen(fd), 'fasta')
         with tempfile.NamedTemporaryFile('w+', delete=False) as handle:
             SeqIO.write(seedpair, handle, 'fasta')
-            seedfnames.append(handle.name)
+            tmp_seed_fnames.append(handle.name)
 
     # 3. Use MAFFT to combine TMalign'd pairs into a multiple alignment;
     seq_fd, seq_fname = tempfile.mkstemp(text=True)
@@ -77,11 +77,12 @@ def align_structs(pdb_fnames):
     mafft_output = subprocess.check_output(['mafft',
         '--quiet', '--amino', '--localpair',
         '--maxiterate', '1000']
-        + list(itertools.chain(*[('--seed', sfn) for sfn in seedfnames]))
+        + list(itertools.chain(*[('--seed', sfn)
+                                 for sfn in (seed_fnames or []) + tmp_seed_fnames]))
         + [seq_fname])
     # Clean up
     os.remove(seq_fname)
-    for sfn in seedfnames:
+    for sfn in tmp_seed_fnames:
         os.remove(sfn)
 
     # 4. Emit the aligned sequences

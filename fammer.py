@@ -147,15 +147,16 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
 
     subtask_family_results.sort(key=str)    # Needed? We sort FASTAs above
 
-    # Structural alignment of any PDBs found here or in any subdirectories
+    # Structural alignment of the PDBs here; reuse subfamily PDB alignments
     if use_pdb:
-        these_pdb = subprocess.check_output(
-                ['find', topdir, '-name', '*.pdb']
-                ).splitlines()
-        if len(these_pdb) > 1:
+        these_pdbs = glob(join(topdir, '*.pdb'))
+        sub_pdb_seqs = [ext(sgr.aln, 'pdb.seq')
+                        for sgr in subtask_group_results]
+        if len(these_pdbs) + len(sub_pdb_seqs) > 1:
             subtask_pdb_result = Task(this + '.pdb.seq',
                     action=align_pdbs,
-                    depends=these_pdb)
+                    kwargs={'sub_pdb_seqs': sub_pdb_seqs},
+                    depends=these_pdbs)
             use_pdb = True
         else:
             use_pdb = False
@@ -217,9 +218,33 @@ def align_fasta(task):
                  for rec in records])
 
 
-def align_pdbs(task):
+def align_pdbs(task, sub_pdb_seqs=()):
     """Create a structure-based sequence alignment from PDB files."""
-    records = tmalign.align_structs(task.depends)
+    pdbs = task.depends[:]
+    # Scan existing PDB alignments to choose a reference PDB from each
+    sub_pdb_seqs = filter(isfile, sub_pdb_seqs)
+    for sub_pdb_fname in sub_pdb_seqs:
+        best_tmscore = -1
+        best_pdb = None
+        for rec in SeqIO.parse(sub_pdb_fname, 'fasta'):
+            # Extract TM-score
+            for token in rec.description.split():
+                if token.startswith('TM-score'):
+                    try:
+                        this_tmscore = float(token.split('=', 1)[1])
+                        if this_tmscore > best_tmscore:
+                            best_tmscore = this_tmscore
+                            best_pdb = rec.id
+                    except:
+                        logging.warn("PDB seq parsing issue: %s",
+                                     rec.description)
+                    finally:
+                        break
+        assert best_pdb is not None, "Weird PDB alignment: " + sub_pdb_fname
+        logging.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
+        pdbs.append(best_pdb)
+
+    records = tmalign.align_structs(pdbs, sub_pdb_seqs)
     SeqIO.write(records, task.target, 'fasta')
 
 
@@ -328,9 +353,8 @@ def all_hmm(task):
     """Concatenate all HMM profiles into a database & press."""
     base = noext(task.depends[-1])
     # TODO - filter out *_all.hmm from `find` hits
-    # use os.walk instead of find?
-    sh("cat %s.hmm `find %s/ -name '*.hmm'` > %s"
-            % (base, base, task.target))
+    sh("cat %s.hmm `find %s/ -name '*.hmm' | grep -v '_all.hmm'` > %s"
+       % (base, base, task.target))
     sh("hmmpress -f %s" % task.target)
 
 
