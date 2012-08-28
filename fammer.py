@@ -25,7 +25,7 @@ from Bio.SeqRecord import SeqRecord
 from biocma import biocma
 from biofrills import consensus, alnutils
 
-from tasks import Task, ext, noext, sh
+from tasks import Task, ext, noext, sh, is_empty
 import tmalign
 
 
@@ -34,11 +34,13 @@ import tmalign
 class Result(object):
     """Output of taskify_subdirs. Collection of tasks.
 
-    Contains references to the tasks for the alignment and, optionally, the
-    corresponding HMMer .hmm profile and/or MAPGAPS .cma and .tpl.
+    Contains references to the tasks for the main alignment, the PDB seed
+    alignment, and, optionally, the corresponding HMMer .hmm profile and/or
+    MAPGAPS .cma and .tpl.
     """
-    def __init__(self, aln, hmm=None, cma=None, tpl=None):
+    def __init__(self, aln, pdbseq=None, hmm=None, cma=None, tpl=None):
         self.aln = aln
+        self.pdbseq = pdbseq
         self.hmm = hmm
         self.cma = cma
         self.tpl = tpl
@@ -147,30 +149,28 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
 
     subtask_family_results.sort(key=str)    # Needed? We sort FASTAs above
 
-    # Structural alignment of the PDBs here; reuse subfamily PDB alignments
-    if use_pdb:
-        these_pdbs = glob(join(topdir, '*.pdb'))
-        sub_pdb_seqs = [ext(sgr.aln, 'pdb.seq')
-                        for sgr in subtask_group_results]
-        if len(these_pdbs) + len(sub_pdb_seqs) > 1:
-            subtask_pdb_result = Task(this + '.pdb.seq',
-                    action=align_pdbs,
-                    kwargs={'sub_pdb_seqs': sub_pdb_seqs},
-                    depends=these_pdbs)
-            use_pdb = True
-        else:
-            use_pdb = False
+    # Structural alignment of PDBs in this dir; reuse subfamily PDB alignments
+    these_pdbs = glob(join(topdir, '*.pdb'))
+    sub_pdb_seqs = [sgr.pdbseq for sgr in subtask_group_results]
+    task_pdbseq = Task(this + '.pdb.seq',
+            action=align_pdbs,
+            kwargs={'use_pdb': use_pdb},
+            depends=these_pdbs + sub_pdb_seqs)
 
     # Aggregate those profile consensus sequences & make a meta-profile
     result = Result(Task(this + '.aln',
-            action=align_profiles,
-            kwargs={'use_pdb': use_pdb},
-            depends=[r.aln for r in
-                (subtask_group_results + subtask_family_results)
-                ] + ([subtask_pdb_result] if use_pdb else []),
-            cleans=ext(map(str, subtask_group_results + subtask_family_results),
-                'cons.seq') + [this + '.families.fa', this + '.families.seq',
-                    this + '.seq']))
+                         action=align_profiles,
+                         kwargs={'use_pdb': use_pdb},
+                         depends=[r.aln
+                                  for r in (subtask_group_results +
+                                            subtask_family_results)
+                                 ] + [task_pdbseq],
+                         cleans=ext(map(str, subtask_group_results +
+                                        subtask_family_results),
+                                    'cons.seq') + [this + '.families.fa',
+                                                   this + '.families.seq',
+                                                   this + '.seq']),
+                    pdbseq=task_pdbseq)
     if hmmer:
         result.hmm = Task(this + '.hmm',
                 action=aln2hmm,
@@ -196,6 +196,12 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
 
 # Actions
 
+# def touch(task):
+#     """Just create a file if it's not already present."""
+#     with open(task.target, 'w'):
+#         pass
+
+
 def align_fasta(task):
     """Align a FASTA file with MAFFT. Clustal output."""
     seq = ext(task.depends[0], 'seq')
@@ -218,12 +224,32 @@ def align_fasta(task):
                  for rec in records])
 
 
-def align_pdbs(task, sub_pdb_seqs=()):
+def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
     """Create a structure-based sequence alignment from PDB files."""
-    pdbs = task.depends[:]
+    if not use_pdb:
+        # Just touch the '.pdb.seq' file; don't use TM-align
+        with open(task.target, 'w'):
+            return
+
+    pdbs = []
+    sub_pdb_seqs = []
+    for elem in task.depends:
+        if str(elem).endswith('.pdb'):
+            pdbs.append(elem)
+        else:
+            sub_pdb_seqs.append(str(elem))
     # Scan existing PDB alignments to choose a reference PDB from each
-    sub_pdb_seqs = filter(isfile, sub_pdb_seqs)
-    for sub_pdb_fname in sub_pdb_seqs:
+    # sub_pdb_seqs = filter(isfile, sub_pdb_seqs)
+    for sub_pdb_fname in map(str, sub_pdb_seqs):
+        if is_empty(sub_pdb_fname):
+            # Dummy seed alignment -- look in that dir for a .pdb
+            #   ENH - recursively
+            sub_pdbs = glob(join(sub_pdb_fname[:-4], '*.pdb'))
+            if sub_pdbs:
+                logging.info("Picked up %d neglected PDBs: %s",
+                             len(sub_pdbs), ' '.join(sub_pdbs))
+                pdbs.extend(sub_pdbs)
+            continue
         best_tmscore = -1
         best_pdb = None
         for rec in SeqIO.parse(sub_pdb_fname, 'fasta'):
@@ -240,15 +266,21 @@ def align_pdbs(task, sub_pdb_seqs=()):
                                      rec.description)
                     finally:
                         break
-        assert best_pdb is not None, "Weird PDB alignment: " + sub_pdb_fname
-        logging.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
-        pdbs.append(best_pdb)
+        if best_pdb is None:
+            logging.warn("Empty PDB alignment: " + sub_pdb_fname)
+        else:
+            logging.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
+            pdbs.append(best_pdb)
 
-    records = tmalign.align_structs(pdbs, sub_pdb_seqs)
+    records = tmalign.align_structs(pdbs,
+                                    [seed for seed in map(str, sub_pdb_seqs)
+                                    if isfile(seed) and not is_empty(seed)])
     SeqIO.write(records, task.target, 'fasta')
+    # if not records:
+    #     logging.info("Created empty PDB alignment %s", task.target)
 
 
-def align_profiles(task, use_pdb=False):
+def align_profiles(task, use_pdb=None):
     """Align several FASTA files with MAFFT. Clustal output.
 
     Cleans: [depends].cons.seq, [target].families.fa, [target].families.seq,
@@ -256,14 +288,12 @@ def align_profiles(task, use_pdb=False):
     """
     seeds, singles = [], []
     # PDB alignment -- include as a seed profile if requested
-    if use_pdb:
-        pdb_seed = str(task.depends[-1])
-        assert isfile(pdb_seed) and os.stat(pdb_seed).st_size > 1, \
-                "Bogus PDB alignment: %s" % pdb_seed
+    subalignments, pdb_seed = task.depends[:-1], str(task.depends[-1])
+    if use_pdb and not is_empty(pdb_seed):
         seeds.append(pdb_seed)
-        subalignments = task.depends[:-1]
     else:
-        subalignments = task.depends
+        logging.info("Empty PDB alignment: %s", pdb_seed)
+
     # Get subfamily and subgroup consensus sequences/profiles
     for subaln in subalignments:
         aln = AlignIO.read(str(subaln), 'clustal')
@@ -310,7 +340,8 @@ def align_profiles(task, use_pdb=False):
     records = [rec for rec in SeqIO.parse(allseq, 'fasta')
             # Drop PDB-derived sequences
             # if ':' not in rec.id
-            if 'TMalign' not in rec.description
+            if 'TMalign' not in rec.description and
+               'TM-score' not in rec.description
             ]
     records = list(alnutils.remove_empty_cols(records))
     if seeds:
@@ -318,7 +349,13 @@ def align_profiles(task, use_pdb=False):
         for rec in records:
             if rec.id.startswith('_seed_'):
                 rec.id = rec.id[6:]
-    max_id_len = max(len(r.id) for r in records)
+    try:
+        max_id_len = max(len(r.id) for r in records)
+    except ValueError:
+        # Common effup
+        raise ValueError("Profile alignment failed for %s.\nInputs: %s"
+                         % (task.target, ' '.join(map(str, task.depends))))
+
     with open(task.target, 'w+') as outfile:
         outfile.write('CLUSTAL X (-like) multiple sequence alignment\n\n')
         outfile.writelines(

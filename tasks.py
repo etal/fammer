@@ -30,6 +30,15 @@ def sh(cmd):
         raise exc
 
 
+def is_empty(path):
+    """True if a file contains more than a single byte (has size >1).
+
+    We ignore a single byte because shell and I/O operations sometimes create a
+    file containing a space or EOL character, and that's meaningless.
+    """
+    return os.stat(path).st_size < 2
+
+
 class Task(object):
     """Solve the cache-invalidation problem.
 

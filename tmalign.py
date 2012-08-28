@@ -88,7 +88,7 @@ def align_structs(pdb_fnames, seed_fnames=None):
     # 4. Emit the aligned sequences
     recs = SeqIO.parse(StringIO(mafft_output), 'fasta')
     recs = clean_and_dedupe_seqs(recs)
-    return alnutils.remove_empty_cols(recs)
+    return list(alnutils.remove_empty_cols(recs))
 
 
 def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
