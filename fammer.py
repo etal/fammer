@@ -228,7 +228,7 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
     """Create a structure-based sequence alignment from PDB files."""
     if not use_pdb:
         # Just touch the '.pdb.seq' file; don't use TM-align
-        with open(task.target, 'w'):
+        with open(task.target, 'a'):
             return
 
     pdbs = []
@@ -961,9 +961,9 @@ if __name__ == '__main__':
     P_build.add_argument('--clean',
             action='store_true',
             help='Clean auxilliary files after building.')
-    P_build.add_argument('--pdb',
-            action='store_true',
-            help='Use PDB structures when constructing alignments.')
+    P_build.add_argument('--no-pdb',
+            dest='pdb', action='store_false', default=True,
+            help="Don't use PDB structures when constructing alignments.")
     P_build.add_argument('--hmmer',
             action='store_true',
             help='Build profiles for HMMer.')
