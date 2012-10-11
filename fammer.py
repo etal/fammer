@@ -886,13 +886,13 @@ def find_update_tasks(topdir):
                       for fn in fnames
                       if fn.endswith('.aln') and fn[:-4] + '.fasta' in fnames]
         for base in todo_bases:
-            yield Task(base + '.fasta', 
-                action=update_fasta,
-                # kwargs={'do_sort': do_sort},
-                depends=base + '.aln')
+            if not is_same_aln_fasta(base + '.aln', base + '.fasta'):
+                yield Task(base + '.fasta', 
+                    action=update_fasta,
+                    depends=base + '.aln')
 
 
-def update_fasta(task, do_sort=False):
+def update_fasta(task):
     """Overwrite the .fasta with ungapped unique .aln sequences."""
     # ENH: warn about:
     # - Sequences containing 'X' (log the number of X's)
@@ -929,13 +929,25 @@ def update_fasta(task, do_sort=False):
                     % (counter, '' if counter == 1 else 's'))
         logging.info(msg)
 
+    # if not is_same_aln_fasta(task.depends[0], task.target):
     records = ungap_and_unique(SeqIO.parse(str(task.depends[0]), 'clustal'))
-    if do_sort:
-        # XXX remove this option? the -c algorithm always sorts by length
-        logging.info("Also sorting records")
-        records = sorted(records, key=len, reverse=True)
     SeqIO.write(records, task.target, 'fasta')
 
+
+def is_same_aln_fasta(aln_fn, fasta_fn):
+    """Compare ungapped seqs in aln and fasta; are they all the same?"""
+    def rec2tuple(rec, do_ungap):
+        if do_ungap:
+            strseq = str(rec.seq).replace('-', '').replace('.', '').upper()
+        else:
+            strseq = str(rec.seq).upper()
+        return (rec.id, strseq)
+
+    aln_hash = set([rec2tuple(rec, True)
+                    for rec in SeqIO.parse(aln_fn, 'clustal')])
+    fa_hash = set([rec2tuple(rec, False)
+                   for rec in SeqIO.parse(fasta_fn, 'fasta')])
+    return aln_hash == fa_hash
 
 
 # === Main ============================================
