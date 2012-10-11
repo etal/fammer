@@ -870,9 +870,16 @@ def get_hmm_evalues(hmmfname, seqfname):
 # Overwrite the original FASTA files with ungapped .aln sequences
 
 def cmd_update_fasta(args):
-    assert isdir(args.basedir)
-    for task in find_update_tasks(args.basedir):
-        task.build()
+    if isdir(args.basedir):
+        for task in find_update_tasks(args.basedir):
+            task.build()
+    elif isfile(args.basedir) and args.basedir.endswith('.aln'):
+        task = one_update_task(args.basedir)
+        if task is not None:
+            task.build()
+    else:
+        raise RuntimeError("Target must be a directory or .aln file: %s"
+                         % args.basedir)
 
 
 def find_update_tasks(topdir):
@@ -890,6 +897,19 @@ def find_update_tasks(topdir):
                 yield Task(base + '.fasta', 
                     action=update_fasta,
                     depends=base + '.aln')
+
+
+def one_update_task(aln_fname):
+    fasta_fname = aln_fname[:-4] + '.fasta'
+    if not isfile(fasta_fname):
+        raise RuntimeError("No corresponding .fasta file for %s: need %s"
+                           % (aln_fname, fasta_fname))
+    if is_same_aln_fasta(aln_fname, fasta_fname):
+        logging.info("%s already matches %s." % (fasta_fname, aln_fname))
+    else:
+        return Task(fasta_fname, 
+                    action=update_fasta,
+                    depends=aln_fname)
 
 
 def update_fasta(task):
