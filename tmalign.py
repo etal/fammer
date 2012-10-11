@@ -146,6 +146,7 @@ def clean_and_dedupe_seqs(records, best_score=False):
         # Remove the _seed_ prefix from each sequence ID
         if record.id.startswith('_seed_'):
             record.id = record.id[len('_seed_'):]
+            record.name = record.id
         # Check for duplicates.
         if best_score:
             # If a previously seen PDB was aligned better (per the TM-score),
