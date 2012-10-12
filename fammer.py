@@ -827,16 +827,16 @@ def cmd_refine(args):
                 db_evals = get_hmm_evalues(tempseqfile.name + '.hmm',
                                            unclass_fa)
                 try:
-                    top_eval = max(db_evals.values())
+                    out_eval = max(db_evals.values())
                 except ValueError:
                     # No HMM hits!
                     logging.warn("No unclassified hits for %s!", this_fa)
                     break
 
-                if top_eval >= seed_eval:
+                if out_eval <= seed_eval:
                     if args.dry_run:
                         logging.info("* drop %s (evalue %s vs. %s)",
-                                     seq_id, seed_eval, top_eval)
+                                     seq_id, seed_eval, out_eval)
                     else:
                         # TODO:
                         # - append the dropped seq to unclass_fa
@@ -844,13 +844,13 @@ def cmd_refine(args):
                         # - Logging: print the name of the dropped seq
                         logging.info(
                             "Dropped %s from %s into %s (evalue %s vs. %s)",
-                            seq_id, this_fa, unclass_fa, seed_eval, top_eval)
+                            seq_id, this_fa, unclass_fa, seed_eval, out_eval)
                 else:
                     # Since the seeds are sorted by evalue, if this sequence is a
                     # keeper, then so are the rest. On to the next profile!
                     if args.dry_run:
                         logging.info("* keep %s (evalue %s vs. %s)",
-                                     seq_id, seed_eval, top_eval)
+                                     seq_id, seed_eval, out_eval)
                     break
 
 
