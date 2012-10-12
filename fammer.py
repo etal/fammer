@@ -772,13 +772,21 @@ def cmd_refine(args):
         unclass_fa = args.unclassified
     else:
         topname = basename(abspath(args.basedir).rstrip('/'))
-        unclass_fa = join(args.basedir, topname + '-Unclassified.fasta')
+        unclass_fa = join(args.basedir, topname + '-Unique.fasta')
     if not isfile(unclass_fa):
         raise ValueError("Can't find the unclassified sequence set "
                             "(%s does not exist)" % unclass_fa)
 
     all_fa = glob(join(args.basedir, '*.fasta'))
     all_fa.remove(unclass_fa)
+    if args.exclude:
+        if args.exclude in all_fa:
+            all_fa.remove(args.exclude)
+        elif args.exclude + '.fasta' in all_fa:
+            all_fa.remove(args.exclude + '.fasta')
+        else:
+            logging.warn("Didn't find excluded profile %s in %s",
+                         args.exclude, args.basedir)
     # Prerequisites: HMM profiles for each sequence set must be built
     for fa in all_fa:
         if not isfile(ext(fa, 'hmm')):
@@ -949,7 +957,6 @@ def update_fasta(task):
                     % (counter, '' if counter == 1 else 's'))
         logging.info(msg)
 
-    # if not is_same_aln_fasta(task.depends[0], task.target):
     records = ungap_and_unique(SeqIO.parse(str(task.depends[0]), 'clustal'))
     SeqIO.write(records, task.target, 'fasta')
 
@@ -1056,7 +1063,9 @@ if __name__ == '__main__':
             help='Do a "dry run"; don\'t modify the original sequence sets.')
     P_refine.add_argument('-u', '--unclassified',
             help="""The set of unclassified/unassigned sequences (FASTA file).
-            By default, this is <basedir>/<basedir>-unique.fasta.""")
+            By default, this is <basedir>/<basedir>-Unique.fasta.""")
+    P_refine.add_argument('-x', '--exclude',
+            help="Exclude this profile from evaluation.")
     P_refine.set_defaults(func=cmd_refine)
     # Subcommand: update-fasta
     P_update = AP_subparsers.add_parser('update-fasta', 
