@@ -17,7 +17,7 @@ from Bio.SeqRecord import SeqRecord
 from biocma import biocma
 from biofrills import consensus, alnutils
 
-from tasks import Task, ext, noext, sh, is_empty
+from .tasks import Task, ext, noext, sh, is_empty
 from . import tmalign
 
 
