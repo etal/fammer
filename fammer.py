@@ -70,6 +70,10 @@ if __name__ == '__main__':
     P_scan.add_argument('-A', '--align',
             action='store_true',
             help='Make a FASTA alignment of sequences matching each profile.')
+    P_scan.add_argument('-n', '--include',
+            help='Only match profiles whose name contains this string(s).')
+    P_scan.add_argument('-x', '--exclude',
+            help='Exclude matches to profiles whose name contains this string.')
     P_scan.set_defaults(func=cmd_scan)
 
     # Sub-command: add

@@ -492,6 +492,20 @@ def cmd_scan(args):
         logging.warn("No hits in %s", args.target)
         return
 
+    # Filter hits for include/exclude strings
+    if args.include:
+        includes = args.include.split(',')
+        for key, val in scanhits.items():
+            profname, _evalue = val
+            if not any(incl in profname for incl in includes):
+                del scanhits[key]
+    if args.exclude:
+        excludes = args.exclude.split(',')
+        for key, val in scanhits.items():
+            profname, _evalue = val
+            if any(excl in profname for excl in excludes):
+                del scanhits[key]
+
     # Write a table of just the best hit for each sequence
     if args.table:
         write_table(scanhits)
