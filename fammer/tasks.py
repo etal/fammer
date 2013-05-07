@@ -30,6 +30,22 @@ def sh(cmd):
         raise exc
 
 
+def which(exenames):
+    """Returns the full path to an executable under any of the given names.
+
+    Example::
+
+        >>> which(['raxml', 'raxmlHPC', 'raxmlHPC-PTHREADS'])
+        '/usr/local/bin/raxmlHPC'
+    """
+    for exe in exenames:
+        try:
+            path = subprocess.check_output(['which', exe])
+            return path.strip()
+        except subprocess.CalledProcessError:
+            pass
+
+
 def is_empty(path):
     """True if a file contains more than a single byte (has size >1).
 

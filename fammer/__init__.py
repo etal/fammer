@@ -17,7 +17,7 @@ from Bio.SeqRecord import SeqRecord
 from biocma import biocma
 from biofrills import consensus, alnutils
 
-from .tasks import Task, ext, noext, sh, is_empty
+from .tasks import Task, ext, noext, sh, which, is_empty
 from . import tmalign
 
 
@@ -217,8 +217,11 @@ def align_fasta(task):
 
 
 def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
-    """Create a structure-based sequence alignment from PDB files."""
-    if not use_pdb:
+    """Create a structure-based sequence alignment from PDB files.
+
+    Inputs are PDB files and FASTA alignments (of previously aligned PDBs).
+    """
+    if not use_pdb or not task.depends:
         # Just touch the '.pdb.seq' file; don't use TM-align
         with open(task.target, 'a'):
             return
@@ -230,6 +233,7 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
             pdbs.append(elem)
         else:
             sub_pdb_seqs.append(str(elem))
+
     # Scan existing PDB alignments to choose a reference PDB from each
     # sub_pdb_seqs = filter(isfile, sub_pdb_seqs)
     for sub_pdb_fname in map(str, sub_pdb_seqs):
@@ -253,7 +257,7 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
                         if this_tmscore > best_tmscore:
                             best_tmscore = this_tmscore
                             best_pdb = rec.id
-                    except:
+                    except Exception:
                         logging.warn("PDB seq parsing issue: %s",
                                      rec.description)
                     finally:
@@ -264,9 +268,27 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
             logging.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
             pdbs.append(best_pdb)
 
-    records = tmalign.align_structs(pdbs,
-                                    [seed for seed in map(str, sub_pdb_seqs)
-                                    if isfile(seed) and not is_empty(seed)])
+    pdbseedfnames = [seed for seed in map(str, sub_pdb_seqs)
+                     if isfile(seed) and not is_empty(seed)]
+
+    try:
+        mustang_tmpfname = '_tmp_mustang.afasta'
+        if len(pdbs) > 1 and which(['mustang']):
+            # Align PDBs with MUSTANG.
+            subprocess.check_call(['mustang',
+                                    '-o', '_tmp_mustang',
+                                    '-F', 'fasta',
+                                    '-s', 'OFF',
+                                    '-i'] + pdbs)
+            pdbseedfnames.append(mustang_tmpfname)
+
+        # This is where the magic happens.
+        records = tmalign.align_structs(pdbs, pdbseedfnames)
+
+    finally:
+        if isfile(mustang_tmpfname):
+            os.remove(mustang_tmpfname)
+
     SeqIO.write(records, task.target, 'fasta')
     # if not records:
     #     logging.info("Created empty PDB alignment %s", task.target)
@@ -334,7 +356,8 @@ def align_profiles(task, use_pdb=None):
             # Drop PDB-derived sequences
             # if ':' not in rec.id
             if 'TMalign' not in rec.description and
-               'TM-score' not in rec.description
+               'TM-score' not in rec.description and
+               not rec.id.endswith('.pdb')
             ]
     records = list(alnutils.remove_empty_cols(records))
     if seeds:

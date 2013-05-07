@@ -66,7 +66,9 @@ def align_structs(pdb_fnames, seed_fnames=None):
     # 4. Emit the aligned sequences
     recs = SeqIO.parse(StringIO(mafft_output), 'fasta')
     recs = clean_and_dedupe_seqs(recs)
-    return list(alnutils.remove_empty_cols(recs))
+    recs = alnutils.remove_empty_cols(recs)
+    recs = purge_seqs(recs)
+    return list(recs)
 
 
 def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
@@ -115,7 +117,7 @@ def tmscore_from_description(text):
 
 
 def clean_and_dedupe_seqs(records, best_score=False):
-    """Remove the _seed_ prefix and omit duplicated records."""
+    """Remove the _seed_ prefix and omit duplicated records (by ID)."""
     if best_score:
         seen = {}
     else:
@@ -141,4 +143,14 @@ def clean_and_dedupe_seqs(records, best_score=False):
                 continue
             seen.add(ident)
         yield record
+
+
+def purge_seqs(records):
+    """Drop duplicated records by identical sequence."""
+    seen = set()
+    for rec in records:
+        seq = str(rec.seq)
+        if seq not in seen:
+            yield rec
+            seen.add(seq)
 
