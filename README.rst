@@ -19,6 +19,7 @@ Dependencies:
 - HMMer_ 3.0
 - MAPGAPS_ (optional)
 - TMalign_ (optional) -- for structural alignments
+- FastTree_ (optional) -- for clustering
 
 .. _Python: http://www.python.org/download/
 .. _Biopython: http://biopython.org/wiki/Download
@@ -31,6 +32,7 @@ Dependencies:
 .. _HMMer: http://hmmer.janelia.org/
 .. _MAPGAPS: http://mapgaps.igs.umaryland.edu/
 .. _TMalign: http://cssb.biology.gatech.edu/skolnick/webservice/TM-align/index.shtml
+.. _FastTree: http://www.microbesonline.org/fasttree/
 
 
 I recommend creating a symbolic link to ``fammer.py`` in your ``$PATH``, e.g.::
@@ -62,6 +64,8 @@ Sub-commands:
         meet acceptance thresholds to the profile FASTA files.
     `refine`_
         Leave-one-out validation of HMM profiles.
+    `cluster`_
+        Split a sequence set into clusters (based on phylogeny).
 
 
 Directory tree is the superfamily hierarchy
@@ -294,6 +298,16 @@ this high-scoring "unclassified" sequence and be erroneously marked for removal
 from the profile. This is easy enough to spot in the logged output. One way to
 avoid it is to first use the ``add`` command with  ``-Unclassified.fasta`` as
 the target, to catch and classify such sequences beforehand.
+
+cluster
+```````
+
+Extract clusters from a sequence set based on phylogenetic relationships.
+
+Uses FastTree to quickly build a tree with branch support values, then extracts
+well-supported clades from the tree and writes the corresponding sequence sets
+to FASTA files. Unclustered sequences are written to another "Unique" file.
+Also writes a phyloXML tree file (.xml) showing clusters as colorized clades.
 
 
 Bundled modules

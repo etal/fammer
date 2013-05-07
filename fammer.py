@@ -10,6 +10,7 @@ import logging
 import argparse
 
 from fammer import cmd_build, cmd_scan, cmd_add, cmd_refine, cmd_update_fasta
+from fammer.cluster import cmd_cluster
 
 # === Main ============================================
 
@@ -19,7 +20,7 @@ if __name__ == '__main__':
             epilog="Contact Eric <etal@uga.edu> for help.")
 
     # Global options
-    AP.add_argument('--quiet',
+    AP.add_argument('-q', '--quiet',
             action='store_true',
             help="Don't print status messages, only warnings and errors.")
     AP_subparsers = AP.add_subparsers(
@@ -119,11 +120,21 @@ if __name__ == '__main__':
             help='Top of the directory tree where the sequences sets are.')
     P_update.set_defaults(func=cmd_update_fasta)
 
+    # Sub-command: cluster
+    P_cluster = AP_subparsers.add_parser('cluster',
+            help="""Split a sequence set into smaller clusters.""")
+    P_cluster.add_argument('sequences',
+            help='Clustal alignment (.aln) or unaligned FASTA (.fasta).')
+    P_cluster.set_defaults(func=cmd_cluster)
+
     args = AP.parse_args()
     # Handle global options here
-    if not args.quiet:
+    if args.quiet:
+        logging.basicConfig(level=logging.WARNING,
+                format="%(module)s: %(message)s")
+    else:
         logging.basicConfig(level=logging.INFO,
-                format="@%(lineno)s | %(message)s")
+                format="%(module)s [@%(lineno)s]: %(message)s")
     # Pass the rest along to the sub-command implementation
     args.func(args)
 
