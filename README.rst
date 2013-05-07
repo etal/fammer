@@ -14,6 +14,8 @@ Dependencies:
 - Python_ 2.7
 - Python libraries Biopython_, biofrills_, biocma_, networkx_
 - MAFFT_
+- PRANK_
+- Exonerate_ (optional, used by PRANK for speed)
 - HMMer_ 3.0
 - MAPGAPS_ (optional)
 - TMalign_ (optional) -- for structural alignments
@@ -24,6 +26,8 @@ Dependencies:
 .. _biocma: https://github.com/etal/biocma
 .. _networkx: http://networkx.lanl.gov/
 .. _MAFFT: http://mafft.cbrc.jp/alignment/software/
+.. _PRANK: http://code.google.com/p/prank-msa/
+.. _Exonerate: http://www.ebi.ac.uk/~guy/exonerate/
 .. _HMMer: http://hmmer.janelia.org/
 .. _MAPGAPS: http://mapgaps.igs.umaryland.edu/
 .. _TMalign: http://cssb.biology.gatech.edu/skolnick/webservice/TM-align/index.shtml

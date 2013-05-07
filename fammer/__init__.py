@@ -108,7 +108,7 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
     If mapgaps is True, build CMA profiles and templates too.
     """
     this = topdir.rstrip('/')
-    subdirs = filter(isdir, 
+    subdirs = filter(isdir,
             [join(topdir, sd) for sd in sorted(os.listdir(topdir))])
     # Each subtask pair: (HMM, CMA)-making tasks for the subdir
     # Groups with their own families within -- recurse
@@ -122,9 +122,10 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
         if noext(subfa) in subdirs:
             continue
         subresult = Result(Task(ext(subfa, 'aln'),
-                action=align_fasta,
+                action=align_fasta_mafft,
                 depends=subfa,
-                cleans=ext(subfa, 'seq')))
+                cleans=ext(subfa, 'seq')))  # mafft
+                # cleans=[subfa + '.1.fas', subfa + '.2.fas']))  # prank
         if hmmer:
             subresult.hmm = Task(ext(subfa, 'hmm'),
                     action=aln2hmm,
@@ -194,20 +195,39 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
 #         pass
 
 
-def align_fasta(task):
+def align_fasta_mafft(task):
     """Align a FASTA file with MAFFT. Clustal output."""
     seq = ext(task.depends[0], 'seq')
     sh("mafft --quiet --amino --reorder --maxiterate 1000 "
        "--genafpair --ep 0.123 %s > %s"
        % (task.depends[0], seq))
-    # XXX fast version
-    # sh("mafft --quiet --amino --reorder --auto %s > %s" % (task.depends[0], seq))
     # Convert FASTA to "pressed" (single-row) Clustal
     records = list(SeqIO.parse(seq, 'fasta'))
-    # check for 'X' characters in the sequences -- these cause problems
+    # Check for 'X' characters in the sequences -- these cause problems
     for rec in records:
         if 'X' in str(rec.seq):
-            logging.warn('Sequence %r contains unknown residue X' % rec.id)
+            logging.warn('Sequence %r contains unknown residue X', rec.id)
+    max_id_len = max(len(r.id) for r in records)
+    with open(task.target, 'w+') as outfile:
+        outfile.write('CLUSTAL X (-like) multiple sequence alignment\n\n')
+        outfile.writelines(
+                ['%s %s\n' % (rec.id.ljust(max_id_len), rec.seq)
+                 for rec in records])
+
+
+def align_fasta_prank(task):
+    """Align a FASTA file with PRANK. Clustal output.
+
+    Cleans: [input].fasta.{1,2}.fas
+    """
+    seq = task.depends[0] + '.2.fas'
+    sh("prank -d=%s -o=%s -twice -quiet" % (task.depends[0], task.depends[0]))
+    # Convert FASTA to "pressed" (single-row) Clustal
+    records = list(SeqIO.parse(seq, 'fasta'))
+    # Check for 'X' characters in the sequences -- these cause problems
+    for rec in records:
+        if 'X' in str(rec.seq):
+            logging.warn('Sequence %r contains unknown residue X', rec.id)
     max_id_len = max(len(r.id) for r in records)
     with open(task.target, 'w+') as outfile:
         outfile.write('CLUSTAL X (-like) multiple sequence alignment\n\n')
@@ -471,7 +491,7 @@ def treeify_subdirs(topdir):
     External nodes = names of .fasta files
     """
     # Full paths of directories under topdir
-    subdirs = filter(isdir, 
+    subdirs = filter(isdir,
             [join(topdir, sd) for sd in sorted(os.listdir(topdir))])
     # Do internal nodes first, then the tips
     # Internal nodes: subtree Newick strings
@@ -934,7 +954,7 @@ def find_update_tasks(topdir):
                       if fn.endswith('.aln') and fn[:-4] + '.fasta' in fnames]
         for base in todo_bases:
             if not is_same_aln_fasta(base + '.aln', base + '.fasta'):
-                yield Task(base + '.fasta', 
+                yield Task(base + '.fasta',
                     action=update_fasta,
                     depends=base + '.aln')
 
@@ -947,7 +967,7 @@ def one_update_task(aln_fname):
     if is_same_aln_fasta(aln_fname, fasta_fname):
         logging.info("%s already matches %s." % (fasta_fname, aln_fname))
     else:
-        return Task(fasta_fname, 
+        return Task(fasta_fname,
                     action=update_fasta,
                     depends=aln_fname)
 
