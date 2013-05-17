@@ -9,8 +9,10 @@ corresponding to each subfamily of a protein superfamily.
 import logging
 import argparse
 
-from fammer import cmd_build, cmd_scan, cmd_add, cmd_refine, cmd_update_fasta
+from fammer import cmd_build, cmd_scan, cmd_add, cmd_refine
 from fammer.cluster import cmd_cluster
+from fammer.update_fasta import cmd_update_fasta
+
 
 # === Main ============================================
 
