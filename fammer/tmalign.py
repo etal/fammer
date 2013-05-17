@@ -79,7 +79,16 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
     tmscores = []
     for line in lines:
         if line.startswith('TM-score'):
+            # TMalign v. 2012/05/07 or earlier
             tmscores.append(float(line.split(None, 2)[1]))
+        elif 'TM-score=' in line:
+            # TMalign v. 2013/05/11 or so
+            tokens = line.split()
+            for token in tokens:
+                if token.startswith('TM-score='):
+                    _key, _val = token.split('=')
+                    tmscores.append(float(_val.rstrip(',')))
+                    break
     tmscore = sum(tmscores) / len(tmscores)
     # Extract the sequence alignment
     lastlines = lines[-5:]
