@@ -29,10 +29,10 @@ try:
     from setuptools import setup
     setup_args.update(
         install_requires=[
-            'biopython >= 1.58',
+            'biopython >= 1.60',
             'networkx >= 1.0',
             'biocma >= 0.1.0',
-            'biofrills >= 0.1.0',
+            'biofrills >= 0.2.0',
         ])
 except:
     from distutils.core import setup
