@@ -1,9 +1,21 @@
 *.pyc
-*.hmm
 *.h3?
-*.{mpa,tpl}
+*.hmm
+*.mpa
+*.tpl
 *.pdb.seq
-Testfam.{aln,cma,dft,nwk}
-Testfam/*.{aln,cma}
-Testfam/{CAMK,CMGC,STE}/*.{aln,cma}
+profiles/*.aln
+profiles/*.cma
+profiles/*.dft
+profiles/*.nwk
+profiles/SomeKinases/*.aln
+profiles/SomeKinases/*.cma
+profiles/SomeKinases/CAMK/*.aln
+profiles/SomeKinases/CAMK/*.cma
+profiles/SomeKinases/CMGC/*.aln
+profiles/SomeKinases/CMGC/*.cma
+profiles/SomeKinases/STE/*.aln
+profiles/SomeKinases/STE/*.cma
+profiles/ROPK/*.aln
+profiles/ROPK/*.cma
 
