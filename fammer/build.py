@@ -15,6 +15,7 @@ from Bio.SeqRecord import SeqRecord
 from biocma import biocma
 from biofrills import consensus, alnutils
 
+from ._share import write_fasta
 from .tasks import Task, ext, noext, sh, which, is_empty
 from . import tmalign
 
@@ -185,12 +186,6 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
 
 # Actions
 
-# def touch(task):
-#     """Just create a file if it's not already present."""
-#     with open(task.target, 'w'):
-#         pass
-
-
 def align_fasta_mafft(task):
     """Align a FASTA file with MAFFT. Clustal output."""
     seq = ext(task.depends[0], 'seq')
@@ -305,7 +300,8 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
         if isfile(mustang_tmpfname):
             os.remove(mustang_tmpfname)
 
-    SeqIO.write(records, task.target, 'fasta')
+    # SeqIO.write(records, task.target, 'fasta')
+    write_fasta(records, task.target)
     # if not records:
     #     logging.info("Created empty PDB alignment %s", task.target)
 
@@ -500,4 +496,5 @@ def treeify_subdirs(topdir):
     return '(%s)%s' % (
             ','.join(subtree_strs + tip_names),
             basename(topdir.rstrip('/')))
+
 

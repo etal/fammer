@@ -3,7 +3,12 @@
 import collections
 import tempfile
 
+from Bio.File import as_handle
+
 from .tasks import sh
+
+
+# HMMer utilities
 
 def get_hmm_evalues(hmmfname, seqfname):
     with tempfile.NamedTemporaryFile(suffix='.tbl') as tbl:
@@ -50,4 +55,23 @@ TAIR|locus:2011201      -          Testfam              -           2.4e-137  45
         topprofs[seqname] = profname
     return dict((seq, (prof, topevals[seq]))
                  for seq, prof in topprofs.iteritems())
+
+
+# Helpers
+
+# def touch(task):
+#     """Just create a file if it's not already present."""
+#     with open(task.target, 'w'):
+#         pass
+
+
+def write_fasta(records, fname):
+    """Write a FASTA file without wrapping lines."""
+    with as_handle(fname, 'w+') as outfile:
+        for rec in records:
+            descr = rec.description.strip()
+            if descr:
+                outfile.write(">%s %s\n%s\n" % (rec.id, descr, rec.seq))
+            else:
+                outfile.write(">%s\n%s\n" % (rec.id, rec.seq))
 

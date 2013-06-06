@@ -6,6 +6,7 @@ from os.path import isdir, isfile, join
 
 from Bio import SeqIO
 
+from ._share import write_fasta
 from .tasks import Task
 
 
@@ -56,7 +57,8 @@ def update_fasta(task):
     """Overwrite the .fasta with ungapped unique .aln sequences."""
     records = ungap_and_unique(SeqIO.parse(str(task.depends[0]), 'clustal'),
                                task.target)
-    SeqIO.write(records, task.target, 'fasta')
+    write_fasta(records, task.target)
+    # SeqIO.write(records, task.target, 'fasta')
 
 
 def ungap_and_unique(records, target_name):
