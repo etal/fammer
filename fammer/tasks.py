@@ -23,11 +23,16 @@ def noext(path):
 
 
 def sh(cmd):
+    """Execute a command through the shell. Print any error messages."""
     try:
-        subprocess.check_call(cmd, shell=True)
-    except (OSError, subprocess.CalledProcessError), exc:
+        subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
+    except OSError:
+        # NB: Not sure what could trigger this; check_output eats most errors
         logging.warning("*** Failed command: %s", str(cmd))
-        raise exc
+        raise
+    except subprocess.CalledProcessError, exc:
+        raise RuntimeError("Failed command: %s\n\n%s"
+                           % (str(cmd), exc.output))
 
 
 def which(exenames):
