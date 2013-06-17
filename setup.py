@@ -21,7 +21,7 @@ setup_args = dict(
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
     ],
-    packages=['fammer'],
+    packages=['fammerlib'],
     scripts=[join(DIR, 'fammer.py'), join(DIR, 'tmalign.py')],
 )
 

@@ -12,28 +12,15 @@ Procedure:
    the MST, and use them as seeds in MAFFT (--localpair).
 4. Remove duplicated sequences and all-gap columns from the resulting alignment.
 
-
-Depends:
-
-- TMalign
-- MAFFT
-- networkx
-- Biopython
-- biofrills
 """
 
 import argparse
 import sys
+import logging
 
 from Bio import SeqIO
 
-from fammer.tmalign import align_structs
-
-try:
-    from esbglib.sugar import log_config
-    log_config()
-except ImportError:
-    pass
+from fammerlib.tmalign import align_structs
 
 
 if __name__ == '__main__':
@@ -45,6 +32,8 @@ if __name__ == '__main__':
                   type=argparse.FileType('w+'),
                   help="Filename for the output FASTA alignment.")
     args = AP.parse_args()
+    logging.basicConfig(level=logging.INFO,
+            format="%(module)s [@%(lineno)s]: %(message)s")
 
     out_seqrecs = align_structs(args.pdbfnames)
     SeqIO.write(out_seqrecs, args.output, 'fasta')

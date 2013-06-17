@@ -5,16 +5,17 @@
 Manages a hierarchical directory tree containing sequence sets (FASTA files)
 corresponding to each subfamily of a protein superfamily.
 """
+from __future__ import absolute_import
 
 import logging
 import argparse
 
-from fammer.build import cmd_build
-from fammer.scan import cmd_scan
-from fammer.add import cmd_add
-from fammer.refine import cmd_refine
-from fammer.cluster import cmd_cluster
-from fammer.update_fasta import cmd_update_fasta
+from fammerlib.build import cmd_build
+from fammerlib.scan import cmd_scan
+from fammerlib.add import cmd_add
+from fammerlib.refine import cmd_refine
+from fammerlib.cluster import cmd_cluster
+from fammerlib.update_fasta import cmd_update_fasta
 
 
 if __name__ == '__main__':
