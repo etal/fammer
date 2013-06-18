@@ -17,12 +17,17 @@ Freely distributed under the permissive BSD 2-clause license (see LICENSE).
 Installation
 ------------
 
-Dependencies:
+The installation consists of a Python library, ``fammerlib``, and two scripts,
+``fammer.py`` and ``tmalign.py``.
+
+Download the .zip file and unpack it, or clone this Git repository, to get the
+source code.
+
+To use all the features of Fammer, you'll need the following third-party
+programs installed:
 
 - Python_ 2.7
-- Python libraries Biopython_, biofrills_, biocma_, networkx_
 - MAFFT_
-- PRANK_
 - Exonerate_ (optional, used by PRANK for speed)
 - HMMer_ 3.0
 - MAPGAPS_ (optional)
@@ -30,23 +35,47 @@ Dependencies:
 - FastTree_ (optional) -- for clustering
 
 .. _Python: http://www.python.org/download/
-.. _Biopython: http://biopython.org/wiki/Download
-.. _biofrills: https://github.com/etal/biofrills
-.. _biocma: https://github.com/etal/biocma
-.. _networkx: http://networkx.lanl.gov/
 .. _MAFFT: http://mafft.cbrc.jp/alignment/software/
-.. _PRANK: http://code.google.com/p/prank-msa/
 .. _Exonerate: http://www.ebi.ac.uk/~guy/exonerate/
 .. _HMMer: http://hmmer.janelia.org/
 .. _MAPGAPS: http://mapgaps.igs.umaryland.edu/
 .. _TMalign: http://cssb.biology.gatech.edu/skolnick/webservice/TM-align/index.shtml
 .. _FastTree: http://www.microbesonline.org/fasttree/
 
+.. For hackers, also PRANK: http://code.google.com/p/prank-msa/
 
-I recommend creating a symbolic link to ``fammer.py`` in your ``$PATH``, e.g.::
+If you're on a Debian-based Linux system, check your package manager for these
+first to save yourself some time.
 
-    ln -s `pwd`/fammer.py ~/bin/fammer
+Then, install the Python library dependencies and Fammer itself as follows.
 
+Recommended:
+````````````
+
+Install the Python packaging system pip or setuptools. Then run the setup
+script, and all Python dependencies will be pulled in:
+
+    python setup.py build
+    python setup.py install
+
+(You might need root privileges for the last step.)
+
+Manual:
+```````
+
+Install the Python libraries Biopython_, biofrills_, biocma_ and networkx_.
+
+.. _Biopython: http://biopython.org/wiki/Download
+.. _biofrills: https://github.com/etal/biofrills
+.. _biocma: https://github.com/etal/biocma
+.. _networkx: http://networkx.lanl.gov/
+
+Then run the setup script as usual::
+
+    python setup.py build
+    python setup.py install
+
+(You might need root privileges for the last step.)
 
 Basic usage
 -----------
@@ -130,8 +159,9 @@ build
 Construct a profile database from a directory tree of family profile alignments.
 
 Assume we have a directory tree set up under ``Superfamily/`` as above.
-Next, run ``fammer build Superfamily`` to align all sequence files with MAFFT,
-and (recursively up) align the consensus sequences of each subfamily together::
+Next, run ``fammer.py build Superfamily`` to align all sequence files with
+MAFFT, and (recursively up) align the consensus sequences of each subfamily
+together::
 
     Superfamily/
         Group1/
@@ -155,9 +185,9 @@ The alignments are in un-wrapped Clustal format.
 You can manually adjust the alignments and rebuild, if desired, perhaps
 iteratively. Only the "parent" family alignments will be rebuilt as needed, e.g.
 if ``subfam1_Group1.aln`` is edited, then only ``Group1.aln`` and
-``Superfamily.aln`` will be rebuilt the next time ``fammer build Superfamily``
-is called because the consensus sequences that constitute those alignments may
-have changed. (It's like Make.)
+``Superfamily.aln`` will be rebuilt the next time ``fammer.py build
+Superfamily`` is called because the consensus sequences that constitute those
+alignments may have changed. (It's like Make.)
 
 Finally, use the option ``--hmmer`` to build profiles::
 
