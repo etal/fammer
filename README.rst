@@ -10,7 +10,10 @@ it:
 
     Talevich, E. & Kannan, N. (2013) Structural and evolutionary adaptation of
     rhoptry kinases and pseudokinases, a family of coccidian virulence factors.
-    *BMC Evolutionary Biology*
+    *BMC Evolutionary Biology* 13:117
+    doi:10.1186/1471-2148-13-117
+
+    Available at: http://www.biomedcentral.com/1471-2148/13/117
 
 Freely distributed under the permissive BSD 2-clause license (see LICENSE).
 
@@ -53,7 +56,7 @@ Recommended:
 ````````````
 
 Install the Python packaging system pip or setuptools. Then run the setup
-script, and all Python dependencies will be pulled in:
+script, and all Python dependencies will be pulled in::
 
     python setup.py build
     python setup.py install
