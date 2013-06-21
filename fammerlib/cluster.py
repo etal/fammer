@@ -107,6 +107,7 @@ def load_tree(seqfname):
     min_confidence = sum(confs) / len(confs)
     tree.collapse_all(lambda c: c.confidence < min_confidence)
     tree.ladderize(reverse=True)
+    tree.root.branch_length = 0.0
     return tree
 
 
