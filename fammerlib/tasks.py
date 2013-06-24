@@ -31,8 +31,8 @@ def sh(cmd):
         logging.warning("*** Failed command: %s", str(cmd))
         raise
     except subprocess.CalledProcessError, exc:
-        raise RuntimeError("Failed command: %s\n\n%s"
-                           % (str(cmd), exc.output))
+        raise RuntimeError("Failed command (returned %s):\n%s\n\n%s"
+                           % (exc.returncode, str(cmd), exc.output))
 
 
 def which(exenames):
