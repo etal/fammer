@@ -28,8 +28,21 @@ def align_structs(pdb_fnames, seed_fnames=None):
         for eqv_pdbfn in pdb_fnames[idx+1:]:
             assert eqv_pdbfn != ref_pdbfn
             logging.info("Aligning %s to %s", eqv_pdbfn, ref_pdbfn)
-            tm_output = subprocess.check_output(['TMalign', ref_pdbfn, eqv_pdbfn])
-            tm_seqpair = read_tmalign_as_seqrec_pair(tm_output, ref_pdbfn, eqv_pdbfn)
+            try:
+                tm_output = subprocess.check_output(['TMalign',
+                                                     ref_pdbfn, eqv_pdbfn])
+            except OSError:
+                logging.warning("Failed command: TMalign %s %s",
+                                ref_pdbfn, eqv_pdbfn)
+                for fname in (ref_pdbfn, eqv_pdbfn):
+                    if not os.path.isfile(fname):
+                        logging.warning("Missing file: %s", fname)
+                raise
+            except subprocess.CalledProcessError, exc:
+                raise RuntimeError("TMalign failed (returned %s):\n%s"
+                                   % (exc.returncode, exc.output))
+            tm_seqpair = read_tmalign_as_seqrec_pair(tm_output,
+                                                     ref_pdbfn, eqv_pdbfn)
             allpairs.append(tm_seqpair)
 
     # In case of 2 structs, no need to combine alignments -- we're done
