@@ -88,6 +88,9 @@ def load_tree(seqfname):
         alndata = subprocess.check_output(['mafft', '--quiet', '--auto',
                                            seqfname])
         aln = AlignIO.read(StringIO(alndata), 'fasta')
+    else:
+        raise ValueError("Input sequences must be a Clustal alignment (.aln) "
+                         "or unaligned FASTA (.fasta)")
 
     # Use conserved (less-gappy) blocks to build the tree
     aln = alnutils.blocks(aln, 0.4)
