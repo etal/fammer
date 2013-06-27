@@ -31,7 +31,6 @@ programs installed:
 
 - Python_ 2.7
 - MAFFT_
-- Exonerate_ (optional, used by PRANK for speed)
 - HMMer_ 3.0
 - MAPGAPS_ (optional)
 - TMalign_ (optional) -- for structural alignments
@@ -39,7 +38,6 @@ programs installed:
 
 .. _Python: http://www.python.org/download/
 .. _MAFFT: http://mafft.cbrc.jp/alignment/software/
-.. _Exonerate: http://www.ebi.ac.uk/~guy/exonerate/
 .. _HMMer: http://hmmer.janelia.org/
 .. _MAPGAPS: http://mapgaps.igs.umaryland.edu/
 .. _TMalign: http://cssb.biology.gatech.edu/skolnick/webservice/TM-align/index.shtml
@@ -48,7 +46,9 @@ programs installed:
 .. For hackers, also PRANK: http://code.google.com/p/prank-msa/
 
 If you're on a Debian-based Linux system, check your package manager for these
-first to save yourself some time.
+first to save yourself some time::
+
+    sudo apt-get install mafft hmmer tm-align fasttree python-pip
 
 Then, install the Python library dependencies and Fammer itself as follows.
 
@@ -67,18 +67,14 @@ Manual:
 ```````
 
 Install the Python libraries Biopython_, biofrills_, biocma_ and networkx_.
+Then run the setup script as above.
 
 .. _Biopython: http://biopython.org/wiki/Download
 .. _biofrills: https://github.com/etal/biofrills
 .. _biocma: https://github.com/etal/biocma
 .. _networkx: http://networkx.lanl.gov/
 
-Then run the setup script as usual::
 
-    python setup.py build
-    python setup.py install
-
-(You might need root privileges for the last step.)
 
 Basic usage
 -----------
@@ -106,51 +102,6 @@ Sub-commands:
         Leave-one-out validation of HMM profiles.
     `cluster`_
         Split a sequence set into clusters (based on phylogeny).
-
-
-Directory tree is the superfamily hierarchy
--------------------------------------------
-
-Begin by creating a directory tree with each subfamily's representative
-sequences in an unaligned FASTA file.  The FASTA file names must end in
-``.fasta``.
-
-A simple un-nested layout looks like::
-
-    Superfamily/
-        subfam1.fasta
-        subfam2.fasta
-        subfam3.fasta
-        ...
-        Superfamily-Unclassified.fasta
-
-Typically, a protein superfamily will have some members that cannot be cleanly
-classified into subfamilies.
-
-Recursive nesting is also allowed (in fact, that's the point of this project).
-It looks like this::
-
-    Superfamily/
-        Group1/
-            subfam1_Group1.fasta
-            subfam2_Group1.fasta
-            subfam3_Group1.fasta
-            ...
-            Group1-Unclassified.fasta
-        Group2/
-            subfam1_Group2.fasta
-            subfam2_Group2.fasta
-            subfam3_Group2.fasta
-            ...
-            Group2-Unclassified.fasta
-        Group3/
-            subfam1_Group3.fasta
-            subfam2_Group3.fasta
-            subfam3_Group3.fasta
-            ...
-            Group3-Unclassified.fasta
-        ...
-        Superfamily-Unclassified.fasta
 
 
 Commands
@@ -370,4 +321,149 @@ Align multiple structures using TMalign_ for pairwise alignments and a minimum
 spanning tree constructed from the pairwise TM-scores to assemble the pairwise
 alignments into a multiple sequence alignment. This module can also be used as a
 command-line script.
+
+How to curate profiles
+----------------------
+
+Directory tree is the superfamily hierarchy
+```````````````````````````````````````````
+
+Begin by creating a directory tree with each subfamily's representative
+sequences in an unaligned FASTA file.  The FASTA file names must end in
+``.fasta``.
+
+A simple un-nested layout looks like::
+
+    Superfamily/
+        subfam1.fasta
+        subfam2.fasta
+        subfam3.fasta
+        ...
+        Superfamily-Unclassified.fasta
+
+Typically, a protein superfamily will have some members that cannot be cleanly
+classified into subfamilies.
+
+Recursive nesting is also allowed (in fact, that's the point of this project).
+It looks like this::
+
+    Superfamily/
+        Group1/
+            subfam1_Group1.fasta
+            subfam2_Group1.fasta
+            subfam3_Group1.fasta
+            ...
+            Group1-Unclassified.fasta
+        Group2/
+            subfam1_Group2.fasta
+            subfam2_Group2.fasta
+            subfam3_Group2.fasta
+            ...
+            Group2-Unclassified.fasta
+        Group3/
+            subfam1_Group3.fasta
+            subfam2_Group3.fasta
+            subfam3_Group3.fasta
+            ...
+            Group3-Unclassified.fasta
+        ...
+        Superfamily-Unclassified.fasta
+
+
+At least 2 sequences are needed to define each subfamily.  The sequences are
+initially retrieved and organized manually. External databases can help; for
+example, KinBase provides a classification scheme and representative sequences
+for the protein kinase superfamily.  The directory hierarchy defines the higher
+levels of organization of the superfamily.
+
+Now build the initial alignments::
+
+    fammer.py build --clean Superfamily/
+
+
+Trim the tails
+``````````````
+
+For best results, sequences should all cover the same conserved domain region
+and align exactly at N- and C-termini. For example, the eukaryotic protein
+kinase domain begins 7 residues before the glycine-rich loop (GxGxxG motif) and
+ends 12 residues after a conserved arginine in subdomain XI (RP[TS] motif).
+The consensus function used in Fammer includes the flanking sequences before
+the first conserved block or after the last conserved block, regardless of
+"gappiness", so even one sequence in a set can be used to define domain
+boundaries for the whole set.
+
+Edit the subfamily-level alignments (.aln) to trim the sequences to the domain
+boundaries. I use Vim's block-selection mode (Ctrl-v); you might prefer
+JalView. Do not edit higher-level .aln files; just look at them to see which
+subfamily-level alignments have extended tails, then edit those .aln files.
+
+When you think you've trimmed all the .aln files to the conserved domain
+region, update the corresponding unaligned sequence files (.fasta) to match::
+
+    fammer.py update-fasta Superfamily/
+
+Rebuild the alignments whose source sequence sets have changed::
+
+    fammer.py build --clean Superfamily/
+
+MAFFT may create better alignments for sets where the unalignable regions have
+now been removed. When this step completes, examine the top-level alignment
+(e.g. Superfamily.aln) -- are the domain boundaries aligned cleanly across all
+sequence sets? Repeat the process if any subfamilies need to be trimmed further.
+
+If you realize you've trimmed a profile too far, use your version control
+system (you are using Git or Mercurial to take snapshots of the tree, right?)
+to revert the .fasta file to an earlier version, then rebuild and try trimming
+again.
+
+If you never had the full-length sequences for a subfamily to begin with, try
+to find one representative full-length sequence from a database like UniProt,
+add it to the .fasta file, realign, and trim that sequence to the region it
+should cover. This won't improve the HMM or MAPGAPS profile for that subfamily
+much, but it will help the higher-level alignments that include the consensus
+sequence of that subfamily.
+
+
+PDB files for structural alignment
+``````````````````````````````````
+
+While MAFFT typically creates good alignments within a subfamily, for
+high-level profiles it may struggle to align the consensus sequences of very
+divergent families or groups to each other.  In these cases, seeding with a
+structural alignment can help line up homologous regions.
+
+Manually identify the high-quality solved crystal structures that correspond to
+families in your tree, and place those PDB files in the directory tree at the
+same level as the subfamily they represent.
+
+Open the PDB file (.pdb) in a text editor and:
+
+- Remove the ATOM records corresponding to residues outside the conserved
+  domain.
+- If multiple chains are present, choose the best, most complete chain and
+  delete the others. (Otherwise, Fammer will take the first chain by default.)
+
+To determine the domain boundaries, load a "reference" PDB (e.g. 1ATP for
+kinases) and the other PDB together in PyMOL and align using the command
+"cealign" or "fit". Visually find which residues correspond to the start and
+end of the conserved domain.  If your PDB structure diverges from the reference
+structure drastically before or after a certain point (i.e. N- or C-terminal
+region of the domain is non-homologous -- excluding inserts), it may be best to
+truncate the PDB to remove the non-homologous portion as it cannot be aligned
+accurately.
+
+Save the edited .pdb file, and rebuild the higher-level profiles::
+
+    fammer.py build --clean Superfamily/
+
+Now that PDB files are present in the directory tree, Fammer will writes
+structural alignments in FASTA format to the .pdb.seq files.
+
+Once complete, examine the top-level alignment (e.g. Superfamily.aln) for
+misalignments. To fix these, first edit the corresponding .pdb.seq file.
+Usually there is just one structure that was misaligned.  Rebuild and re-edit
+as necessary. If a particular PDB is very poorly aligned to the others, it may
+be best to just remove it altogether -- it may have a different conformation
+from the others.
 
