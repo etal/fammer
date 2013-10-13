@@ -1,7 +1,9 @@
 """Align multiple structures with TMalign."""
+from __future__ import division
 
 import itertools
 import logging
+import math
 import os
 import subprocess
 import tempfile
@@ -102,7 +104,7 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
                     _key, _val = token.split('=')
                     tmscores.append(float(_val.rstrip(',')))
                     break
-    tmscore = sum(tmscores) / len(tmscores)
+    tmscore = math.fsum(tmscores) / len(tmscores)
     # Extract the sequence alignment
     lastlines = lines[-5:]
     assert lastlines[0].startswith('(":"') # (":" denotes the residues pairs

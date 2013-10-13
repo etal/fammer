@@ -44,4 +44,4 @@ if __name__ == '__main__':
     else:
         out_seqrecs = align_structs(args.pdbfnames)
     SeqIO.write(out_seqrecs, args.output, 'fasta')
-    print >>sys.stderr, "tmalign: Wrote", args.output
+    print >>sys.stderr, "tmalign: Wrote", args.output.name

@@ -8,7 +8,7 @@ DIR = (dirname(__file__) or '.')
 
 setup_args = dict(
     name='fammer',
-    version='0.2',
+    version='0.2+',
     description=__doc__,
     author='Eric Talevich',
     author_email='eric.talevich@gmail.com',

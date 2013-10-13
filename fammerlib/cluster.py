@@ -14,6 +14,7 @@ Depends:
 from __future__ import division
 
 import logging
+import math
 import os.path
 import subprocess
 import tempfile
@@ -107,7 +108,7 @@ def load_tree(seqfname):
              for c in tree.find_clades()
              if c.confidence is not None]
     # ENH: accept min_confidence as an option
-    min_confidence = sum(confs) / len(confs)
+    min_confidence = math.fsum(confs) / len(confs)
     tree.collapse_all(lambda c: c.confidence < min_confidence)
     tree.ladderize(reverse=True)
     tree.root.branch_length = 0.0
@@ -124,7 +125,7 @@ def get_clades_to_cut(tree):
             tip_branch_lengths.append(clade.branch_length)
         else:
             inner_branch_lengths.append(clade.branch_length)
-    # tip_mean = sum(tip_branch_lengths) / len(tip_branch_lengths)
+    # tip_mean = math.fsum(tip_branch_lengths) / len(tip_branch_lengths)
     tip_mean = geom_mean(tip_branch_lengths)
     clades_to_cut = [cl for cl in tree.get_nonterminals()
                     if cl.branch_length >= tip_mean]
