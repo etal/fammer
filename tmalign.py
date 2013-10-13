@@ -27,6 +27,8 @@ if __name__ == '__main__':
     AP = argparse.ArgumentParser(__doc__)
     AP.add_argument('pdbfnames', nargs='+',
             help="PDB file names of the structures to align.")
+    AP.add_argument('-s', '--seed', action='append', default=[],
+            help="Aligned FASTA sequences to include in the output alignment.")
     AP.add_argument('-o', '--output',
                   default=sys.stdout,
                   type=argparse.FileType('w+'),
@@ -35,6 +37,11 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
             format="%(module)s [@%(lineno)s]: %(message)s")
 
-    out_seqrecs = align_structs(args.pdbfnames)
+    if args.seed:
+        print >>sys.stderr, "tmalign: Using seed alignments", \
+                ' '.join(args.seed)
+        out_seqrecs = align_structs(args.pdbfnames, seed_fnames=args.seed)
+    else:
+        out_seqrecs = align_structs(args.pdbfnames)
     SeqIO.write(out_seqrecs, args.output, 'fasta')
-
+    print >>sys.stderr, "tmalign: Wrote", args.output
