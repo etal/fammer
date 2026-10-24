@@ -32,7 +32,8 @@ programs installed:
 - Python_ 2.7
 - MAFFT_
 - HMMer_ 3.0
-- MAPGAPS_ (optional)
+- MAPGAPS_ (optional) -- for MAPGAPS profiles; also needs the Python library
+  biocma_
 - TMalign_ (optional) -- for structural alignments
 - FastTree_ (optional) -- for clustering
 
@@ -56,18 +57,22 @@ Recommended:
 ````````````
 
 Install the Python packaging system pip or setuptools. Then run the setup
-script, and all Python dependencies will be pulled in::
+script, and all required Python dependencies will be pulled in::
 
     python setup.py build
     python setup.py install
 
 (You might need root privileges for the last step.)
 
+The ``--mapgaps`` option also needs biocma_, which the setup script does not
+install. Add it with ``pip install biocma``, or install Fammer from the source
+directory with ``pip install '.[mapgaps]'`` in place of the steps above.
+
 Manual:
 ```````
 
-Install the Python libraries Biopython_, biofrills_, biocma_ and networkx_.
-Then run the setup script as above.
+Install the Python libraries Biopython_, biofrills_ and networkx_, plus biocma_
+for ``--mapgaps``. Then run the setup script as above.
 
 .. _Biopython: http://biopython.org/wiki/Download
 .. _biofrills: https://github.com/etal/biofrills
@@ -159,8 +164,8 @@ Finally, use the option ``--hmmer`` to build profiles::
     Superfamily_all.hmm     # concatenated profiles
     Superfamily_all.hmm.{h3f,h3i,h3m,h3p}   # indexes from hmmpress
 
-The ``--mapgaps`` option works similarly, if you have the necessary programs
-installed.
+The ``--mapgaps`` option works similarly, if you have MAPGAPS and the Python
+library biocma_ installed.
 
 The ``--clean`` option can be included with any of the above commands to remove
 intermediate files.

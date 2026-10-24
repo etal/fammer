@@ -12,7 +12,6 @@ from Bio import AlignIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from biocma import biocma
 from biofrills import consensus, alnutils
 
 from ._share import write_fasta
@@ -432,6 +431,11 @@ def mg_aln2cma(task, level=None):
     Depends: .aln
     Cleans: .cons.cma, .cons_iron.cma
     """
+    try:
+        from biocma import biocma
+    except ImportError as exc:
+        raise ImportError("build --mapgaps requires the Python package "
+                          "biocma (pip install biocma): %s" % exc)
     base = noext(task.target)
     name = basename(base)
     # Add consensus back to the subfamily-consensus seq set (.aln)

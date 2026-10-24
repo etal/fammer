@@ -31,9 +31,11 @@ try:
         install_requires=[
             'biopython >= 1.60',
             'networkx >= 1.0',
-            'biocma >= 0.1.0',
             'biofrills >= 0.2.0',
-        ])
+        ],
+        extras_require={
+            'mapgaps': ['biocma >= 0.1.0'],
+        })
 except:
     from distutils.core import setup
 
