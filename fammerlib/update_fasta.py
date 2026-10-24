@@ -5,6 +5,7 @@ import os
 from os.path import isdir, isfile, join
 
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 from ._share import write_fasta
 from .tasks import Task
@@ -89,7 +90,7 @@ def ungap_and_unique(records, target_name):
                 else:
                     # No match -- thisseq is novel
                     seen.add(thisseq)
-                    rec.seq._data = thisseq
+                    rec.seq = Seq(thisseq)
                     yield rec
                     break
             else:
@@ -104,7 +105,7 @@ def ungap_and_unique(records, target_name):
             else:
                 seen.add(thisseq)
                 # Apply the ungapping from above
-                rec.seq._data = thisseq
+                rec.seq = Seq(thisseq)
                 yield rec
 
     # I/O

@@ -8,7 +8,7 @@ def ext(path, extension):
     """Replace the extension on a path (or iterable of paths)."""
     if isinstance(path, Task):
         return ext(path.target, extension)
-    if isinstance(path, basestring):
+    if isinstance(path, str):
         return path.rsplit('.', 1)[0] + '.' + extension
     return [ext(p, extension) for p in path]
 
@@ -17,7 +17,7 @@ def noext(path):
     """Replace the extension on a path (or iterable of paths)."""
     if isinstance(path, Task):
         return noext(path.target)
-    if isinstance(path, basestring):
+    if isinstance(path, str):
         return path.rsplit('.', 1)[0]
     return [noext(p) for p in path]
 
@@ -30,9 +30,10 @@ def sh(cmd):
         # NB: Not sure what could trigger this; check_output eats most errors
         logging.warning("*** Failed command: %s", str(cmd))
         raise
-    except subprocess.CalledProcessError, exc:
+    except subprocess.CalledProcessError as exc:
         raise RuntimeError("Failed command (returned %s):\n%s\n\n%s"
-                           % (exc.returncode, str(cmd), exc.output))
+                           % (exc.returncode, str(cmd),
+                              exc.output.decode('utf-8', 'replace')))
 
 
 def which(exenames):
@@ -45,7 +46,7 @@ def which(exenames):
     """
     for exe in exenames:
         try:
-            path = subprocess.check_output(['which', exe])
+            path = subprocess.check_output(['which', exe], text=True)
             return path.strip()
         except subprocess.CalledProcessError:
             pass
@@ -81,7 +82,7 @@ class Task(object):
     def _enlist(x):
         if not x:
             return []
-        if isinstance(x, Task) or isinstance(x, basestring):
+        if isinstance(x, Task) or isinstance(x, str):
             return [x]
         return list(x)
 
@@ -134,10 +135,6 @@ class Task(object):
         for dep in self.depends:
             if isinstance(dep, Task):
                 dep.clean()
-
-    def __cmp__(self, other):
-        """Enable sorting alphabetically by target name."""
-        return cmp(self.target, str(other))
 
     def __str__(self):
         return self.target

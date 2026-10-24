@@ -33,8 +33,8 @@ def cmd_refine(args):
         elif args.exclude + '.fasta' in all_fa:
             all_fa.remove(args.exclude + '.fasta')
         else:
-            logging.warn("Didn't find excluded profile %s in %s",
-                         args.exclude, args.basedir)
+            logging.warning("Didn't find excluded profile %s in %s",
+                            args.exclude, args.basedir)
     # Prerequisites: HMM profiles for each sequence set must be built
     for fa in all_fa:
         if not isfile(ext(fa, 'hmm')):
@@ -51,10 +51,11 @@ def cmd_refine(args):
         # Starting with the lowest-scoring seed, do leave-one-out.
         # Leave at least 2 sequences in the profile, otherwise MAFFT will fail
         # (and a set of only 2 seqs should be merged into Unclassified anyway)
-        for seq_id, evalue in sorted(seq_evals.items()[:-2],
+        for seq_id, evalue in sorted(list(seq_evals.items())[:-2],
                                     key=lambda kv: kv[1]):
             # Copy all seqs in this_fa, except seq_id, to a temp file
-            with tempfile.NamedTemporaryFile(suffix='.fa') as tempseqfile:
+            with tempfile.NamedTemporaryFile(mode='w+',
+                                             suffix='.fa') as tempseqfile:
                 for rec in SeqIO.parse(this_fa, 'fasta'):
                     if rec.id == seq_id:
                         # Put this seq in a separate file
@@ -86,7 +87,7 @@ def cmd_refine(args):
                     out_eval = max(db_evals.values())
                 except ValueError:
                     # No HMM hits!
-                    logging.warn("No unclassified hits for %s!", this_fa)
+                    logging.warning("No unclassified hits for %s!", this_fa)
                     break
 
                 if out_eval <= seed_eval:

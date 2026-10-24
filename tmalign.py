@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Use TMalign for multiple structure alignment.
 
@@ -38,10 +38,10 @@ if __name__ == '__main__':
             format="%(module)s [@%(lineno)s]: %(message)s")
 
     if args.seed:
-        print >>sys.stderr, "tmalign: Using seed alignments", \
-                ' '.join(args.seed)
+        print("tmalign: Using seed alignments", ' '.join(args.seed),
+              file=sys.stderr)
         out_seqrecs = align_structs(args.pdbfnames, seed_fnames=args.seed)
     else:
         out_seqrecs = align_structs(args.pdbfnames)
     SeqIO.write(out_seqrecs, args.output, 'fasta')
-    print >>sys.stderr, "tmalign: Wrote", args.output.name
+    print("tmalign: Wrote", args.output.name, file=sys.stderr)

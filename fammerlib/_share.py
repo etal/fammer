@@ -11,7 +11,7 @@ from .tasks import sh
 # HMMer utilities
 
 def get_hmm_evalues(hmmfname, seqfname):
-    with tempfile.NamedTemporaryFile(suffix='.tbl') as tbl:
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='.tbl') as tbl:
         sh(('hmmsearch --noali --notextw -E 0.001 --domE 0.001 '
             '--tblout %s %s %s > /dev/null')
             % (tbl.name, hmmfname, seqfname))
@@ -19,7 +19,7 @@ def get_hmm_evalues(hmmfname, seqfname):
         # Parse the table; get the domain score for each sequence
         hits = parse_scanned_hits(tbl)
     return dict((seqname, prof_eval[1])
-                for seqname, prof_eval in hits.iteritems())
+                for seqname, prof_eval in hits.items())
 
 
 def parse_scanned_hits(tblfile):
@@ -54,7 +54,7 @@ TAIR|locus:2011201      -          Testfam              -           2.4e-137  45
         topevals[seqname] = float(dom_eval)
         topprofs[seqname] = profname
     return dict((seq, (prof, topevals[seq]))
-                 for seq, prof in topprofs.iteritems())
+                 for seq, prof in topprofs.items())
 
 
 # Helpers

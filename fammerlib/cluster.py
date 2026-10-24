@@ -11,14 +11,13 @@ Depends:
     mafft (apt-get install mafft)
 
 """
-from __future__ import division
-
+import functools
 import logging
 import math
 import os.path
 import subprocess
 import tempfile
-from cStringIO import StringIO
+from io import StringIO
 
 from Bio import AlignIO, SeqIO, Phylo
 from Bio.Phylo.BaseTree import BranchColor
@@ -87,7 +86,7 @@ def load_tree(seqfname):
     elif seqfname.endswith('.fasta'):
         # Run MAFFT quickly
         alndata = subprocess.check_output(['mafft', '--quiet', '--auto',
-                                           seqfname])
+                                           seqfname], text=True)
         aln = AlignIO.read(StringIO(alndata), 'fasta')
     else:
         raise ValueError("Input sequences must be a Clustal alignment (.aln) "
@@ -100,7 +99,7 @@ def load_tree(seqfname):
         tmp.flush()
         treedata = subprocess.check_output(['fasttree',
                                             '-pseudo', '-gamma', '-wag',
-                                            tmp.name])
+                                            tmp.name], text=True)
     tree = Phylo.read(StringIO(treedata), 'newick')
 
     # Collapse weakly supported splits
@@ -109,7 +108,9 @@ def load_tree(seqfname):
              if c.confidence is not None]
     # ENH: accept min_confidence as an option
     min_confidence = math.fsum(confs) / len(confs)
-    tree.collapse_all(lambda c: c.confidence < min_confidence)
+    # A clade without a support value counts as weakly supported.
+    tree.collapse_all(lambda c: c.confidence is None
+                      or c.confidence < min_confidence)
     tree.ladderize(reverse=True)
     tree.root.branch_length = 0.0
     return tree
@@ -136,7 +137,7 @@ def get_clades_to_cut(tree):
 
 def geom_mean(arr):
     """Geometric mean of an array of numbers."""
-    prod = reduce(float.__mul__, map(float, arr))
+    prod = functools.reduce(float.__mul__, map(float, arr))
     return pow(prod, 1./len(arr))
 
    
@@ -155,7 +156,7 @@ def write_clusters(seqfname, tree, clusters, unclustered):
 
     colors = [BranchColor(*map(lambda x: int(x*255), rgb))
             for rgb in ColorSpiral().get_colors(len(clusters))]
-    for i, item in enumerate(sorted(clusters.iteritems(), reverse=True,
+    for i, item in enumerate(sorted(clusters.items(), reverse=True,
                                     key=lambda kv: len(kv[1]))):
         clade, cluster = item
         write_cluster(cluster, os.path.basename(seqfname) + '.' + str(i))

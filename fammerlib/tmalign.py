@@ -1,13 +1,11 @@
 """Align multiple structures with TMalign."""
-from __future__ import division
-
 import itertools
 import logging
 import math
 import os
 import subprocess
 import tempfile
-from cStringIO import StringIO
+from io import StringIO
 
 import networkx
 
@@ -32,7 +30,8 @@ def align_structs(pdb_fnames, seed_fnames=None):
             logging.info("Aligning %s to %s", eqv_pdbfn, ref_pdbfn)
             try:
                 tm_output = subprocess.check_output(['TMalign',
-                                                     ref_pdbfn, eqv_pdbfn])
+                                                     ref_pdbfn, eqv_pdbfn],
+                                                    text=True)
             except OSError:
                 logging.warning("Failed command: TMalign %s %s",
                                 ref_pdbfn, eqv_pdbfn)
@@ -40,7 +39,7 @@ def align_structs(pdb_fnames, seed_fnames=None):
                     if not os.path.isfile(fname):
                         logging.warning("Missing file: %s", fname)
                 raise
-            except subprocess.CalledProcessError, exc:
+            except subprocess.CalledProcessError as exc:
                 raise RuntimeError("TMalign failed (returned %s):\n%s"
                                    % (exc.returncode, exc.output))
             tm_seqpair = read_tmalign_as_seqrec_pair(tm_output,
@@ -65,14 +64,14 @@ def align_structs(pdb_fnames, seed_fnames=None):
     # 3. Use MAFFT to combine TMalign'd pairs into a multiple alignment;
     seq_fd, seq_fname = tempfile.mkstemp(text=True)
     # Create a blank file to appease MAFFT
-    os.write(seq_fd, '')
+    os.write(seq_fd, b'')
     os.close(seq_fd)
     mafft_output = subprocess.check_output(['mafft',
         '--quiet', '--amino', '--localpair',
         '--maxiterate', '1000']
         + list(itertools.chain(*[('--seed', sfn)
                                  for sfn in (seed_fnames or []) + tmp_seed_fnames]))
-        + [seq_fname])
+        + [seq_fname], text=True)
     # Clean up
     os.remove(seq_fname)
     for sfn in tmp_seed_fnames:

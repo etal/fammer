@@ -1,12 +1,10 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 """A toolkit for protein superfamily sequence profile alignment and curation.
 
 Manages a hierarchical directory tree containing sequence sets (FASTA files)
 corresponding to each subfamily of a protein superfamily.
 """
-from __future__ import absolute_import
-
 import logging
 import argparse
 
@@ -28,6 +26,7 @@ if __name__ == '__main__':
             action='store_true',
             help="Don't print status messages, only warnings and errors.")
     AP_subparsers = AP.add_subparsers(
+            required=True,
             help='sub-commands (use with -h for more info)')
 
     # Sub-command: build

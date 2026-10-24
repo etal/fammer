@@ -9,6 +9,7 @@ from os.path import basename, isdir, isfile, join
 
 from Bio import SeqIO
 from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
@@ -104,8 +105,8 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
     If mapgaps is True, build CMA profiles and templates too.
     """
     this = topdir.rstrip('/')
-    subdirs = filter(isdir,
-            [join(topdir, sd) for sd in sorted(os.listdir(topdir))])
+    subdirs = list(filter(isdir,
+            [join(topdir, sd) for sd in sorted(os.listdir(topdir))]))
     # Each subtask pair: (HMM, CMA)-making tasks for the subdir
     # Groups with their own families within -- recurse
     subtask_group_results = [taskify_subdirs(sd, hmmer, mapgaps, use_pdb, level+1)
@@ -196,7 +197,7 @@ def align_fasta_mafft(task):
     # Check for 'X' characters in the sequences -- these cause problems
     for rec in records:
         if 'X' in str(rec.seq):
-            logging.warn('Sequence %r contains unknown residue X', rec.id)
+            logging.warning('Sequence %r contains unknown residue X', rec.id)
     max_id_len = max(len(r.id) for r in records)
     with open(task.target, 'w+') as outfile:
         outfile.write('CLUSTAL X (-like) multiple sequence alignment\n\n')
@@ -217,7 +218,7 @@ def align_fasta_prank(task):
     # Check for 'X' characters in the sequences -- these cause problems
     for rec in records:
         if 'X' in str(rec.seq):
-            logging.warn('Sequence %r contains unknown residue X', rec.id)
+            logging.warning('Sequence %r contains unknown residue X', rec.id)
     max_id_len = max(len(r.id) for r in records)
     with open(task.target, 'w+') as outfile:
         outfile.write('CLUSTAL X (-like) multiple sequence alignment\n\n')
@@ -268,12 +269,11 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
                             best_tmscore = this_tmscore
                             best_pdb = rec.id
                     except Exception:
-                        logging.warn("PDB seq parsing issue: %s",
-                                     rec.description)
-                    finally:
-                        break
+                        logging.warning("PDB seq parsing issue: %s",
+                                        rec.description)
+                    break
         if best_pdb is None:
-            logging.warn("Empty PDB alignment: " + sub_pdb_fname)
+            logging.warning("Empty PDB alignment: " + sub_pdb_fname)
         else:
             logging.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
             pdbs.append(best_pdb)
@@ -444,7 +444,7 @@ def mg_aln2cma(task, level=None):
     cons_rec = SeqRecord(Seq(consensus.consensus(aln, trim_ends=False,
                                                  gap_threshold=0.6)),
                          id=name, description=name + ' consensus')
-    aln._records.insert(0, cons_rec)
+    aln = MultipleSeqAlignment([cons_rec] + list(aln))
     # Tidy up the CMA
     cmaln = biocma.ChainMultiAlignment(aln, level=level)
     biocma.write([cmaln], task.target, do_iron=True)
@@ -487,8 +487,8 @@ def treeify_subdirs(topdir):
     External nodes = names of .fasta files
     """
     # Full paths of directories under topdir
-    subdirs = filter(isdir,
-            [join(topdir, sd) for sd in sorted(os.listdir(topdir))])
+    subdirs = list(filter(isdir,
+            [join(topdir, sd) for sd in sorted(os.listdir(topdir))]))
     # Do internal nodes first, then the tips
     # Internal nodes: subtree Newick strings
     subtree_strs = [treeify_subdirs(sd) for sd in sorted(subdirs)]

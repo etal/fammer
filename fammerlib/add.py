@@ -6,6 +6,7 @@ import tempfile
 from os.path import basename, isdir, isfile, join
 
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 from .tasks import ext, noext, sh
 from ._share import get_hmm_evalues, parse_scanned_hits
@@ -67,9 +68,12 @@ def cmd_add(args):
                 continue
             # Remove the "/123-456" suffix from aligned record keys
             record.id = acc
-            # Remove gaps from the hit sequence
-            record.seq._data = str(record.seq).\
-                    replace('-', '').replace('.', '').upper()
+            # Remove gaps from the hit sequence. The per-residue posterior
+            # probabilities from hmmsearch -A do not fit the ungapped
+            # sequence, so drop them first.
+            record.letter_annotations = {}
+            record.seq = Seq(str(record.seq).
+                    replace('-', '').replace('.', '').upper())
             hit_seqs.append(record)
 
         # ENH: extend hits that are close to the edge of the profile (e.g. 5aa) to
@@ -101,7 +105,7 @@ def get_hmm_data(hmmfname, seqfname, evalue):
 
     Return a mapping of hit sequence names to the best profile and e-value.
     """
-    with tempfile.NamedTemporaryFile(suffix='.tbl') as tbl:
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='.tbl') as tbl:
         sh('hmmsearch --noali --notextw '
            '-E %s --domE %s --tblout %s %s %s > /dev/null'
            % (evalue, evalue, tbl.name, hmmfname, seqfname))
@@ -118,7 +122,7 @@ def get_hmm_alignment(hmmfname, hits, index):
     with open(tmp_seqfname, 'w+') as handle:
         SeqIO.write(fullseqs, handle, 'fasta')
         handle.flush()
-    with tempfile.NamedTemporaryFile(suffix='.stk') as alnfile:
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='.stk') as alnfile:
         sh(('hmmsearch --noali -A %s %s %s > /dev/null')
             % (alnfile.name, hmmfname, tmp_seqfname))
         alnfile.seek(0)
@@ -144,7 +148,7 @@ def filter_profile(hits, profile_name):
 
     Generates tuples of: (sequence name, e-value)
     """
-    for seqname, data in hits.iteritems():
+    for seqname, data in hits.items():
         profname, evalue = data
         if profname == profile_name:
             yield (seqname, evalue)

@@ -33,19 +33,19 @@ def cmd_scan(args):
     with open(tblfname) as tblfile:
         scanhits = parse_scanned_hits(tblfile)
     if not scanhits:
-        logging.warn("No hits in %s", args.target)
+        logging.warning("No hits in %s", args.target)
         return
 
     # Filter hits for include/exclude strings
     if args.include:
         includes = args.include.split(',')
-        for key, val in scanhits.items():
+        for key, val in list(scanhits.items()):
             profname, _evalue = val
             if not any(incl in profname for incl in includes):
                 del scanhits[key]
     if args.exclude:
         excludes = args.exclude.split(',')
-        for key, val in scanhits.items():
+        for key, val in list(scanhits.items()):
             profname, _evalue = val
             if any(excl in profname for excl in excludes):
                 del scanhits[key]
@@ -68,12 +68,12 @@ def write_summary(scanhits):
     [profile name] : [#hits]
     """
     profcounts = collections.Counter(
-        [prof for prof, score in scanhits.itervalues()])
-    max_width = max(map(len, profcounts.iterkeys()))
-    for profname, count in sorted(profcounts.iteritems(),
+        [prof for prof, score in scanhits.values()])
+    max_width = max(map(len, profcounts.keys()))
+    for profname, count in sorted(profcounts.items(),
             # sort by decreasing count, then alphabetically
             key=lambda pair: (-pair[1], pair[0])):
-        print profname.ljust(max_width), ':', count
+        print(profname.ljust(max_width), ':', count)
 
 
 def write_table(scanhits):
@@ -84,15 +84,15 @@ def write_table(scanhits):
     """
     # ENH: include e-value cutoff, sequence description
     # [sequence id] \t [profile name] \t [e-value] \t [description...]
-    for seqname, data in sorted(scanhits.iteritems()):
+    for seqname, data in sorted(scanhits.items()):
         profname, score = data
-        print "%s\t%s" % (seqname, profname)
+        print("%s\t%s" % (seqname, profname))
 
 
 def write_seqout(scanhits, sourcefname, outfname):
     """Write a single FASTA file containing all hits to any profiles."""
     seq_idx = SeqIO.index(sourcefname, 'fasta')
-    with open(outfname, 'w+') as outfile:
+    with open(outfname, 'wb+') as outfile:
         for acc in scanhits:
             block = seq_idx.get_raw(acc)
             outfile.write(block)
@@ -105,12 +105,12 @@ def write_seqsets(scanhits, sourcefname, align=False):
     # NB: scanhits looks like {seq_id: (profile_name, score)}
     # Flip to: {profile_name: [sequence ids...]}
     profiles = collections.defaultdict(list)
-    for seqname, prof_score in scanhits.iteritems():
+    for seqname, prof_score in scanhits.items():
         profiles[prof_score[0]].append(seqname)
     # For each entry there, fetch all seq ids from the file & write
-    for profname, seqnames in sorted(profiles.iteritems()):
+    for profname, seqnames in sorted(profiles.items()):
         outfname = "%s.%s.fasta" % (basename(sourcefname), profname)
-        with open(outfname, 'w+') as outfile:
+        with open(outfname, 'wb+') as outfile:
             for rec in seqnames:
                 block = seq_idx.get_raw(rec)
                 outfile.write(block)
