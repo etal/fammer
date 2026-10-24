@@ -102,6 +102,9 @@ Pure-Python functions, called in-process.
   Each task is recorded by target, with its action's name, keyword arguments, dependencies (`{"task": target}` or `{"file": path}`) and files to clean.
 - `build-SomeKinases-group-fasta.json`: the same for `profiles/SomeKinases` with a FASTA file added beside each group directory (`CAMK.fasta`, `CMGC.fasta`, `STE.fasta`).
   Both functions skip a FASTA file named after a sibling directory, and the bundled trees contain no such file, so only this case detects a port that turns their list of subdirectories into a one-shot iterator.
+- `mapgaps.json` and `mapgaps/`: `build.mg_aln2cma`, which writes MAPGAPS profiles through biocma, on three alignments from `e2e/build/`, one per level of the profile tree: `SomeKinases/CAMK/CDPK.cma` (level 2), `SomeKinases/CAMK.tpl` (level 1) and `SomeKinases.tpl` (level 0).
+  The written files are kept under `mapgaps/` at their paths in the build tree.
+  Each case also records the consensus sequence that `mg_aln2cma` prepends to the alignment, so that the biocma writer can be compared on its own when the biofrills consensus differs.
 - `share-scan-add.json`: `_share.parse_scanned_hits` on the example in its docstring, on a synthetic table with ties, and on `tool-outputs/hmmsearch/twenty.fasta.SomeKinases_all.tbl`; `scan.write_summary` and `scan.write_table` output; `add.filter_profile` and `add.filter_evalue`; `_share.write_fasta`.
 - `update_fasta.json`: `ungap_and_unique` on synthetic record sets and on `profiles/ROPK/PKL.aln`, and `is_same_aln_fasta` against several FASTA variants of one alignment.
 - `tmalign.json`: `read_tmalign_as_seqrec_pair` on each file in `tool-outputs/tmalign/`, as written and with its final CPU-time line removed; `tmscore_from_description`, `clean_and_dedupe_seqs`, `purge_seqs` and `mst_pairs`.
@@ -173,5 +176,5 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
   Remove the `[@line]` part of each log line and reduce a traceback to its final exception line before comparing.
 - **Not captured.**
   A successful structure alignment, which no current toolchain can produce from the unmodified code.
-  `--mapgaps` end to end, because the MAPGAPS programs are not packaged; its task graph is in `build-*.json`.
+  `--mapgaps` end to end, because the MAPGAPS programs are not packaged; its task graph is in `build-*.json`, and `mapgaps/` holds three of the profile files it writes before running `run_map`.
   `scan -A` and `build --align-script`, which have no effect.

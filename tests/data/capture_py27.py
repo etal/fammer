@@ -14,6 +14,7 @@ It rewrites two directories beside this file:
 * py27/ -- what the Python 2 code computed:
   - library/*.json: pure-Python functions applied to synthetic and real
     inputs, and to the tool outputs below;
+  - library/mapgaps/: the .cma and .tpl files written by build.mg_aln2cma;
   - e2e/*.json: command-line runs of fammer.py and tmalign.py on a scratch
     copy of profiles/SomeKinases, with stdout, stderr, exit status and the
     files each run wrote or changed;
@@ -457,6 +458,69 @@ def capture_build_graph(tree, group_fastas=False):
     finally:
         os.chdir(cwd)
         shutil.rmtree(workdir)
+
+
+# ---------------------------------------------------------------------------
+# Library: build, MAPGAPS profiles (biocma; the MAPGAPS programs are not run)
+
+# One case per level of the SomeKinases profile tree, with the target and
+# level that taskify_subdirs assigns: a family profile, a group template and
+# the top-level template.  The alignments are those of the end-to-end build.
+MAPGAPS_CASES = [
+    ('SomeKinases/CAMK/CDPK.aln', 'SomeKinases/CAMK/CDPK.cma', 2),
+    ('SomeKinases/CAMK.aln', 'SomeKinases/CAMK.tpl', 1),
+    ('SomeKinases.aln', 'SomeKinases.tpl', 0),
+]
+
+
+def capture_mapgaps(build_root):
+    """build.mg_aln2cma on alignments that the end-to-end build wrote.
+
+    capture_e2e keeps those alignments under build_root, so this runs after
+    it.  Each written file is kept under library/mapgaps/ at its path in the
+    build tree.  The consensus sequence that mg_aln2cma prepends is recorded
+    too, recomputed here with the arguments of the consensus call inside
+    mg_aln2cma (trim_ends=False, gap_threshold=0.6), so that biocma's writer
+    can be checked apart from the biofrills consensus.
+    """
+    from Bio import AlignIO
+    from biofrills import consensus
+    from fammerlib import build
+    from fammerlib.tasks import Task
+    workdir = tempfile.mkdtemp(prefix='fammer-mapgaps-')
+    NORMALIZE.add(workdir, '<mapgapsdir>')
+    cases = []
+    try:
+        for aln_name, target_name, level in MAPGAPS_CASES:
+            aln_path = os.path.join(build_root, aln_name)
+            target = os.path.join(workdir, target_name)
+            if not os.path.isdir(os.path.dirname(target)):
+                os.makedirs(os.path.dirname(target))
+            task = Task(target, action=build.mg_aln2cma, depends=aln_path,
+                        kwargs={'level': level})
+            before = snapshot(workdir)
+            result = outcome(build.mg_aln2cma, task, **task.kwargs)
+            created = sorted(set(snapshot(workdir)) - set(before))
+            if os.path.isfile(target):
+                write_bytes(os.path.join(OUT, 'library', 'mapgaps', target_name),
+                            read_bytes(target))
+            aln = AlignIO.read(aln_path, 'clustal')
+            cases.append(OrderedDict([
+                ('alignment', os.path.relpath(aln_path, OUT)),
+                ('target', target_name),
+                ('level', level),
+                ('consensus', consensus.consensus(aln, trim_ends=False,
+                                                  gap_threshold=0.6)),
+                ('mg_aln2cma', result),
+                ('created', created),
+            ]))
+    finally:
+        shutil.rmtree(workdir)
+    return OrderedDict([
+        ('cases', cases),
+        ('kept_files', 'library/mapgaps/: each target at its path in the '
+                       'build tree'),
+    ])
 
 
 # ---------------------------------------------------------------------------
@@ -1217,6 +1281,8 @@ def main():
                        capture_build_graph(tree))
         write_json(os.path.join('library', 'build-SomeKinases-group-fasta.json'),
                    capture_build_graph('SomeKinases', group_fastas=True))
+        write_json(os.path.join('library', 'mapgaps.json'),
+                   capture_mapgaps(os.path.join(OUT, 'e2e', 'build')))
         write_json(os.path.join('library', 'share-scan-add.json'),
                    capture_share(os.path.join(
                        TOOL_OUT, 'hmmsearch',

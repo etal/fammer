@@ -1,0 +1,41 @@
+{
+ "cases": [
+  {
+   "alignment": "e2e/build/SomeKinases/CAMK/CDPK.aln",
+   "target": "SomeKinases/CAMK/CDPK.cma",
+   "level": 2,
+   "consensus": "YTLGRELGRGQFGVVYLCTDKS------TGQERACKIISKSKLKNKT------------DVEDVRREVEIMKHLD--HPNIVKLYETYEDERNVYLVMEL------------------------------------------CEGGELFDRIISR---------------------------------------------GHF--TERDAAAIMRQILSAVNYCHSNGIVHRDLKPENFL--FASKKE-DS-----PIKAIDFGLSVFFDPG-E---------------------KMTDRVGTPYY---------VAPEVLK---RK-YDEKCDVWSAGVILYILLCGYPPFWGETEQEIFEKVLKGKYDFDGDPWPNISEEAKDLIRKMLTYDPRKRLSAQQALQHPWI",
+   "mg_aln2cma": {
+    "value": null
+   },
+   "created": [
+    "SomeKinases/CAMK/CDPK.cma"
+   ]
+  },
+  {
+   "alignment": "e2e/build/SomeKinases/CAMK.aln",
+   "target": "SomeKinases/CAMK.tpl",
+   "level": 1,
+   "consensus": "YQLGE-ELGRGAFGVVRRCRHKSTGQE--YACKIIDKKKLKDK--------LDREQVEREVEILRQL-SGHPNIVQLYDVFETE------------------TRLYLVMELCT-GGELFD----------RIVS--KG-RLTEREARFYFRQILSAVKYCHSNNIVHRDLKPENILLD-SKDPDPQIKLCDFGLARELN---EGELMKTFCGTPAYVAPEVLRG------KPYD-KKVDMWSLGVILYIMLCGYPPFW--DD-NQQE-----LFEQIQAGQYSFPSPYWDNISEEAKDLIRKLLVVDPSKRLTAEQALNHPWI",
+   "mg_aln2cma": {
+    "value": null
+   },
+   "created": [
+    "SomeKinases/CAMK.tpl"
+   ]
+  },
+  {
+   "alignment": "e2e/build/SomeKinases.aln",
+   "target": "SomeKinases.tpl",
+   "level": 0,
+   "consensus": "FEYEVGE-----ELGRGS--------------------------------FGVVYKCRH-KKTGQE--VAIKIIDKKKQKD---K-------------DREQ--AEREIEILRQL-SGHP-------------------------NIVQLYDVFETE------------------TH-----LYLVMEYMD-GGELFD----------RIK--K--K----G-RLSEREARKYMRQILSALAYCH-S-NGIVHRDLKPENILLD---DEDG---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------QVKLCDFGLAR-FLT---PGEP-----M---------TTYVGTPWYMAPEVLLG------TPYD---------------------------KAVDMWSLGCILYEML-TGY---PPFP--DD-S------QQE-----QLEKICRGQY----------------------------------------SFPSPP---------WPN-VSE----------EAKDLIRKMLVYDPSKRPTAEQALQHPWF",
+   "mg_aln2cma": {
+    "value": null
+   },
+   "created": [
+    "SomeKinases.tpl"
+   ]
+  }
+ ],
+ "kept_files": "library/mapgaps/: each target at its path in the build tree"
+}

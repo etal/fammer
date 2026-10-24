@@ -3,6 +3,7 @@
 *.hmm
 *.mpa
 *.tpl
+!tests/data/py27/library/mapgaps/**/*.tpl
 *.pdb.seq
 profiles/*.aln
 profiles/*.cma
