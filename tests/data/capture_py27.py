@@ -1,8 +1,8 @@
 #!/usr/bin/env python2.7
 """Capture reference outputs of the Python 2 fammer code base.
 
-This script must run under Python 2.7 with Biopython 1.76, against an
-unmodified checkout of the last Python 2 fammer commit, with MAFFT, HMMER,
+This script must run under Python 2.7 with Biopython 1.76, against the
+unmodified fammer sources of FAMMER_SOURCES_COMMIT below, with MAFFT, HMMER,
 FastTree and TM-align on PATH; see README.md beside it for the environment.
 biofrills and biocma are taken from their sibling Git checkouts at the pinned
 Python 2 commits below, not from their working trees.  The capture puts
@@ -26,9 +26,8 @@ Every function call records either {"value": ...} or {"error": {"type": ...,
 Floats are written with Python 2.7's repr, the shortest decimal string that
 reads back to the identical double.
 
-Usage, from the repository root:
-
-    PATH=<tools-prefix>/bin:$PATH <python2.7> tests/data/capture_py27.py
+Usage: see "Regenerating" in README.md.  The capture does not run from the
+repository root; the comment on FAMMER_SOURCES_COMMIT below says why.
 """
 from __future__ import print_function
 
@@ -58,8 +57,12 @@ SHIMS = os.path.join(HERE, 'tool-shims')
 BIOFRILLS_COMMIT = '36684bb6c7632f96215e8b2b4ebc86640f331bcd'
 BIOCMA_COMMIT = 'eac0c57eb83a9498e53ccdeb9cbc3fe21a5826a7'
 
-# fammer's code under test; its last commit, rather than HEAD, is recorded so
-# that regenerating on a later commit reproduces versions.json too.
+# fammer's code under test: the commit of SOURCES whose outputs the references
+# record.  Any later change to these sources, even one that preserves behavior,
+# moves the source line numbers that the recorded log lines carry, so the
+# capture refuses any other sources; README.md describes running it from a
+# worktree.
+FAMMER_SOURCES_COMMIT = '5bcf8ebcfcb4242d81df896119e97741a1bb9f08'
 SOURCES = ['fammerlib', 'fammer.py', 'tmalign.py', 'setup.py']
 
 # Input data copied from the repository; checked and recorded like SOURCES.
@@ -1159,10 +1162,17 @@ def main():
                if not any(os.access(os.path.join(d, tool), os.X_OK)
                           for d in os.environ['PATH'].split(os.pathsep))]
     assert not missing, "not on PATH: %s" % ', '.join(missing)
+    def last_commit(paths):
+        return subprocess.check_output(
+            ['git', 'log', '-1', '--format=%H', '--'] + paths,
+            cwd=REPO).decode('ascii').strip()
     dirty = subprocess.check_output(['git', 'status', '--porcelain', '--']
                                     + SOURCES + INPUTS,
                                     cwd=REPO).decode('ascii')
     assert not dirty.strip(), "fammer sources or inputs are modified:\n" + dirty
+    assert last_commit(SOURCES) == FAMMER_SOURCES_COMMIT, (
+        "fammer sources are not those of %s; run from a worktree as "
+        "README.md describes" % FAMMER_SOURCES_COMMIT[:7])
 
     upstream = tempfile.mkdtemp(prefix='fammer-py2-upstream-')
     NORMALIZE.add(upstream, '<upstream>')
@@ -1220,10 +1230,6 @@ def main():
     finally:
         shutil.rmtree(upstream)
 
-    def last_commit(paths):
-        return subprocess.check_output(
-            ['git', 'log', '-1', '--format=%H', '--'] + paths,
-            cwd=REPO).decode('ascii').strip()
     write_json('versions.json', OrderedDict([
         ('python', sys.version.split()[0]),
         ('implementation', platform.python_implementation()),
@@ -1234,7 +1240,7 @@ def main():
         ('reportlab', reportlab.Version),
         ('biofrills_commit', BIOFRILLS_COMMIT),
         ('biocma_commit', BIOCMA_COMMIT),
-        ('fammer_sources_commit', last_commit(SOURCES)),
+        ('fammer_sources_commit', FAMMER_SOURCES_COMMIT),
         ('fammer_inputs_commit', last_commit(INPUTS)),
         ('mafft', tool_version(['mafft', '--version'], r'v\d')),
         ('hmmer', tool_version(['hmmbuild', '-h'], r'HMMER \d')),

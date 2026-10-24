@@ -38,14 +38,24 @@ conda create -p /tmp/fammer-tools --override-channels -c conda-forge -c bioconda
     mafft hmmer tmalign fasttree
 ```
 
-Then, from the repository root, with `../biofrills` and `../biocma` checked out (or `BIOFRILLS_REPO` and `BIOCMA_REPO` naming them):
+The capture must run the Python 2 sources of commit `5bcf8eb`, and the script refuses any other version of them.
+Later commits change those sources, and even a change that preserves behavior moves the source line numbers recorded in the standard error of the end-to-end runs.
+So run it from a Git worktree of `86ac15b`, the first commit that holds the capture script, with the current `tests/data/` copied in.
+From the repository root, with `../biofrills` and `../biocma` checked out (or `BIOFRILLS_REPO` and `BIOCMA_REPO` naming them):
 
 ```sh
-PATH=/tmp/fammer-tools/bin:$PATH /tmp/fammer-py27/bin/python -B tests/data/capture_py27.py
+git worktree add --detach ../fammer-capture 86ac15b
+cp -R tests/data/. ../fammer-capture/tests/data/
+PATH=/tmp/fammer-tools/bin:$PATH /tmp/fammer-py27/bin/python -B ../fammer-capture/tests/data/capture_py27.py &&
+  rm -r tests/data/py27 tests/data/tool-outputs &&
+  cp -R ../fammer-capture/tests/data/py27 ../fammer-capture/tests/data/tool-outputs tests/data/
+git worktree remove --force ../fammer-capture
 ```
 
-The script deletes and rewrites `py27/` and `tool-outputs/`, and takes about two and a half minutes.
-It refuses to run if the fammer sources or the input directories `profiles/` and `test/` differ from the committed state, and `versions.json` records the last commit that changed each.
+The worktree is a sibling of the repository so that the script finds `../biofrills` and `../biocma` from it too.
+The script deletes and rewrites `py27/` and `tool-outputs/` inside the worktree, and takes about two and a half minutes.
+If it stops early, nothing in the repository itself has changed; remove the worktree with the last command before trying again.
+It refuses to run if the fammer sources or the input directories `profiles/` and `test/` differ from the committed state of the worktree, and `versions.json` records the sources commit and the last commit that changed the inputs.
 Two consecutive captures on the same machine produced identical files.
 A capture on a different kind of file system produces the order-only differences described under "Interpreting a mismatch".
 On Linux, create the first environment without `CONDA_SUBDIR`.
