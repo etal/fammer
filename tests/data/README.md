@@ -77,7 +77,7 @@ MAFFT stopped implementing that option in 2012 and stopped accepting it at the t
 The unmodified code therefore cannot build any profile tree with a MAFFT that can be installed today.
 The capture puts `tool-shims/` first on `PATH`; its `mafft` script replaces `--globalgenafpair` with `--globalpair` and runs the real MAFFT, and every other MAFFT call passes through unchanged.
 For the MAFFT releases contemporary with fammer's development in 2012 and 2013, this replacement computes what the original option computed.
-The port has to replace the option in the code; if it chooses something other than `--globalpair`, regenerate the references with a matching wrapper.
+The current code still passes the option, so `fammer build` needs the wrapper on any installable MAFFT; a change that replaces the option with something other than `--globalpair` must regenerate the references with a matching wrapper.
 
 ## Conventions
 
@@ -90,7 +90,7 @@ Tuples are written as JSON lists.
 
 Machine-specific paths are replaced by labels; the current files contain `<repo>` (the repository), `<taskdir>` (the scratch directory of the task scenarios) and `<tmpfile>` (a randomly named temporary file).
 The script defines further labels for its other scratch directories and the Python installation, which appear only if such a path reaches a recorded string.
-The standard error of a command-line run uses fammer's log format, `module [@line]: message`, and may hold a traceback; both carry line numbers of the Python 2 sources, which the port will change.
+The standard error of a command-line run uses fammer's log format, `module [@line]: message`, and may hold a traceback; both carry line numbers of the Python 2 sources, which differ from those of the current sources.
 
 ## Layout
 

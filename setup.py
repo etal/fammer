@@ -17,12 +17,13 @@ setup_args = dict(
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
     ],
     packages=['fammerlib'],
     scripts=[join(DIR, 'fammer.py'), join(DIR, 'tmalign.py')],
+    python_requires='>=3.12',
 )
 
 try:

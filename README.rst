@@ -29,7 +29,7 @@ source code.
 To use all the features of Fammer, you'll need the following third-party
 programs installed:
 
-- Python_ 2.7
+- Python_ 3.12 or later
 - MAFFT_
 - HMMer_ 3.0
 - MAPGAPS_ (optional) -- for MAPGAPS profiles; also needs the Python library
@@ -49,7 +49,7 @@ programs installed:
 If you're on a Debian-based Linux system, check your package manager for these
 first to save yourself some time::
 
-    sudo apt-get install mafft hmmer tm-align fasttree python-pip
+    sudo apt-get install mafft hmmer tm-align fasttree python3-pip
 
 Then, install the Python library dependencies and Fammer itself as follows.
 
