@@ -3,6 +3,7 @@
 The files under `py27/` record what fammer computed on Python 2.7, before the port to Python 3.
 They are the reference against which the port is checked: a ported function or command should reproduce these results, or the difference should be explained by a documented, deliberate change.
 The files under `tool-outputs/` are raw output of the external programs fammer runs, kept so that fammer's parsers can be tested without those programs installed.
+`differences.json` lists the recorded cases that the current code deliberately computes differently, as described under "Deliberate differences".
 
 ## Producing versions
 
@@ -135,12 +136,13 @@ Each run records its arguments, exit status, standard output, standard error, an
 ## Recorded defects
 
 The capture records what the code did, including results that are wrong.
-A port that reproduces these cases is faithful; the fixes are separate, deliberate changes that replace the affected expectations.
+A port that reproduces these cases is faithful; the fixes are separate, deliberate changes, and the cases they move are listed under "Deliberate differences".
 
 - **`update-fasta` drops sequences.**
   In `ungap_and_unique`, an X-containing sequence whose X-separated segments all occur in longer kept sequences ends the loop, and every shorter sequence is lost.
   The synthetic case `x_redundant_then_unique` shows it on four records.
   The end-to-end case `single_aln_after_edit` shows it on real data: after one record is deleted from `CDK.aln`, the rewritten `CDK.fasta` holds 24 of the 144 remaining sequences, because the 25th, `gi|193506638|pdb|3BLH|A`, contains an X.
+  The current code keeps those sequences.
 - **Duplicated identifiers in FASTA headers.**
   `_share.write_fasta` and `cluster.write_fasta` write the identifier before a description that already begins with it (`>seq1 seq1 some description`), and `cluster.write_fasta` writes an empty line after a header without a description.
 - **The structure-alignment path fails.**
@@ -178,3 +180,27 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
   A successful structure alignment, which no current toolchain can produce from the unmodified code.
   `--mapgaps` end to end, because the MAPGAPS programs are not packaged; its task graph is in `build-*.json`, and `mapgaps/` holds three of the profile files it writes before running `run_map`.
   `scan -A` and `build --align-script`, which have no effect.
+
+## Deliberate differences
+
+`replay.py` runs the recorded update-fasta cases, those of `library/update_fasta.json` and `e2e/update-fasta.json`, again with the current sources of this repository, and writes each case whose outcome differs from the recorded one to `differences.json`.
+A library entry gives the fixture file relative to `py27/`, the section, the case name, and the recorded and current outcomes, an exception compared by its type only.
+An end-to-end case is replayed in-process on a copy of `profiles/SomeKinases` with the alignments under `e2e/build/`, so it needs no external program; its entry gives the fields that differ among the log lines (without line numbers) and the lists of created, modified and deleted files, and, for each file whose contents differ, the record counts and checksums of both versions with the identifiers found in only one of them.
+Every entry is deliberate and is explained below; a test of the current code expects the fixture value except where `differences.json` records another.
+After a change that moves a recorded output, regenerate the file from the repository root and explain the new entries here:
+
+```sh
+python tests/data/replay.py
+```
+
+The script needs Python 3 and Biopython.
+The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
+
+- **Redundant sequences in `update-fasta`** (3 cases).
+  `ungap_and_unique` no longer stops at the first redundant sequence that contains an X, and it tests such a sequence differently.
+  An X now matches exactly one residue, and the whole sequence must occur in a single kept sequence, as a sequence without X must; the recorded code instead required each X-separated segment to occur somewhere among the kept sequences, in any of them and in any order.
+  An X in a kept sequence still matches only an X.
+  `x_redundant_then_unique` keeps `short_novel1` and `short_novel2`, with the same purge count.
+  `x_segments_in_different_records` keeps `split`, whose segments `CCC` and `DDD` occur only in two different records, and `tail`, which the recorded code lost; nothing is purged.
+  `single_aln_after_edit` writes 142 of the 144 sequences instead of 24, and purges the two structure sequences `gi|193506638|pdb|3BLH|A` and `gi|58176911|pdb|1UA2|A`, which match the full-length sequences `CDK9_Hsap` and `CDK7_Hsap` with their single X in place of a threonine.
+  On every alignment under `e2e/build/` and on `profiles/ROPK/PKL.aln`, the new rule and the recorded rule with only the stopping defect corrected keep the same records.

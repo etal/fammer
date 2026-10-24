@@ -1,0 +1,257 @@
+{
+ "differences": [
+  {
+   "file": "library/update_fasta.json",
+   "section": "ungap_and_unique",
+   "case": "x_redundant_then_unique",
+   "recorded": {
+    "value": [
+     [
+      "long",
+      "<unknown description>",
+      "ACDEFGHIKL"
+     ]
+    ],
+    "log": [
+     [
+      "INFO",
+      "update_fasta",
+      "Updated target.fasta (purged 1 sequence)"
+     ]
+    ]
+   },
+   "current": {
+    "value": [
+     [
+      "long",
+      "<unknown description>",
+      "ACDEFGHIKL"
+     ],
+     [
+      "short_novel1",
+      "<unknown description>",
+      "MNP"
+     ],
+     [
+      "short_novel2",
+      "<unknown description>",
+      "QRS"
+     ]
+    ],
+    "log": [
+     [
+      "INFO",
+      "update_fasta",
+      "Updated target.fasta (purged 1 sequence)"
+     ]
+    ]
+   }
+  },
+  {
+   "file": "library/update_fasta.json",
+   "section": "ungap_and_unique",
+   "case": "x_segments_in_different_records",
+   "recorded": {
+    "value": [
+     [
+      "first",
+      "<unknown description>",
+      "AAAAACCCCC"
+     ],
+     [
+      "second",
+      "<unknown description>",
+      "DDDDDEEEEE"
+     ]
+    ],
+    "log": [
+     [
+      "INFO",
+      "update_fasta",
+      "Updated target.fasta (purged 1 sequence)"
+     ]
+    ]
+   },
+   "current": {
+    "value": [
+     [
+      "first",
+      "<unknown description>",
+      "AAAAACCCCC"
+     ],
+     [
+      "second",
+      "<unknown description>",
+      "DDDDDEEEEE"
+     ],
+     [
+      "split",
+      "<unknown description>",
+      "CCCXDDD"
+     ],
+     [
+      "tail",
+      "<unknown description>",
+      "MNP"
+     ]
+    ],
+    "log": [
+     [
+      "INFO",
+      "update_fasta",
+      "Updated target.fasta"
+     ]
+    ]
+   }
+  },
+  {
+   "file": "e2e/update-fasta.json",
+   "case": "single_aln_after_edit",
+   "recorded": {
+    "log": [
+     "tasks: SomeKinases/CMGC/CDK.fasta: Building...",
+     "update_fasta: Updated SomeKinases/CMGC/CDK.fasta (purged 1 sequence)"
+    ]
+   },
+   "current": {
+    "log": [
+     "tasks: SomeKinases/CMGC/CDK.fasta: Building...",
+     "update_fasta: Updated SomeKinases/CMGC/CDK.fasta (purged 2 sequences)"
+    ]
+   },
+   "changed_files": {
+    "SomeKinases/CMGC/CDK.fasta": {
+     "recorded": {
+      "records": 24,
+      "sha256": "70032912f457aec0ac2b1d6315909c716387f460f5d2895108c5b3edc98d75e3"
+     },
+     "current": {
+      "records": 142,
+      "sha256": "2f7e75a1781cb66c0846fc21212d45766cc3123caaae094d9850e577d186e485"
+     },
+     "only_recorded": [],
+     "only_current": [
+      "CDK9_Mmus",
+      "ZC504.3_Cele",
+      "CC1G_11325_Cc",
+      "CG7597_Dmel",
+      "CRK7_Spur",
+      "AqueK101_Aq",
+      "CRK7_Hsap",
+      "CRK7_Mmus",
+      "CHED_Hsap",
+      "Pitslre_Dmel",
+      "CRK7_d_Sm",
+      "B0285.1_Cele",
+      "25907_Tt",
+      "B0495.2_Cele",
+      "CDK11_b-2_Sm",
+      "CDKB_a-2_Sm",
+      "26940_Tt",
+      "cdk-1_Cele",
+      "TAIR|locus:2011761",
+      "TAIR|Locus:2037410",
+      "PHO85_Scer",
+      "ZC123.4_Cele",
+      "AqueK104_Aq",
+      "6129_Tt",
+      "CDK4_Hsap",
+      "CDK4_Mmus",
+      "21599_Tt",
+      "CDK11_a-2_Sm",
+      "CDK11_a-1_Sm",
+      "13176_Tt",
+      "CDC28_Scer",
+      "6298_Tt",
+      "CDK6_Hsap",
+      "CDK6_Mmus",
+      "CTK1_Scer",
+      "DDB0229427_Ddis",
+      "cdk-5_Cele",
+      "GK020_Gl",
+      "Pftaire_Spur",
+      "gi|224983388|pdb|2W99|B",
+      "CDK4_Spur",
+      "Cdk4_Dmel",
+      "PITSLRE_Hsap",
+      "PITSLRE_Mmus",
+      "PITSLRE_Spur",
+      "CG6800_Dmel",
+      "CRK7a_Sm",
+      "CC1G_14638_Cc",
+      "AqueK105_Aq",
+      "DDB0216376_Ddis",
+      "AqueK095_Aq",
+      "cdc2rk_Dmel",
+      "CDK10_Hsap",
+      "CDK10_Mmus",
+      "CDK10_Spur",
+      "CC1G_03767_Cc",
+      "Eip63E_Dmel",
+      "PFTAIRE2_Hsap",
+      "PFTAIRE2_Mmus",
+      "PFTAIRE1_Hsap",
+      "PFTAIRE1_Mmus",
+      "AqueK098_Aq",
+      "cdk-7_Cele",
+      "Cdk7_Ddis",
+      "AqueK093_Aq",
+      "CCRK_Hsap",
+      "CCRK_Mmus",
+      "Ccrk_Spur",
+      "cdk-4_Cele",
+      "CDC2-2_Sm",
+      "AqueK094_Aq",
+      "cdc2_Dmel",
+      "CDC2_Hsap",
+      "CDC2_Mmus",
+      "9119_Tt",
+      "25533_Tt",
+      "Cdk7_Dmel",
+      "CDK7_Hsap",
+      "CDK7_Mmus",
+      "KIN28_Scer",
+      "CDK2_Hsap",
+      "gi|18655411|pdb|1GII|A",
+      "CDK3_Hsap",
+      "CDK2_Spur",
+      "Cdk5_Dmel",
+      "CDK5_Hsap",
+      "CDK5_Mmus",
+      "gi|56966251|pdb|1UNG|A",
+      "CDC2_Spur",
+      "AqueK097_Aq",
+      "Cdk5_Ddis",
+      "9560_Tt",
+      "gi|158430247|pdb|2QKR|A",
+      "GK023_Gl",
+      "AqueK103_Aq",
+      "PCTAIRE3_Hsap",
+      "PCTAIRE3_Mmus",
+      "PCTAIRE2_Hsap",
+      "PCTAIRE2_Mmus",
+      "PCTAIRE1_Hsap",
+      "gi|297787763|pdb|3MTL|A",
+      "PCTAIRE1_Mmus",
+      "pct-1_Cele",
+      "CC1G_03659_Cc",
+      "gi|42543186|pdb|1OB3|A",
+      "psu|MAL13P1.279",
+      "CDK7-2_Sm",
+      "CC1G_00997_Cc",
+      "cdc2c_Dmel",
+      "AqueK096_Aq",
+      "Cdc2_Ddis",
+      "CC1G_02703_Cc",
+      "DDB0229294_Ddis",
+      "Pctaire_Spur",
+      "H01G02.2_Cele",
+      "CDK7_Spur",
+      "AqueK102_Aq",
+      "AqueK100_Aq"
+     ]
+    }
+   }
+  }
+ ]
+}

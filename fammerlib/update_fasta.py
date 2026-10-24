@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 from os.path import isdir, isfile, join
 
 from Bio import SeqIO
@@ -63,10 +64,12 @@ def update_fasta(task):
 
 
 def ungap_and_unique(records, target_name):
-    """Remove gap characters, drop duplicate SeqRecords, and sort by length.
+    """Remove gap characters, drop redundant SeqRecords, and sort by length.
 
-    Equivalent to:
-    seqioconvert clustal fasta < t.aln | purge.py -c | press.py -u > t.fasta
+    Records are visited in order of decreasing ungapped length, and a record
+    is dropped if its ungapped sequence occurs within a sequence already
+    kept.  An 'X' in the record's sequence matches any single residue; an 'X'
+    in a kept sequence matches only an 'X'.
     """
     # ENH: warn about:
     # - Sequences containing 'X' (log the number of X's)
@@ -81,32 +84,18 @@ def ungap_and_unique(records, target_name):
         thisseq = str(rec.seq).replace('-', '').replace('.', '').upper()
         # Drop if this sequence is completely contained by another
         if 'X' in thisseq:
-            # Ignore ambiguous chars by checking each unambigous segment
-            for segment in thisseq.split('X'):
-                for longseq in seen:
-                    if segment in longseq:
-                        # Check the next segment
-                        break
-                else:
-                    # No match -- thisseq is novel
-                    seen.add(thisseq)
-                    rec.seq = Seq(thisseq)
-                    yield rec
-                    break
-            else:
-                # All fragments have been "seen"
-                counter += 1
-                break
+            # Each ambiguous residue matches any single residue
+            pattern = re.compile(re.escape(thisseq).replace('X', '.'))
+            redundant = any(pattern.search(longseq) for longseq in seen)
         else:
-            for longseq in seen:
-                if thisseq in longseq:
-                    counter += 1
-                    break
-            else:
-                seen.add(thisseq)
-                # Apply the ungapping from above
-                rec.seq = Seq(thisseq)
-                yield rec
+            redundant = any(thisseq in longseq for longseq in seen)
+        if redundant:
+            counter += 1
+            continue
+        seen.add(thisseq)
+        # Apply the ungapping from above
+        rec.seq = Seq(thisseq)
+        yield rec
 
     # I/O
     msg = "Updated %s" % target_name
