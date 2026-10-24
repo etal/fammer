@@ -1,0 +1,114 @@
+{
+ "geom_mean": {
+  "three_values": {
+   "input": [
+    0.1,
+    0.2,
+    0.4
+   ],
+   "result": {
+    "value": 0.20000000000000004
+   }
+  },
+  "single": {
+   "input": [
+    0.3
+   ],
+   "result": {
+    "value": 0.3
+   }
+  },
+  "n100_of_0.05": {
+   "input": "100 x 0.05",
+   "result": {
+    "value": 0.05
+   }
+  },
+  "n250_of_0.05": {
+   "input": "250 x 0.05",
+   "result": {
+    "value": 0.0
+   }
+  },
+  "n500_of_0.05": {
+   "input": "500 x 0.05",
+   "result": {
+    "value": 0.0
+   }
+  },
+  "with_zero": {
+   "input": [
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.05,
+    0.0
+   ],
+   "result": {
+    "value": 0.0
+   }
+  },
+  "empty": {
+   "input": [],
+   "result": {
+    "error": {
+     "type": "TypeError",
+     "message": "reduce() of empty sequence with no initial value"
+    }
+   }
+  }
+ },
+ "write_fasta": {
+  "with_description": {
+   "input": [
+    [
+     "s1",
+     "s1 desc",
+     "AC-de."
+    ]
+   ],
+   "do_ungap": false,
+   "result": {
+    "value": ">s1 s1 desc\nAC-de.\n"
+   }
+  },
+  "with_description_ungap": {
+   "input": [
+    [
+     "s1",
+     "s1 desc",
+     "AC-de."
+    ]
+   ],
+   "do_ungap": true,
+   "result": {
+    "value": ">s1 s1 desc\nACDE\n"
+   }
+  },
+  "empty_description": {
+   "input": [
+    [
+     "s2",
+     "",
+     "AC-DE"
+    ]
+   ],
+   "do_ungap": false,
+   "result": {
+    "value": ">s2\n\nAC-DE\n"
+   }
+  }
+ },
+ "load_tree_other_suffix": {
+  "error": {
+   "type": "ValueError",
+   "message": "Input sequences must be a Clustal alignment (.aln) or unaligned FASTA (.fasta)"
+  }
+ }
+}

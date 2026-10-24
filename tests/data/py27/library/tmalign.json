@@ -1,0 +1,314 @@
+{
+ "read_tmalign_as_seqrec_pair": {
+  "tmalign/1ATP__1CSN.txt": {
+   "ref_id": "profiles/ROPK/1ATP.pdb",
+   "eqv_id": "profiles/ROPK/1CSN.pdb",
+   "as_written": {
+    "error": {
+     "type": "AssertionError",
+     "message": ""
+    }
+   },
+   "without_cpu_time_line": {
+    "value": {
+     "records": [
+      [
+       "profiles/ROPK/1ATP.pdb",
+       "TMalign TM-score=0.832680",
+       "FDRIKTLGTGSFGRVMLVKHKESGNHYAMKILDKQKVVKLKQIEHTLNEKRILQAV-NFPFLVKLEFSFKDNSNLYMVMEYVAGGEMFSHLRRI-GRFSEPHARFYAAQIVLTFEYLHSLDLIYRDLKPENLLIDQ-----QGYIQVTDFGFAKRVK-------GR-T--W-LCGTPEYLAPEIILSKGYNKAVDWWALGVLIYEMAAGYPPFFAD--Q----PI-QIYEKIVSGKV-RFPSHFSSDLKDLLRNLLQVDLTKRFGNLKNGVNDIKNHKWF"
+      ],
+      [
+       "profiles/ROPK/1CSN.pdb",
+       "TMalign TM-score=0.832680",
+       "YKVGRRIGEGSFGVIFEGTNLLNNQQVAIKFEPRR--SDA-PQ--LRDEYRTYKLLAGCTGIPNVYYFGQEGLHNVLVIDLL-GPSLEDLLDLCGRKFSVKTVAMAAKQMLARVQSIHEKSLVYRDIKPDNFLIGRPNSKNANMIYVVDFGMVKFYRDPVTKQHIPYREKKNLSGTARYMSINTHLGREQSRRDDLEALGHVFMYFLRGSLPWQGLKAATNKQKYERIGEKKQSTPLRELCAGFPEEFYKYMHYA-R-NLA-F--DATPDYDYLQGLFSK"
+      ]
+     ],
+     "tmscore": 0.83268
+    }
+   }
+  },
+  "tmalign/2W1Z__3Q60.txt": {
+   "ref_id": "profiles/ROPK/2W1Z.pdb",
+   "eqv_id": "profiles/ROPK/3Q60.pdb",
+   "as_written": {
+    "error": {
+     "type": "AssertionError",
+     "message": ""
+    }
+   },
+   "without_cpu_time_line": {
+    "value": {
+     "records": [
+      [
+       "profiles/ROPK/2W1Z.pdb",
+       "TMalign TM-score=0.817155",
+       "LVRGPVLRDDGSYICLEATDQETGEPLEVHVPYFTERPPSNAIKQLS-EQVLRLRLLRGIKNQRQAKAYLRFIFPIDLVKDPKKRK-MIRVRLDERDMWVLSRFFLYPRMQSNLHILGDVLLSHSSTHKSLVHHARLQLTLQLIRLAASLQHYGLVHADFQVRNILLDQRGGVFLTGFEHLVRDGASAVS-PIGRGFAPPETTAERHHPTLMTFPFDTWTLGLAIYWIWCADLPN-T-------------EDAELGGIEWIYRRCKNIPQPVRALLEGFLRYSKEDRLLPLQAMETSEY"
+      ],
+      [
+       "profiles/ROPK/3Q60.pdb",
+       "TMalign TM-score=0.817155",
+       "LKLVEPLRVGDRSVVFLVRDVERLEDFALKVFTMGAENSRSELERLHEATFAAARL---L-G--------RLLLPSDAVAVQSQPPFAQLSP----GYAVANYLLLMPAASVDLELLFSTLDFVYVFRGDEGILALHILTAQLIRLAANLQSKGLVHGHFTPDNLFIMPDGRLMLGDVSALWKVGTRGPASSVPVTYAPREFL-NA-STATFTHALNAWQLGLSIYRVWCLFLPFGLVTPGIKGSWKRPSLRVPGT-DSLAFGSCTPLPDFVKTLIGRFLNFDRRRRLLPLEAMETPEF"
+      ]
+     ],
+     "tmscore": 0.817155
+    }
+   }
+  },
+  "tmalign/1JST__2ERK.txt": {
+   "ref_id": "profiles/SomeKinases/CMGC/1JST.pdb",
+   "eqv_id": "profiles/SomeKinases/CMGC/2ERK.pdb",
+   "as_written": {
+    "error": {
+     "type": "AssertionError",
+     "message": ""
+    }
+   },
+   "without_cpu_time_line": {
+    "value": {
+     "records": [
+      [
+       "profiles/SomeKinases/CMGC/1JST.pdb",
+       "TMalign TM-score=0.826490",
+       "--------------MENFQKVEKIGEGTYGVVYKARNKLTGEVVALKKIRLDTETEG-VPSTAIREISLLKELNHPNIVKLLDVIHT----EN-KLYLVFEFLHQDLKKFMDASALTGIPLPLIKSYLFQLLQGLAFCHSHRVLHRDLKPQNLLINTEGAIKLADFGLARAFGV-PVR-TYHEVVTLWYRAPEILLGCKYYSTAVDIWSLGCIFAEMVTRRALFPGDSEIDQLFRIFRTLGTPDEVVWPGVTSMPDY-K-PSFPKWARQDFSKVVPPLDEDGRSLLSQMLHYDPNKRISAKAALAHPFFQDVTKPVPHLRL-------------------------------------------"
+      ],
+      [
+       "profiles/SomeKinases/CMGC/2ERK.pdb",
+       "TMalign TM-score=0.826490",
+       "AAGPEMVRGQVFDVGPRYTNLSYIGEGAYGMVCSAYDNLNKVRVAIKKISPF--EHQTYCQRTLREIKILLRFRHENIIGINDIIRAPTIEQMKDVYIVQDLMETDLYKLLKTQ---HLSNDHICYFLYQILRGLKYIHSANVLHRDLKPSNLLLNTTCDLKICDFGLARVADPDHDHTGFLEVATRWYRAPEIMLNSKGYTKSIDIWSVGCILAEMLSNRPIFPGKHYLDQLNHILGILGSPSQEDLNCIINLKARNYLLSLPHKNKVPWNRLFPNADSKALDLLDKMLTFNPHKRIEVEQALAHPYLEQYY--------DPSDEPIAEAPFKFDMELDDLPKEKLKELIFEETARFQPGYRS"
+      ]
+     ],
+     "tmscore": 0.82649
+    }
+   }
+  }
+ },
+ "tmscore_from_description": [
+  [
+   "TMalign TM-score=0.854630",
+   {
+    "value": 0.85463
+   }
+  ],
+  [
+   "x TM-score=0.5 y",
+   {
+    "value": 0.5
+   }
+  ],
+  [
+   "TM-score=abc",
+   {
+    "error": {
+     "type": "ValueError",
+     "message": "could not convert string to float: abc"
+    }
+   }
+  ],
+  [
+   "no score here",
+   {
+    "value": null
+   }
+  ],
+  [
+   "",
+   {
+    "value": null
+   }
+  ],
+  [
+   "TM-score0.7",
+   {
+    "error": {
+     "type": "IndexError",
+     "message": "list index out of range"
+    }
+   }
+  ]
+ ],
+ "clean_and_dedupe_seqs": {
+  "input": [
+   [
+    "_seed_1ATP.pdb",
+    "TMalign TM-score=0.800000",
+    "AC-DE"
+   ],
+   [
+    "1ATP.pdb",
+    "TMalign TM-score=0.900000",
+    "AC-DE"
+   ],
+   [
+    "_seed_1ATP.pdb",
+    "TMalign TM-score=0.700000",
+    "ACD-E"
+   ],
+   [
+    "1CSN.pdb",
+    "TMalign TM-score=0.600000",
+    "WW-YY"
+   ],
+   [
+    "_seed_1CSN.pdb",
+    "TMalign TM-score=0.650000",
+    "WW-YY"
+   ],
+   [
+    "other",
+    "TMalign TM-score=0.500000",
+    "AC-DE"
+   ]
+  ],
+  "best_score_false": {
+   "value": [
+    [
+     "1ATP.pdb",
+     "1ATP.pdb",
+     "TMalign TM-score=0.800000",
+     "AC-DE"
+    ],
+    [
+     "1ATP.pdb",
+     "1ATP.pdb",
+     "TMalign TM-score=0.700000",
+     "ACD-E"
+    ],
+    [
+     "1CSN.pdb",
+     "<unknown name>",
+     "TMalign TM-score=0.600000",
+     "WW-YY"
+    ],
+    [
+     "other",
+     "<unknown name>",
+     "TMalign TM-score=0.500000",
+     "AC-DE"
+    ]
+   ]
+  },
+  "best_score_true": {
+   "value": [
+    [
+     "1ATP.pdb",
+     "1ATP.pdb",
+     "TMalign TM-score=0.800000",
+     "AC-DE"
+    ],
+    [
+     "1ATP.pdb",
+     "<unknown name>",
+     "TMalign TM-score=0.900000",
+     "AC-DE"
+    ],
+    [
+     "1CSN.pdb",
+     "<unknown name>",
+     "TMalign TM-score=0.600000",
+     "WW-YY"
+    ],
+    [
+     "1CSN.pdb",
+     "1CSN.pdb",
+     "TMalign TM-score=0.650000",
+     "WW-YY"
+    ],
+    [
+     "other",
+     "<unknown name>",
+     "TMalign TM-score=0.500000",
+     "AC-DE"
+    ]
+   ]
+  }
+ },
+ "purge_seqs": {
+  "input": [
+   [
+    "a",
+    "AC-DE"
+   ],
+   [
+    "b",
+    "AC-DE"
+   ],
+   [
+    "c",
+    "ACD-E"
+   ],
+   [
+    "d",
+    "ac-de"
+   ]
+  ],
+  "result": {
+   "value": [
+    [
+     "a",
+     "<unknown description>",
+     "AC-DE"
+    ],
+    [
+     "c",
+     "<unknown description>",
+     "ACD-E"
+    ],
+    [
+     "d",
+     "<unknown description>",
+     "ac-de"
+    ]
+   ]
+  }
+ },
+ "mst_pairs": {
+  "structures": [
+   "A.pdb",
+   "B.pdb",
+   "C.pdb",
+   "D.pdb"
+  ],
+  "scores_in_pair_order": [
+   0.9,
+   0.8,
+   0.7,
+   0.6,
+   0.5,
+   0.4
+  ],
+  "seqrecord": {
+   "error": {
+    "type": "TypeError",
+    "message": "unhashable type: 'SeqRecord'"
+   }
+  },
+  "identity_hash_emulation": {
+   "value": [
+    [
+     "A.pdb",
+     "B.pdb"
+    ],
+    [
+     "A.pdb",
+     "C.pdb"
+    ],
+    [
+     "A.pdb",
+     "D.pdb"
+    ],
+    [
+     "B.pdb",
+     "C.pdb"
+    ],
+    [
+     "B.pdb",
+     "D.pdb"
+    ],
+    [
+     "C.pdb",
+     "D.pdb"
+    ]
+   ]
+  }
+ }
+}

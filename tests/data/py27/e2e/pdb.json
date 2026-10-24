@@ -1,0 +1,59 @@
+{
+ "build_with_pdb": {
+  "script": "fammer.py",
+  "argv": [
+   "build",
+   "SomeKinases",
+   "--hmmer"
+  ],
+  "returncode": 1,
+  "stdout": "",
+  "stderr": "tasks [@106]: SomeKinases/CAMK.pdb.seq: Building...\ntasks [@106]: SomeKinases/CAMK.aln: Building...\nbuild [@321]: Empty PDB alignment: SomeKinases/CAMK.pdb.seq\ntasks [@106]: SomeKinases/CMGC.pdb.seq: Building...\ntmalign [@32]: Aligning SomeKinases/CMGC/3BEG.pdb to SomeKinases/CMGC/1JST.pdb\ntasks [@110]: *** Failed action @ SomeKinases/CMGC.pdb.seq\nTraceback (most recent call last):\n  File \"<repo>/fammer.py\", line 143, in <module>\n    args.func(args)\n  File \"<repo>/fammerlib/build.py\", line 64, in cmd_build\n    T_base_all_hmm.build()\n  File \"<repo>/fammerlib/tasks.py\", line 101, in build\n    dep.build()\n  File \"<repo>/fammerlib/tasks.py\", line 101, in build\n    dep.build()\n  File \"<repo>/fammerlib/tasks.py\", line 101, in build\n    dep.build()\n  File \"<repo>/fammerlib/tasks.py\", line 101, in build\n    dep.build()\n  File \"<repo>/fammerlib/tasks.py\", line 108, in build\n    self.action(self, **self.kwargs)\n  File \"<repo>/fammerlib/build.py\", line 297, in align_pdbs\n    records = tmalign.align_structs(pdbs, pdbseedfnames)\n  File \"<repo>/fammerlib/tmalign.py\", line 47, in align_structs\n    ref_pdbfn, eqv_pdbfn)\n  File \"<repo>/fammerlib/tmalign.py\", line 110, in read_tmalign_as_seqrec_pair\n    assert lastlines[0].startswith('(\":\"') # (\":\" denotes the residues pairs\nAssertionError\n",
+  "created": [
+   "SomeKinases/CAMK.pdb.seq"
+  ],
+  "modified": [],
+  "deleted": [],
+  "manifest": [
+   [
+    "SomeKinases/CAMK.pdb.seq",
+    0,
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sha256"
+   ]
+  ]
+ },
+ "tmalign.two": {
+  "script": "tmalign.py",
+  "argv": [
+   "SomeKinases/CMGC/1JST.pdb",
+   "SomeKinases/CMGC/2ERK.pdb",
+   "-o",
+   "tm.out.fasta"
+  ],
+  "returncode": 1,
+  "stdout": "",
+  "stderr": "tmalign [@32]: Aligning SomeKinases/CMGC/2ERK.pdb to SomeKinases/CMGC/1JST.pdb\nTraceback (most recent call last):\n  File \"<repo>/tmalign.py\", line 45, in <module>\n    out_seqrecs = align_structs(args.pdbfnames)\n  File \"<repo>/fammerlib/tmalign.py\", line 47, in align_structs\n    ref_pdbfn, eqv_pdbfn)\n  File \"<repo>/fammerlib/tmalign.py\", line 110, in read_tmalign_as_seqrec_pair\n    assert lastlines[0].startswith('(\":\"') # (\":\" denotes the residues pairs\nAssertionError\n",
+  "created": [
+   "tm.out.fasta"
+  ],
+  "modified": [],
+  "deleted": []
+ },
+ "tmalign.three": {
+  "script": "tmalign.py",
+  "argv": [
+   "SomeKinases/CMGC/1JST.pdb",
+   "SomeKinases/CMGC/2ERK.pdb",
+   "SomeKinases/CMGC/1O9U.pdb",
+   "-o",
+   "tm.out.fasta"
+  ],
+  "returncode": 1,
+  "stdout": "",
+  "stderr": "tmalign [@32]: Aligning SomeKinases/CMGC/2ERK.pdb to SomeKinases/CMGC/1JST.pdb\nTraceback (most recent call last):\n  File \"<repo>/tmalign.py\", line 45, in <module>\n    out_seqrecs = align_structs(args.pdbfnames)\n  File \"<repo>/fammerlib/tmalign.py\", line 47, in align_structs\n    ref_pdbfn, eqv_pdbfn)\n  File \"<repo>/fammerlib/tmalign.py\", line 110, in read_tmalign_as_seqrec_pair\n    assert lastlines[0].startswith('(\":\"') # (\":\" denotes the residues pairs\nAssertionError\n",
+  "created": [],
+  "modified": [],
+  "deleted": []
+ }
+}

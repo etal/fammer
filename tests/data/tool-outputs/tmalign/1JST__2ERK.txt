@@ -1,0 +1,24 @@
+
+ **********************************************************************
+ * TM-align (Version 20240303): protein and RNA structure alignment   *
+ * References: Y Zhang, J Skolnick. Nucl Acids Res 33, 2302-9 (2005)  *
+ *             S Gong, C Zhang, Y Zhang. Bioinformatics, bz282 (2019) *
+ * Please email comments and suggestions to yangzhanglab@umich.edu    *
+ **********************************************************************
+
+Name of Structure_1: profiles/SomeKinases/CMGC/1JST.pdb (to be superimposed onto Structure_2)
+Name of Structure_2: profiles/SomeKinases/CMGC/2ERK.pdb
+Length of Structure_1: 297 residues
+Length of Structure_2: 351 residues
+
+Aligned length= 284, RMSD=   1.96, Seq_ID=n_identical/n_aligned= 0.377
+TM-score= 0.89220 (normalized by length of Structure_1: L=297, d0=6.33)
+TM-score= 0.76078 (normalized by length of Structure_2: L=351, d0=6.82)
+(You should use TM-score normalized by length of the reference structure)
+
+(":" denotes residue pairs of d < 5.0 Angstrom, "." denotes other aligned residues)
+--------------MENFQKVEKIGEGTYGVVYKARNKLTGEVVALKKIRLDTETEG-VPSTAIREISLLKELNHPNIVKLLDVIHT----EN-KLYLVFEFLHQDLKKFMDASALTGIPLPLIKSYLFQLLQGLAFCHSHRVLHRDLKPQNLLINTEGAIKLADFGLARAFGV-PVR-TYHEVVTLWYRAPEILLGCKYYSTAVDIWSLGCIFAEMVTRRALFPGDSEIDQLFRIFRTLGTPDEVVWPGVTSMPDY-K-PSFPKWARQDFSKVVPPLDEDGRSLLSQMLHYDPNKRISAKAALAHPFFQDVTKPVPHLRL-------------------------------------------
+              ::::::::::::::::::::::::::::::::::::::  ::. .::::::::::::::::::::::::::::    :: ::::::::::::::::::::   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::: ::: ::.:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.:::.::::: : ::::::::::::::::::::::::::::::::::::::::::::::::::::.                                                   
+AAGPEMVRGQVFDVGPRYTNLSYIGEGAYGMVCSAYDNLNKVRVAIKKISPF--EHQTYCQRTLREIKILLRFRHENIIGINDIIRAPTIEQMKDVYIVQDLMETDLYKLLKTQ---HLSNDHICYFLYQILRGLKYIHSANVLHRDLKPSNLLLNTTCDLKICDFGLARVADPDHDHTGFLEVATRWYRAPEIMLNSKGYTKSIDIWSVGCILAEMLSNRPIFPGKHYLDQLNHILGILGSPSQEDLNCIINLKARNYLLSLPHKNKVPWNRLFPNADSKALDLLDKMLTFNPHKRIEVEQALAHPYLEQYY--------DPSDEPIAEAPFKFDMELDDLPKEKLKELIFEETARFQPGYRS
+
+#Total CPU time is  0.00 seconds

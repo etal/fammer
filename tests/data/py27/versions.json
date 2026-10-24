@@ -1,0 +1,18 @@
+{
+ "python": "2.7.15",
+ "implementation": "CPython",
+ "platform": "Darwin-25.6.0-x86_64-i386-64bit",
+ "machine": "x86_64",
+ "biopython": "1.76",
+ "networkx": "2.2",
+ "reportlab": "3.5.42",
+ "biofrills_commit": "36684bb6c7632f96215e8b2b4ebc86640f331bcd",
+ "biocma_commit": "eac0c57eb83a9498e53ccdeb9cbc3fe21a5826a7",
+ "fammer_sources_commit": "5bcf8ebcfcb4242d81df896119e97741a1bb9f08",
+ "fammer_inputs_commit": "94a5b2b7abb84173aa6bba5673cf55e6a305c138",
+ "mafft": "v7.526 (2024/Apr/26)",
+ "hmmer": "# HMMER 3.4 (Aug 2023); http://hmmer.org/",
+ "fasttree": "FastTree Version 2.2.0 Double precision",
+ "tmalign": "* TM-align (Version 20240303): protein and RNA structure alignment   *",
+ "mafft_shim": "tool-shims/mafft replaces --globalgenafpair with --globalpair"
+}

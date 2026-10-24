@@ -1,0 +1,16 @@
+{
+ "script": "fammer.py",
+ "argv": [
+  "refine",
+  "SomeKinases",
+  "-n",
+  "-u",
+  "SomeKinases/Testfam-Unclassified.fasta"
+ ],
+ "returncode": 0,
+ "stdout": "",
+ "stderr": "refine [@45]: Refining SomeKinases/ULK.fasta...\nrefine [@109]: * keep ULK1_Mmus (evalue 3.5e-108 vs. 1e-09)\nrefine [@45]: Refining SomeKinases/Aurora.fasta...\nrefine [@109]: * keep gi|284793810|pdb|2WTW|A (evalue 3.2e-130 vs. 4e-09)\n",
+ "created": [],
+ "modified": [],
+ "deleted": []
+}

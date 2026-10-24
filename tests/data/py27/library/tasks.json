@@ -1,0 +1,348 @@
+{
+ "ext": [
+  [
+   "fam.fasta",
+   {
+    "value": "fam.aln"
+   }
+  ],
+  [
+   "dir/fam.fasta",
+   {
+    "value": "dir/fam.aln"
+   }
+  ],
+  [
+   "dir.v2/fam",
+   {
+    "value": "dir.aln"
+   }
+  ],
+  [
+   "noext",
+   {
+    "value": "noext.aln"
+   }
+  ],
+  [
+   "a.b.c",
+   {
+    "value": "a.b.aln"
+   }
+  ],
+  [
+   "tree/.hidden",
+   {
+    "value": "tree/.aln"
+   }
+  ],
+  [
+   [
+    "x.fasta",
+    "y/z.aln"
+   ],
+   {
+    "value": [
+     "x.aln",
+     "y/z.aln"
+    ]
+   }
+  ]
+ ],
+ "noext": [
+  [
+   "fam.fasta",
+   {
+    "value": "fam"
+   }
+  ],
+  [
+   "dir/fam.fasta",
+   {
+    "value": "dir/fam"
+   }
+  ],
+  [
+   "dir.v2/fam",
+   {
+    "value": "dir"
+   }
+  ],
+  [
+   "noext",
+   {
+    "value": "noext"
+   }
+  ],
+  [
+   "a.b.c",
+   {
+    "value": "a.b"
+   }
+  ],
+  [
+   "tree/.hidden",
+   {
+    "value": "tree/"
+   }
+  ],
+  [
+   [
+    "x.fasta",
+    "y/z.aln"
+   ],
+   {
+    "value": [
+     "x",
+     "y/z"
+    ]
+   }
+  ]
+ ],
+ "ext_of_task": {
+  "value": "group/fam.hmm"
+ },
+ "noext_of_task": {
+  "value": "group/fam"
+ },
+ "is_empty_by_size": {
+  "0": {
+   "value": true
+  },
+  "1": {
+   "value": true
+  },
+  "2": {
+   "value": false
+  },
+  "10": {
+   "value": false
+  }
+ },
+ "build_scenarios": {
+  "target_missing": {
+   "is_up_to_date_before": {
+    "value": false
+   },
+   "build": {
+    "value": null,
+    "log": [
+     [
+      "INFO",
+      "tasks",
+      "out: Building..."
+     ]
+    ]
+   },
+   "actions_called": [
+    "out"
+   ],
+   "is_up_to_date_after": {
+    "value": true
+   }
+  },
+  "target_newer_than_dep": {
+   "is_up_to_date_before": {
+    "value": true
+   },
+   "build": {
+    "value": null,
+    "log": [
+     [
+      "INFO",
+      "tasks",
+      "out: Up to date."
+     ]
+    ]
+   },
+   "actions_called": [],
+   "is_up_to_date_after": {
+    "value": true
+   }
+  },
+  "target_same_mtime_as_dep": {
+   "is_up_to_date_before": {
+    "value": true
+   },
+   "build": {
+    "value": null,
+    "log": [
+     [
+      "INFO",
+      "tasks",
+      "out: Up to date."
+     ]
+    ]
+   },
+   "actions_called": [],
+   "is_up_to_date_after": {
+    "value": true
+   }
+  },
+  "target_older_than_dep": {
+   "is_up_to_date_before": {
+    "value": false
+   },
+   "build": {
+    "value": null,
+    "log": [
+     [
+      "INFO",
+      "tasks",
+      "out: Building..."
+     ]
+    ]
+   },
+   "actions_called": [
+    "out"
+   ],
+   "is_up_to_date_after": {
+    "value": true
+   }
+  },
+  "stale_middle_task": {
+   "is_up_to_date_before": {
+    "value": false
+   },
+   "build": {
+    "value": null,
+    "log": [
+     [
+      "INFO",
+      "tasks",
+      "mid: Building..."
+     ],
+     [
+      "INFO",
+      "tasks",
+      "top: Building..."
+     ]
+    ]
+   },
+   "actions_called": [
+    "mid",
+    "top"
+   ],
+   "is_up_to_date_after": {
+    "value": true
+   }
+  },
+  "missing_file_dependency_with_target": {
+   "is_up_to_date_before": {
+    "value": false
+   },
+   "build": {
+    "error": {
+     "type": "OSError",
+     "message": "[Errno 2] No such file or directory: '<taskdir>/absent.in'"
+    },
+    "log": []
+   },
+   "actions_called": [],
+   "is_up_to_date_after": {
+    "value": false
+   }
+  },
+  "missing_file_dependency_without_target": {
+   "is_up_to_date_before": {
+    "value": false
+   },
+   "build": {
+    "value": null,
+    "log": [
+     [
+      "INFO",
+      "tasks",
+      "out: Building..."
+     ]
+    ]
+   },
+   "actions_called": [
+    "out"
+   ],
+   "is_up_to_date_after": {
+    "value": false
+   }
+  },
+  "failing_action": {
+   "is_up_to_date_before": {
+    "value": false
+   },
+   "build": {
+    "error": {
+     "type": "ValueError",
+     "message": "action failed"
+    },
+    "log": [
+     [
+      "INFO",
+      "tasks",
+      "out: Building..."
+     ],
+     [
+      "WARNING",
+      "tasks",
+      "*** Failed action @ out"
+     ]
+    ]
+   },
+   "actions_called": [
+    "out"
+   ],
+   "is_up_to_date_after": {
+    "value": false
+   }
+  },
+  "clean": {
+   "clean": {
+    "value": null,
+    "log": [
+     [
+      "INFO",
+      "tasks",
+      "rm a.tmp"
+     ],
+     [
+      "INFO",
+      "tasks",
+      "rm b.tmp"
+     ]
+    ]
+   },
+   "remaining_files": [
+    "c.tmp",
+    "mid",
+    "out"
+   ]
+  }
+ },
+ "sh": [
+  [
+   "true",
+   {
+    "value": null
+   }
+  ],
+  [
+   "exit 3",
+   {
+    "error": {
+     "type": "RuntimeError",
+     "message": "Failed command (returned 3):\nexit 3\n\n"
+    }
+   }
+  ],
+  [
+   "echo to-stdout; echo to-stderr >&2; exit 2",
+   {
+    "error": {
+     "type": "RuntimeError",
+     "message": "Failed command (returned 2):\necho to-stdout; echo to-stderr >&2; exit 2\n\nto-stdout\nto-stderr\n"
+    }
+   }
+  ]
+ ],
+ "which_missing": {
+  "value": null
+ }
+}

@@ -1,0 +1,24 @@
+
+ **********************************************************************
+ * TM-align (Version 20240303): protein and RNA structure alignment   *
+ * References: Y Zhang, J Skolnick. Nucl Acids Res 33, 2302-9 (2005)  *
+ *             S Gong, C Zhang, Y Zhang. Bioinformatics, bz282 (2019) *
+ * Please email comments and suggestions to yangzhanglab@umich.edu    *
+ **********************************************************************
+
+Name of Structure_1: profiles/ROPK/2W1Z.pdb (to be superimposed onto Structure_2)
+Name of Structure_2: profiles/ROPK/3Q60.pdb
+Length of Structure_1: 282 residues
+Length of Structure_2: 280 residues
+
+Aligned length= 263, RMSD=   2.85, Seq_ID=n_identical/n_aligned= 0.274
+TM-score= 0.81451 (normalized by length of Structure_1: L=282, d0=6.18)
+TM-score= 0.81980 (normalized by length of Structure_2: L=280, d0=6.16)
+(You should use TM-score normalized by length of the reference structure)
+
+(":" denotes residue pairs of d < 5.0 Angstrom, "." denotes other aligned residues)
+LVRGPVLRDDGSYICLEATDQETGEPLEVHVPYFTERPPSNAIKQLS-EQVLRLRLLRGIKNQRQAKAYLRFIFPIDLVKDPKKRK-MIRVRLDERDMWVLSRFFLYPRMQSNLHILGDVLLSHSSTHKSLVHHARLQLTLQLIRLAASLQHYGLVHADFQVRNILLDQRGGVFLTGFEHLVRDGASAVS-PIGRGFAPPETTAERHHPTLMTFPFDTWTLGLAIYWIWCADLPN-T-------------EDAELGGIEWIYRRCKNIPQPVRALLEGFLRYSKEDRLLPLQAMETSEY
+:::::::::::::::::::::::::::::::::::...::::::::: ::::::..   : :        :::::::::::::::: ::...    .:::::::::::::::::::::::::....:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: :::::::::::: :: :::::::::::::::::::::::::::: .             :..... .::::.::.:::::::::::::::::::::::::::::::::
+LKLVEPLRVGDRSVVFLVRDVERLEDFALKVFTMGAENSRSELERLHEATFAAARL---L-G--------RLLLPSDAVAVQSQPPFAQLSP----GYAVANYLLLMPAASVDLELLFSTLDFVYVFRGDEGILALHILTAQLIRLAANLQSKGLVHGHFTPDNLFIMPDGRLMLGDVSALWKVGTRGPASSVPVTYAPREFL-NA-STATFTHALNAWQLGLSIYRVWCLFLPFGLVTPGIKGSWKRPSLRVPGT-DSLAFGSCTPLPDFVKTLIGRFLNFDRRRRLLPLEAMETPEF
+
+#Total CPU time is  0.00 seconds

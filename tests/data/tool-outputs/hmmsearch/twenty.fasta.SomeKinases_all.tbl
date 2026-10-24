@@ -1,0 +1,805 @@
+#                                                                  --- full sequence ---- --- best 1 domain ---- --- domain number estimation ----
+# target name           accession  query name           accession    E-value  score  bias   E-value  score  bias   exp reg clu  ov env dom rep inc description of target
+#   ------------------- ---------- -------------------- ---------- --------- ------ ----- --------- ------ -----   --- --- --- --- --- --- --- --- ---------------------
+CDPK-consensus          -          SomeKinases          -           1.4e-107  349.4   7.1  1.4e-107  349.4   7.1   1.7   2   0   0   2   2   1   1 -
+CAMKL-consensus         -          SomeKinases          -           2.9e-101  328.6   0.5  3.6e-101  328.3   0.5   1.1   1   0   0   1   1   1   1 -
+DAPK-consensus          -          SomeKinases          -            2.3e-99  322.4   0.3   2.6e-99  322.2   0.3   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          SomeKinases          -            5.4e-94  304.8   0.0     6e-94  304.7   0.0   1.0   1   0   0   1   1   1   1 -
+STE20-consensus         -          SomeKinases          -            1.2e-91  297.1   0.3   1.2e-91  297.1   0.3   1.4   2   0   0   2   2   1   1 -
+STE-Unclass-consensus   -          SomeKinases          -              2e-88  286.6   0.7   3.4e-88  285.8   0.7   1.4   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          SomeKinases          -            1.3e-76  247.8   0.0   4.2e-76  246.2   0.0   1.7   1   1   0   1   1   1   1 -
+STE7-consensus          -          SomeKinases          -              2e-74  240.7   0.4   2.2e-74  240.5   0.4   1.0   1   0   0   1   1   1   1 -
+PIM-consensus           -          SomeKinases          -            9.9e-74  238.4   0.0   1.1e-73  238.2   0.0   1.0   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          SomeKinases          -            7.7e-73  235.5   0.9   1.3e-72  234.7   0.9   1.4   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          SomeKinases          -            9.2e-70  225.4   0.0   1.8e-68  221.2   0.0   2.3   1   1   0   1   1   1   1 (CMGC/CLK/)
+SgK495-consensus        -          SomeKinases          -            1.3e-66  215.0   0.0   1.9e-66  214.6   0.0   1.1   1   0   0   1   1   1   1 -
+gi|83755011|pdb|2EXE|A  -          SomeKinases          -            1.9e-65  211.3   2.1   4.2e-65  210.1   2.1   1.5   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK034_Gl                -          SomeKinases          -              4e-63  203.7   0.0   6.2e-63  203.0   0.0   1.3   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          SomeKinases          -            4.5e-63  203.5   0.0   2.1e-62  201.2   0.0   1.8   1   1   0   1   1   1   1 (CMGC/DYRK/HIPK)
+CC1G_04865_Cc           -          SomeKinases          -            7.3e-62  199.5   0.0   9.4e-61  195.9   0.0   2.3   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+22369_Tt                -          SomeKinases          -            2.8e-58  187.8   0.5   5.2e-58  186.9   0.5   1.4   1   1   0   1   1   1   1 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          SomeKinases          -            6.6e-57  183.3   2.3   1.2e-56  182.4   2.3   1.4   1   1   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK032_Gl                -          SomeKinases          -            2.1e-52  168.5   0.0   4.5e-52  167.4   0.0   1.5   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          SomeKinases          -            8.1e-48  153.5   0.0   1.5e-47  152.6   0.0   1.4   1   1   0   1   1   1   1 (CMGC/CLK/)
+CDPK-consensus          -          CAMK                 -           6.2e-115  373.3   5.4    1e-114  372.6   5.4   1.4   1   0   0   1   1   1   1 -
+DAPK-consensus          -          CAMK                 -           3.1e-107  348.1   0.4  3.5e-107  347.9   0.4   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          CAMK                 -           6.5e-105  340.5   0.3  8.3e-105  340.2   0.3   1.1   1   0   0   1   1   1   1 -
+PPCK-consensus          -          CAMK                 -            1.9e-97  316.0   0.0   2.1e-97  315.9   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          CAMK                 -            3.2e-83  269.4   0.0   2.9e-82  266.3   0.0   2.0   1   1   0   1   1   1   1 -
+PIM-consensus           -          CAMK                 -            1.2e-78  254.4   0.0   1.3e-78  254.3   0.0   1.0   1   0   0   1   1   1   1 -
+SgK495-consensus        -          CAMK                 -              1e-75  244.8   0.0   1.3e-75  244.4   0.0   1.1   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          CAMK                 -            7.2e-73  235.5   0.5   1.1e-72  234.8   0.5   1.3   1   0   0   1   1   1   1 -
+STE20-consensus         -          CAMK                 -            1.1e-72  234.9   0.2   1.1e-72  234.9   0.2   1.5   2   0   0   2   2   1   1 -
+STE7-consensus          -          CAMK                 -            4.1e-56  180.6   0.4   4.5e-56  180.4   0.4   1.0   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          CAMK                 -            2.9e-44  141.7   1.1   1.5e-36  116.5   0.3   3.0   1   1   1   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          CAMK                 -            1.7e-41  132.7   0.0   2.2e-23   73.3   0.0   3.0   3   0   0   3   3   2   3 (CMGC/CLK/)
+CC1G_04865_Cc           -          CAMK                 -            9.2e-41  130.3   0.1     2e-35  112.8   0.0   2.8   2   1   0   2   2   2   2 (CMGC/DYRK/PRP4)
+hpk-1_Cele              -          CAMK                 -            1.9e-40  129.2   0.0   5.8e-38  121.1   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/HIPK)
+GK034_Gl                -          CAMK                 -            1.9e-39  126.0   0.0   1.7e-35  113.0   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+gi|83755011|pdb|2EXE|A  -          CAMK                 -            3.9e-39  124.9   1.1   1.2e-32  103.7   0.3   3.0   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+22369_Tt                -          CAMK                 -            7.5e-38  120.7   1.7   2.7e-21   66.5   0.2   3.1   3   0   0   3   3   3   3 (CMGC/CLK/)
+GK032_Gl                -          CAMK                 -            5.4e-37  117.9   0.0   3.8e-30   95.5   0.0   2.3   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+gi|302148765|pdb|3LLT|A -          CAMK                 -            9.3e-35  110.6   1.3     1e-21   67.8   0.3   3.1   2   1   1   3   3   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK028_Gl                -          CAMK                 -            6.4e-30   94.7   0.0   1.5e-24   77.2   0.0   3.7   2   1   0   2   2   1   2 (CMGC/CLK/)
+DAPK-consensus          -          Testfam-Unclassified -              1e-12   37.9   4.0   3.9e-11   32.7   2.0   2.0   2   0   0   2   2   1   2 -
+PPCK-consensus          -          Testfam-Unclassified -            1.7e-12   37.2   1.9   1.1e-11   34.5   0.7   2.1   2   0   0   2   2   1   1 -
+CAMKL-consensus         -          Testfam-Unclassified -            3.5e-12   36.1  10.4   4.2e-11   32.6   4.4   2.2   2   0   0   2   2   1   2 -
+gi|66361317|pdb|1Z57|A  -          Testfam-Unclassified -            5.1e-11   32.3   0.2   3.4e-09   26.3   0.1   2.2   2   0   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CDPK-consensus          -          Testfam-Unclassified -              6e-11   32.0  10.9   1.4e-08   24.3   4.4   2.8   2   0   0   2   2   1   2 -
+STE-Unclass-consensus   -          Testfam-Unclassified -            1.8e-10   30.5   0.6   1.8e-10   30.5   0.6   2.0   2   0   0   2   2   1   1 -
+STE20-consensus         -          Testfam-Unclassified -            2.8e-10   29.8   0.6   2.8e-10   29.8   0.6   2.8   3   0   0   3   3   1   1 -
+hpk-1_Cele              -          Testfam-Unclassified -            3.2e-10   29.7   0.5   6.5e-10   28.6   0.1   1.6   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+CC1G_04865_Cc           -          Testfam-Unclassified -            7.3e-10   28.5   0.3   1.1e-09   27.9   0.3   1.2   1   0   0   1   1   1   1 (CMGC/DYRK/PRP4)
+CLK_d_Sm                -          Testfam-Unclassified -              9e-10   28.2   0.1   1.9e-09   27.1   0.1   1.5   1   0   0   1   1   1   1 (CMGC/CLK/)
+PIM-consensus           -          Testfam-Unclassified -            1.5e-09   27.5   0.2   1.7e-07   20.7   0.0   2.1   2   0   0   2   2   1   2 -
+gi|83755011|pdb|2EXE|A  -          Testfam-Unclassified -            4.8e-09   25.8   0.9   4.8e-09   25.8   0.9   1.6   2   0   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+STE7-consensus          -          Testfam-Unclassified -            1.2e-08   24.5   2.8   9.6e-08   21.5   0.7   2.2   2   0   0   2   2   1   1 -
+gi|302148765|pdb|3LLT|A -          Testfam-Unclassified -            6.7e-08   22.0   2.7   1.2e-07   21.2   2.7   1.5   1   0   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+22369_Tt                -          Testfam-Unclassified -            7.4e-07   18.6   0.4   1.2e-06   17.9   0.4   1.3   1   0   0   1   1   1   1 (CMGC/CLK/)
+GK032_Gl                -          Testfam-Unclassified -            7.8e-07   18.5   0.2   1.7e-06   17.4   0.1   1.6   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+MLCK-like-consensus     -          Testfam-Unclassified -            1.4e-06   17.7   0.1   0.00017   10.8   0.0   2.2   2   0   0   2   2   0   1 -
+GK028_Gl                -          Testfam-Unclassified -            5.4e-05   12.4   0.0    0.0013    7.9   0.0   2.1   2   0   0   2   2   0   1 (CMGC/CLK/)
+SgK495-consensus       -          SgK495               -           1.9e-195  637.8   0.6  2.4e-195  637.5   0.6   1.1   1   0   0   1   1   1   1 -
+CAMKL-consensus        -          SgK495               -            1.5e-43  139.2   0.1   3.1e-43  138.1   0.0   1.4   1   1   0   1   1   1   1 -
+CDPK-consensus         -          SgK495               -            3.1e-35  111.9   0.1   3.1e-35  111.9   0.1   1.6   2   0   0   2   2   1   1 -
+PPCK-consensus         -          SgK495               -            2.9e-30   95.6   0.0   5.9e-30   94.6   0.0   1.4   1   1   0   1   1   1   1 -
+DAPK-consensus         -          SgK495               -            8.6e-29   90.8   0.0   1.8e-28   89.7   0.0   1.4   2   0   0   2   2   1   1 -
+MLCK-like-consensus    -          SgK495               -            1.1e-26   83.8   0.0   1.9e-26   83.1   0.0   1.2   1   0   0   1   1   1   1 -
+STE-Unclass-consensus  -          SgK495               -            1.5e-25   80.1   0.0   2.8e-25   79.2   0.0   1.3   1   0   0   1   1   1   1 -
+PIM-consensus          -          SgK495               -            7.4e-21   64.7   0.0   1.2e-20   64.0   0.0   1.2   1   0   0   1   1   1   1 -
+STE7-consensus         -          SgK495               -            3.9e-18   55.8   0.0     6e-18   55.2   0.0   1.2   1   0   0   1   1   1   1 -
+STE20-consensus        -          SgK495               -            1.8e-17   53.6   0.0   1.3e-16   50.8   0.0   2.1   2   0   0   2   2   1   1 -
+GK032_Gl               -          SgK495               -            2.2e-10   30.3   0.0   1.2e-09   27.9   0.0   2.0   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+hpk-1_Cele             -          SgK495               -            3.2e-09   26.5   0.0     3e-07   20.0   0.0   2.7   2   1   1   3   3   1   1 (CMGC/DYRK/HIPK)
+CC1G_04865_Cc          -          SgK495               -            6.8e-09   25.4   0.1   4.1e-08   22.9   0.0   2.0   2   0   0   2   2   1   1 (CMGC/DYRK/PRP4)
+22369_Tt               -          SgK495               -            7.3e-08   22.1   0.0   0.00071    9.0   0.0   3.4   3   0   0   3   3   0   1 (CMGC/CLK/)
+GK034_Gl               -          SgK495               -            1.2e-06   18.0   0.0   1.8e-06   17.5   0.0   1.2   1   0   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+gi|66361317|pdb|1Z57|A -          SgK495               -            3.4e-06   16.6   0.7   0.00079    8.8   0.3   3.1   2   1   0   2   2   0   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A -          SgK495               -            8.3e-05   12.0   0.7     0.006    5.9   0.1   2.9   2   1   0   2   2   0   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+CDPK-consensus          -          RAD53                -             2e-100  325.7   4.9    2e-100  325.7   4.9   1.6   2   0   0   2   2   1   1 -
+CAMKL-consensus         -          RAD53                -            1.4e-97  316.4   0.3   1.8e-97  316.0   0.3   1.1   1   0   0   1   1   1   1 -
+DAPK-consensus          -          RAD53                -            1.4e-82  267.3   0.1   1.5e-82  267.1   0.1   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          RAD53                -              5e-77  249.0   0.0   5.5e-77  248.9   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          RAD53                -            8.6e-73  235.1   0.0   5.5e-72  232.5   0.0   2.0   1   1   0   1   1   1   1 -
+STE-Unclass-consensus   -          RAD53                -            3.7e-64  206.8   0.2   5.1e-64  206.4   0.2   1.2   1   0   0   1   1   1   1 -
+STE20-consensus         -          RAD53                -            1.4e-59  191.9   0.1   1.4e-59  191.9   0.1   1.4   2   0   0   2   2   1   1 -
+PIM-consensus           -          RAD53                -            1.1e-52  169.2   0.0   1.3e-52  169.0   0.0   1.0   1   0   0   1   1   1   1 -
+STE7-consensus          -          RAD53                -            6.4e-49  156.9   0.4   7.5e-49  156.7   0.4   1.0   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          RAD53                -            2.7e-43  138.4   0.1     6e-38  120.9   0.1   2.1   2   0   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A  -          RAD53                -              2e-38  122.5   0.2   6.7e-35  110.9   0.1   2.1   2   0   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+hpk-1_Cele              -          RAD53                -            1.4e-37  119.7   0.0   6.6e-36  114.2   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+SgK495-consensus        -          RAD53                -            2.8e-37  118.7   0.0   7.6e-37  117.3   0.0   1.5   1   1   0   2   2   1   1 -
+GK034_Gl                -          RAD53                -            3.3e-36  115.2   0.0     1e-32  103.7   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+CLK_d_Sm                -          RAD53                -            4.1e-36  114.9   0.0   9.6e-22   67.8   0.0   3.0   3   0   0   3   3   2   3 (CMGC/CLK/)
+CC1G_04865_Cc           -          RAD53                -            8.3e-36  113.9   0.1   3.2e-31   98.9   0.0   2.9   2   1   0   2   2   1   2 (CMGC/DYRK/PRP4)
+22369_Tt                -          RAD53                -            7.3e-34  107.5   3.5   2.7e-20   63.0   0.6   3.1   3   0   0   3   3   3   3 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          RAD53                -            3.8e-33  105.2   1.2     2e-31   99.6   1.0   2.2   2   0   0   2   2   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK032_Gl                -          RAD53                -            1.7e-27   86.6   0.0   1.8e-21   66.9   0.0   2.3   2   0   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          RAD53                -            8.7e-21   64.7   0.0   2.1e-17   53.6   0.0   3.1   2   1   0   2   2   1   1 (CMGC/CLK/)
+CDPK-consensus          -          PSK                  -            5.3e-86  278.2   1.1   7.5e-86  277.8   1.1   1.2   1   0   0   1   1   1   1 -
+DAPK-consensus          -          PSK                  -              3e-76  246.3   0.0   3.3e-76  246.1   0.0   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          PSK                  -            1.1e-71  231.3   0.0   1.4e-71  231.0   0.0   1.1   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          PSK                  -            4.8e-63  203.0   0.0   1.6e-61  198.1   0.0   2.1   1   1   1   2   2   1   1 -
+PPCK-consensus          -          PSK                  -              6e-63  202.7   0.0   6.7e-63  202.5   0.0   1.0   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          PSK                  -              4e-48  154.1   0.0   5.5e-48  153.6   0.0   1.2   1   0   0   1   1   1   1 -
+STE20-consensus         -          PSK                  -            4.7e-45  144.0   0.0   6.1e-45  143.7   0.0   1.1   1   0   0   1   1   1   1 -
+SgK495-consensus        -          PSK                  -            3.5e-33  105.1   0.0   6.2e-33  104.3   0.0   1.3   1   0   0   1   1   1   1 -
+PIM-consensus           -          PSK                  -            1.2e-31  100.1   0.0   1.5e-31   99.8   0.0   1.1   1   0   0   1   1   1   1 -
+STE7-consensus          -          PSK                  -            2.2e-30   96.0   0.0   2.7e-30   95.7   0.0   1.0   1   0   0   1   1   1   1 -
+hpk-1_Cele              -          PSK                  -            3.5e-28   88.8   0.0   6.7e-28   87.8   0.0   1.4   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+gi|66361317|pdb|1Z57|A  -          PSK                  -            6.2e-27   84.7   0.2   2.6e-24   76.1   0.1   2.5   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+22369_Tt                -          PSK                  -            1.8e-26   83.2   0.7   2.3e-16   50.0   0.4   3.1   3   0   0   3   3   2   3 (CMGC/CLK/)
+CLK_d_Sm                -          PSK                  -            7.7e-26   81.1   0.1   1.2e-15   47.6   0.1   3.0   3   0   0   3   3   2   3 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          PSK                  -            4.2e-23   72.1   0.8   3.7e-20   62.4   0.8   2.6   2   1   0   2   2   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+gi|83755011|pdb|2EXE|A  -          PSK                  -            1.2e-22   70.6   0.3   6.6e-21   64.9   0.1   3.1   2   2   1   3   3   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK034_Gl                -          PSK                  -            2.1e-22   69.8   0.0   1.1e-19   60.9   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+GK032_Gl                -          PSK                  -            2.5e-22   69.6   0.1   4.8e-17   52.3   0.1   2.8   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+CC1G_04865_Cc           -          PSK                  -            8.1e-22   67.9   0.1   2.5e-19   59.7   0.1   2.5   2   1   0   2   2   1   2 (CMGC/DYRK/PRP4)
+GK028_Gl                -          PSK                  -            1.8e-12   37.3   0.1   1.2e-09   28.0   0.0   2.7   2   1   0   2   2   1   2 (CMGC/CLK/)
+DAPK-consensus          -          DAPK                 -           2.4e-142  462.9   0.8  2.6e-142  462.8   0.8   1.0   1   0   0   1   1   1   1 -
+CDPK-consensus          -          DAPK                 -            1.8e-89  289.6   4.5   3.1e-89  288.9   4.5   1.4   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          DAPK                 -            8.6e-76  244.8   0.5   1.1e-75  244.4   0.5   1.1   1   0   0   1   1   1   1 -
+PPCK-consensus          -          DAPK                 -            1.7e-74  240.6   0.0   1.9e-74  240.4   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          DAPK                 -            2.3e-67  217.2   0.1   2.1e-66  214.0   0.1   2.0   1   1   0   1   1   1   1 -
+STE-Unclass-consensus   -          DAPK                 -            5.1e-56  180.0   0.4     8e-56  179.3   0.4   1.3   1   0   0   1   1   1   1 -
+STE20-consensus         -          DAPK                 -            1.5e-54  175.2   0.1   2.1e-54  174.7   0.1   1.2   1   0   0   1   1   1   1 -
+STE7-consensus          -          DAPK                 -            4.7e-45  144.1   0.5   5.2e-45  143.9   0.5   1.0   1   0   0   1   1   1   1 -
+PIM-consensus           -          DAPK                 -            3.3e-37  118.3   0.0   4.3e-37  118.0   0.0   1.1   1   0   0   1   1   1   1 -
+CLK_d_Sm                -          DAPK                 -            1.3e-31  100.0   0.0   1.1e-19   60.8   0.0   3.0   3   0   0   3   3   2   2 (CMGC/CLK/)
+SgK495-consensus        -          DAPK                 -            5.2e-31   98.0   0.0   1.2e-30   96.9   0.0   1.5   1   0   0   1   1   1   1 -
+22369_Tt                -          DAPK                 -            1.2e-30   96.8   2.7   1.1e-19   60.9   0.7   3.1   3   0   0   3   3   2   3 (CMGC/CLK/)
+GK034_Gl                -          DAPK                 -            2.6e-30   95.7   0.0   1.8e-27   86.4   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+gi|66361317|pdb|1Z57|A  -          DAPK                 -            6.1e-30   94.5   0.2   1.2e-25   80.5   0.1   2.9   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+hpk-1_Cele              -          DAPK                 -            1.8e-28   89.7   0.0   1.6e-27   86.6   0.0   1.9   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+GK032_Gl                -          DAPK                 -            1.2e-27   87.0   0.0   2.9e-21   66.1   0.0   2.5   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+gi|302148765|pdb|3LLT|A -          DAPK                 -            5.8e-27   84.8   0.5     1e-17   54.5   0.2   3.0   2   1   1   3   3   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+CC1G_04865_Cc           -          DAPK                 -            3.2e-25   79.1   0.0   6.3e-23   71.5   0.0   2.4   2   1   0   2   2   1   1 (CMGC/DYRK/PRP4)
+gi|83755011|pdb|2EXE|A  -          DAPK                 -            2.9e-23   72.6   0.2   8.1e-21   64.6   0.1   2.8   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK028_Gl                -          DAPK                 -            6.4e-13   38.7   0.0   2.2e-09   27.1   0.0   3.4   3   1   0   3   3   1   2 (CMGC/CLK/)
+DAPK-consensus          -          MLCK                 -           2.7e-104  338.3   0.2    3e-104  338.1   0.2   1.0   1   0   0   1   1   1   1 -
+CDPK-consensus          -          MLCK                 -            9.9e-89  287.3   2.9   9.9e-89  287.3   2.9   1.5   2   0   0   2   2   1   1 -
+CAMKL-consensus         -          MLCK                 -              9e-74  238.3   0.1   1.1e-73  238.0   0.1   1.1   1   0   0   1   1   1   1 -
+PPCK-consensus          -          MLCK                 -            5.2e-71  229.2   0.0   5.8e-71  229.1   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          MLCK                 -            2.5e-68  220.4   0.0   4.5e-65  209.8   0.0   2.1   1   1   0   1   1   1   1 -
+STE-Unclass-consensus   -          MLCK                 -            1.3e-59  191.9   0.1   2.2e-59  191.1   0.1   1.4   1   0   0   1   1   1   1 -
+STE20-consensus         -          MLCK                 -              3e-58  187.4   0.0   4.5e-58  186.8   0.0   1.3   1   0   0   1   1   1   1 -
+STE7-consensus          -          MLCK                 -            1.2e-42  136.2   0.2   1.4e-42  136.1   0.2   1.0   1   0   0   1   1   1   1 -
+PIM-consensus           -          MLCK                 -            3.7e-38  121.5   0.0   4.3e-38  121.3   0.0   1.0   1   0   0   1   1   1   1 -
+CLK_d_Sm                -          MLCK                 -            3.1e-36  115.3   0.0   7.1e-21   64.9   0.0   3.0   2   1   0   3   3   2   3 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          MLCK                 -            1.3e-34  110.0   0.5   4.8e-30   95.0   0.1   3.0   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+GK034_Gl                -          MLCK                 -              8e-33  104.1   0.0   2.6e-30   95.9   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          MLCK                 -            9.2e-32  100.6   0.0   5.2e-31   98.1   0.0   1.8   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+22369_Tt                -          MLCK                 -            1.5e-31   99.9   1.1     4e-19   59.2   0.2   3.1   3   0   0   3   3   2   3 (CMGC/CLK/)
+SgK495-consensus        -          MLCK                 -            1.5e-30   96.6   0.0   2.5e-30   95.9   0.0   1.3   1   0   0   1   1   1   1 -
+gi|83755011|pdb|2EXE|A  -          MLCK                 -            1.6e-30   96.5   0.3   9.1e-21   64.6   0.1   3.0   3   0   0   3   3   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+CC1G_04865_Cc           -          MLCK                 -            1.1e-29   93.9   0.0   5.6e-28   88.2   0.0   2.7   2   1   0   2   2   1   1 (CMGC/DYRK/PRP4)
+gi|302148765|pdb|3LLT|A -          MLCK                 -            2.2e-29   92.8   0.6   7.5e-19   58.3   0.2   2.6   3   0   0   3   3   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK032_Gl                -          MLCK                 -            4.3e-29   91.8   0.0   4.8e-24   75.3   0.0   2.2   2   0   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          MLCK                 -              1e-20   64.4   0.0   1.1e-17   54.4   0.0   3.6   2   1   0   2   2   1   1 (CMGC/CLK/)
+CAMKL-consensus         -          TSSK                 -            1.6e-97  316.2   0.0     2e-97  315.9   0.0   1.1   1   0   0   1   1   1   1 -
+CDPK-consensus          -          TSSK                 -              7e-73  235.5   2.4   1.1e-72  234.9   2.4   1.3   1   0   0   1   1   1   1 -
+PPCK-consensus          -          TSSK                 -            1.3e-62  201.9   0.0   1.4e-62  201.7   0.0   1.0   1   0   0   1   1   1   1 -
+DAPK-consensus          -          TSSK                 -            1.5e-61  198.4   0.0   1.7e-61  198.2   0.0   1.0   1   0   0   1   1   1   1 -
+STE20-consensus         -          TSSK                 -            2.8e-55  177.8   0.0   4.3e-55  177.3   0.0   1.3   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          TSSK                 -            2.9e-55  177.8   0.0     4e-55  177.3   0.0   1.2   1   0   0   1   1   1   1 -
+PIM-consensus           -          TSSK                 -            1.1e-53  172.6   0.0   1.3e-53  172.4   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          TSSK                 -            7.8e-50  160.0   0.1   3.2e-46  148.2   0.0   2.1   2   0   0   2   2   1   2 -
+STE7-consensus          -          TSSK                 -            8.3e-45  143.5   0.1   9.1e-45  143.4   0.1   1.0   1   0   0   1   1   1   1 -
+SgK495-consensus        -          TSSK                 -            1.9e-40  129.2   0.0   3.1e-40  128.6   0.0   1.3   1   0   0   1   1   1   1 -
+CC1G_04865_Cc           -          TSSK                 -            1.1e-32  103.8   0.0     3e-32  102.4   0.0   1.6   2   0   0   2   2   1   1 (CMGC/DYRK/PRP4)
+hpk-1_Cele              -          TSSK                 -            5.9e-29   91.6   0.0   8.4e-29   91.1   0.0   1.2   1   0   0   1   1   1   1 (CMGC/DYRK/HIPK)
+GK034_Gl                -          TSSK                 -            3.8e-28   89.0   0.0   1.1e-27   87.4   0.0   1.6   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+CLK_d_Sm                -          TSSK                 -            8.8e-27   84.5   0.1   2.1e-19   60.3   0.1   2.8   3   0   0   3   3   2   2 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          TSSK                 -              2e-26   83.3   0.6   1.3e-16   51.2   0.1   3.0   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+GK032_Gl                -          TSSK                 -            1.9e-25   80.1   0.0   4.6e-23   72.3   0.0   2.5   2   1   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+gi|302148765|pdb|3LLT|A -          TSSK                 -            2.8e-22   69.7   1.7   3.6e-19   59.6   1.7   2.7   1   1   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+gi|83755011|pdb|2EXE|A  -          TSSK                 -            2.9e-21   66.4   0.1     1e-13   41.7   0.1   2.9   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+22369_Tt                -          TSSK                 -              3e-21   66.4   2.4   1.8e-12   37.6   0.6   2.7   3   0   0   3   3   2   2 (CMGC/CLK/)
+GK028_Gl                -          TSSK                 -            1.1e-19   61.3   0.0   2.8e-16   50.1   0.0   3.6   2   1   0   2   2   1   1 (CMGC/CLK/)
+CDPK-consensus          -          DCAMKL               -            8.5e-89  287.7   2.6   1.4e-88  287.0   2.6   1.3   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          DCAMKL               -            2.8e-77  249.9   0.4   3.6e-77  249.6   0.4   1.1   1   0   0   1   1   1   1 -
+DAPK-consensus          -          DCAMKL               -            7.3e-76  245.3   0.1   8.2e-76  245.1   0.1   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          DCAMKL               -            1.8e-72  234.2   0.0     2e-72  234.0   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          DCAMKL               -            1.2e-67  218.3   0.0   3.6e-67  216.8   0.0   1.7   1   1   0   1   1   1   1 -
+STE-Unclass-consensus   -          DCAMKL               -            2.5e-54  174.7   0.1   3.4e-54  174.3   0.1   1.2   1   0   0   1   1   1   1 -
+STE20-consensus         -          DCAMKL               -            1.4e-53  172.3   0.0   1.9e-53  171.8   0.0   1.2   1   0   0   1   1   1   1 -
+PIM-consensus           -          DCAMKL               -            1.2e-43  139.7   0.0   1.4e-43  139.4   0.0   1.1   1   0   0   1   1   1   1 -
+STE7-consensus          -          DCAMKL               -            8.9e-42  133.6   0.1   1.1e-41  133.3   0.1   1.0   1   0   0   1   1   1   1 -
+gi|83755011|pdb|2EXE|A  -          DCAMKL               -            1.7e-32  103.1   0.2   1.8e-30   96.5   0.1   2.8   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK034_Gl                -          DCAMKL               -            2.3e-32  102.7   0.0   4.5e-30   95.2   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+gi|66361317|pdb|1Z57|A  -          DCAMKL               -            5.3e-32  101.5   0.5   7.3e-29   91.2   0.2   2.8   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+SgK495-consensus        -          DCAMKL               -            1.6e-30   96.7   0.0   7.4e-30   94.5   0.0   1.8   2   0   0   2   2   1   1 -
+CLK_d_Sm                -          DCAMKL               -            2.3e-30   96.2   0.0     1e-16   51.5   0.0   3.0   3   0   0   3   3   2   2 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          DCAMKL               -            5.5e-29   91.6   1.7   2.9e-26   82.7   1.7   2.3   1   1   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+hpk-1_Cele              -          DCAMKL               -              5e-28   88.5   0.0   8.1e-28   87.8   0.0   1.3   1   0   0   1   1   1   1 (CMGC/DYRK/HIPK)
+GK032_Gl                -          DCAMKL               -            5.3e-26   81.9   0.1   4.4e-22   69.0   0.0   2.7   2   1   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+CC1G_04865_Cc           -          DCAMKL               -            1.1e-24   77.5   0.0   1.7e-23   73.6   0.0   2.3   2   1   0   2   2   1   1 (CMGC/DYRK/PRP4)
+22369_Tt                -          DCAMKL               -            3.4e-22   69.4   0.6   2.7e-14   43.5   0.6   3.1   3   0   0   3   3   2   2 (CMGC/CLK/)
+GK028_Gl                -          DCAMKL               -              1e-13   41.6   0.0   1.4e-11   34.6   0.0   3.2   2   1   0   2   2   1   1 (CMGC/CLK/)
+CDPK-consensus          -          CAMK-Unclass         -           1.7e-115  375.1  16.5  1.7e-115  375.1  16.5   2.5   2   1   0   3   3   1   1 -
+CAMKL-consensus         -          CAMK-Unclass         -           4.3e-109  354.1   7.6  6.4e-109  353.6   7.6   1.2   1   0   0   1   1   1   1 -
+DAPK-consensus          -          CAMK-Unclass         -           4.1e-108  350.9   8.3  4.6e-108  350.8   8.3   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          CAMK-Unclass         -           1.8e-101  329.2   1.1    2e-101  329.0   1.1   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          CAMK-Unclass         -            1.6e-93  303.1   0.1   2.3e-93  302.6   0.1   1.2   1   0   0   1   1   1   1 -
+PIM-consensus           -          CAMK-Unclass         -              1e-78  254.6   0.0   1.1e-78  254.4   0.0   1.0   1   0   0   1   1   1   1 -
+STE20-consensus         -          CAMK-Unclass         -            2.2e-76  246.9   4.7   2.2e-76  246.9   4.7   2.1   3   0   0   3   3   1   1 -
+STE-Unclass-consensus   -          CAMK-Unclass         -            4.8e-76  245.8  11.1   7.4e-76  245.2  11.1   1.3   1   0   0   1   1   1   1 -
+SgK495-consensus        -          CAMK-Unclass         -            3.4e-75  243.1   0.0   4.8e-75  242.5   0.0   1.2   1   0   0   1   1   1   1 -
+STE7-consensus          -          CAMK-Unclass         -              5e-59  190.1   8.7   5.6e-59  189.9   8.7   1.0   1   0   0   1   1   1   1 -
+CC1G_04865_Cc           -          CAMK-Unclass         -            9.8e-45  143.2   0.1   6.6e-38  120.8   0.1   2.6   2   1   0   2   2   2   2 (CMGC/DYRK/PRP4)
+gi|66361317|pdb|1Z57|A  -          CAMK-Unclass         -            9.4e-43  136.7   0.1   3.4e-34  108.7   0.0   3.0   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          CAMK-Unclass         -            2.9e-41  131.9   0.0   4.6e-23   72.2   0.0   3.0   3   0   0   3   3   2   3 (CMGC/CLK/)
+GK034_Gl                -          CAMK-Unclass         -            7.2e-40  127.3   0.0   3.9e-36  115.0   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          CAMK-Unclass         -            1.1e-39  126.7   0.0   2.1e-36  115.9   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/HIPK)
+22369_Tt                -          CAMK-Unclass         -            6.4e-39  124.2   0.9   8.8e-22   68.0   0.3   3.1   3   0   0   3   3   3   3 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          CAMK-Unclass         -            2.3e-38  122.3   0.1   1.4e-31  100.2   0.0   3.0   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK032_Gl                -          CAMK-Unclass         -            4.4e-37  118.1   0.0   2.3e-30   96.1   0.0   2.2   2   0   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+gi|302148765|pdb|3LLT|A -          CAMK-Unclass         -            1.6e-35  113.0   0.2   7.4e-22   68.3   0.1   3.1   2   1   1   3   3   2   3 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK028_Gl                -          CAMK-Unclass         -            2.2e-26   83.1   0.0   3.2e-22   69.4   0.0   3.5   2   1   0   2   2   1   2 (CMGC/CLK/)
+PIM-consensus           -          PIM                  -           7.2e-145  471.2   0.0  8.1e-145  471.0   0.0   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          PIM                  -            7.6e-61  195.9   0.0   9.5e-61  195.6   0.0   1.1   1   0   0   1   1   1   1 -
+CDPK-consensus          -          PIM                  -            8.9e-51  162.9   0.5   1.2e-50  162.4   0.5   1.2   1   0   0   1   1   1   1 -
+PPCK-consensus          -          PIM                  -            7.8e-48  153.3   0.0   8.8e-48  153.1   0.0   1.0   1   0   0   1   1   1   1 -
+DAPK-consensus          -          PIM                  -            1.3e-40  129.6   0.0   1.5e-40  129.5   0.0   1.0   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          PIM                  -            5.7e-38  121.0   0.0   8.3e-38  120.4   0.0   1.3   1   0   0   1   1   1   1 -
+STE20-consensus         -          PIM                  -            1.9e-37  119.3   0.0   2.4e-37  118.9   0.0   1.1   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          PIM                  -            1.7e-36  116.2   0.1     1e-31  100.5   0.0   2.2   2   0   0   2   2   2   2 -
+STE7-consensus          -          PIM                  -            7.2e-29   91.2   0.0   9.5e-29   90.8   0.0   1.1   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          PIM                  -            2.2e-25   79.7   0.6     1e-20   64.5   0.2   3.0   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+GK034_Gl                -          PIM                  -            4.4e-25   78.7   0.1   1.2e-23   74.0   0.0   2.0   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+CLK_d_Sm                -          PIM                  -            4.3e-24   75.5   0.0   7.6e-17   51.8   0.0   2.6   3   0   0   3   3   2   2 (CMGC/CLK/)
+SgK495-consensus        -          PIM                  -            4.7e-24   75.4   0.0   7.2e-24   74.8   0.0   1.2   1   0   0   1   1   1   1 -
+hpk-1_Cele              -          PIM                  -            2.3e-22   69.8   0.0   3.2e-22   69.4   0.0   1.2   1   0   0   1   1   1   1 (CMGC/DYRK/HIPK)
+CC1G_04865_Cc           -          PIM                  -            1.1e-21   67.6   0.0   4.6e-20   62.3   0.0   2.3   2   1   0   2   2   1   1 (CMGC/DYRK/PRP4)
+22369_Tt                -          PIM                  -            1.1e-20   64.3   0.3   2.6e-10   30.3   0.0   3.1   3   0   0   3   3   2   2 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          PIM                  -            1.6e-20   63.8   0.1   1.4e-16   50.9   0.1   3.1   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK032_Gl                -          PIM                  -            4.8e-19   59.0   0.0   1.2e-16   51.1   0.0   2.6   2   1   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          PIM                  -              5e-17   52.4   0.0   4.6e-10   29.6   0.0   3.9   3   1   0   3   3   2   2 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          PIM                  -            8.6e-15   45.0   0.5   9.6e-08   21.9   0.0   2.6   2   1   1   3   3   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+CDPK-consensus          -          PKD                  -            2.4e-65  210.6   1.9   2.4e-65  210.6   1.9   1.4   2   0   0   2   2   1   1 -
+CAMKL-consensus         -          PKD                  -            1.3e-61  198.4   0.2   1.7e-61  198.0   0.2   1.1   1   0   0   1   1   1   1 -
+DAPK-consensus          -          PKD                  -              2e-58  187.9   0.1   2.4e-58  187.7   0.1   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          PKD                  -            8.5e-52  166.2   0.0     1e-51  165.9   0.0   1.0   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          PKD                  -            3.8e-43  137.8   0.1   5.4e-43  137.3   0.1   1.2   1   0   0   1   1   1   1 -
+STE20-consensus         -          PKD                  -              4e-43  137.8   0.0     4e-43  137.8   0.0   1.5   2   0   0   2   2   1   1 -
+MLCK-like-consensus     -          PKD                  -            6.2e-39  124.0   0.1   8.1e-37  117.1   0.0   2.1   1   1   1   2   2   1   1 -
+PIM-consensus           -          PKD                  -            3.4e-37  118.3   0.0   5.5e-37  117.6   0.0   1.3   1   1   0   1   1   1   1 -
+STE7-consensus          -          PKD                  -            2.6e-32  102.3   0.3   3.2e-32  102.0   0.3   1.0   1   0   0   1   1   1   1 -
+CLK_d_Sm                -          PKD                  -            2.9e-26   82.5   0.0     8e-16   48.3   0.0   2.6   3   0   0   3   3   2   2 (CMGC/CLK/)
+hpk-1_Cele              -          PKD                  -            4.8e-26   81.8   0.0   7.5e-26   81.2   0.0   1.2   1   0   0   1   1   1   1 (CMGC/DYRK/HIPK)
+SgK495-consensus        -          PKD                  -            1.2e-25   80.4   0.0   2.2e-25   79.6   0.0   1.3   1   0   0   1   1   1   1 -
+GK034_Gl                -          PKD                  -            1.3e-25   80.4   0.0     5e-25   78.5   0.0   1.7   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+CC1G_04865_Cc           -          PKD                  -              4e-25   78.8   0.0   1.6e-24   76.8   0.0   1.8   2   0   0   2   2   1   1 (CMGC/DYRK/PRP4)
+gi|66361317|pdb|1Z57|A  -          PKD                  -            4.6e-25   78.6   0.1   6.2e-23   71.6   0.1   2.8   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|302148765|pdb|3LLT|A -          PKD                  -            7.4e-25   77.9   0.2   1.3e-14   44.3   0.2   2.1   2   0   0   2   2   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+22369_Tt                -          PKD                  -              4e-23   72.2   1.4   8.6e-15   44.9   0.4   2.7   3   0   0   3   3   2   2 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          PKD                  -            1.2e-21   67.4   0.1   1.1e-20   64.3   0.1   2.2   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK032_Gl                -          PKD                  -            1.9e-19   60.2   0.0   7.7e-17   51.6   0.0   2.4   2   1   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          PKD                  -            5.9e-17   52.0   0.0   2.3e-13   40.2   0.0   3.6   2   1   0   2   2   1   1 (CMGC/CLK/)
+CDPK-consensus          -          PHK                  -            1.5e-77  250.9   2.4   2.7e-77  250.0   2.4   1.4   1   0   0   1   1   1   1 -
+DAPK-consensus          -          PHK                  -            2.2e-76  247.0   0.2   2.6e-76  246.8   0.2   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          PHK                  -            6.4e-69  222.6   0.1   8.1e-69  222.2   0.1   1.1   1   0   0   1   1   1   1 -
+PPCK-consensus          -          PHK                  -            1.9e-66  214.5   0.0   2.2e-66  214.2   0.0   1.1   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          PHK                  -            8.2e-58  186.1   0.1     2e-56  181.6   0.1   2.2   1   1   0   1   1   1   1 -
+STE20-consensus         -          PHK                  -            6.9e-49  156.9   0.0   9.6e-49  156.4   0.0   1.2   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          PHK                  -              2e-48  155.3   0.1   3.4e-48  154.6   0.1   1.4   1   0   0   1   1   1   1 -
+PIM-consensus           -          PHK                  -              8e-38  120.6   0.0   9.4e-38  120.3   0.0   1.1   1   0   0   1   1   1   1 -
+STE7-consensus          -          PHK                  -            4.4e-36  114.9   0.2   5.2e-36  114.6   0.2   1.1   1   0   0   1   1   1   1 -
+SgK495-consensus        -          PHK                  -            8.4e-36  114.0   0.0   2.7e-35  112.3   0.0   1.7   2   0   0   2   2   1   1 -
+CC1G_04865_Cc           -          PHK                  -            2.3e-30   96.1   0.1   1.9e-25   80.0   0.0   2.1   2   0   0   2   2   2   2 (CMGC/DYRK/PRP4)
+CLK_d_Sm                -          PHK                  -            8.1e-26   81.2   0.1   1.6e-15   47.4   0.1   3.1   3   0   0   3   3   2   3 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          PHK                  -            1.1e-25   80.8   1.6   1.4e-18   57.5   0.4   3.1   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+22369_Tt                -          PHK                  -            3.5e-23   72.6   0.9   9.2e-12   35.1   0.2   3.1   3   0   0   3   3   3   3 (CMGC/CLK/)
+hpk-1_Cele              -          PHK                  -            3.8e-21   65.9   0.0   2.2e-19   60.1   0.0   2.3   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+gi|83755011|pdb|2EXE|A  -          PHK                  -            4.2e-21   65.8   2.2   5.6e-15   45.7   0.6   3.1   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK034_Gl                -          PHK                  -            1.8e-19   60.4   0.0   1.4e-16   51.0   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+GK032_Gl                -          PHK                  -            6.8e-19   58.5   0.2   5.6e-14   42.4   0.1   2.7   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+gi|302148765|pdb|3LLT|A -          PHK                  -            3.8e-15   46.2   2.2   1.6e-09   27.7   0.3   3.2   2   1   1   3   3   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK028_Gl                -          PHK                  -            1.1e-14   44.7   0.1     2e-11   34.0   0.1   3.3   2   1   0   2   2   1   2 (CMGC/CLK/)
+CAMKL-consensus        -          Trbl                 -            3.8e-53  170.7   0.0   5.4e-53  170.2   0.0   1.2   1   0   0   1   1   1   1 -
+SgK495-consensus       -          Trbl                 -            8.9e-48  153.1   0.1   1.7e-47  152.2   0.1   1.4   1   0   0   1   1   1   1 -
+CDPK-consensus         -          Trbl                 -              3e-41  131.7   0.3   5.1e-41  131.0   0.3   1.3   1   0   0   1   1   1   1 -
+PPCK-consensus         -          Trbl                 -            1.6e-38  122.8   0.0   1.9e-38  122.6   0.0   1.1   1   0   0   1   1   1   1 -
+DAPK-consensus         -          Trbl                 -            6.4e-33  104.5   0.0   7.7e-33  104.2   0.0   1.0   1   0   0   1   1   1   1 -
+PIM-consensus          -          Trbl                 -            6.5e-33  104.5   0.0   7.1e-33  104.3   0.0   1.1   1   0   0   1   1   1   1 -
+MLCK-like-consensus    -          Trbl                 -            1.4e-32  103.3   0.0   2.5e-32  102.6   0.0   1.4   1   0   0   1   1   1   1 -
+STE-Unclass-consensus  -          Trbl                 -            3.2e-30   95.6   0.0   4.9e-30   95.0   0.0   1.2   1   0   0   1   1   1   1 -
+STE20-consensus        -          Trbl                 -            2.2e-21   66.7   0.0   3.2e-21   66.2   0.0   1.2   1   0   0   1   1   1   1 -
+STE7-consensus         -          Trbl                 -            4.9e-13   39.4   0.1   6.7e-13   38.9   0.1   1.3   1   1   0   1   1   1   1 -
+GK032_Gl               -          Trbl                 -            1.1e-11   35.0   0.1   3.5e-08   23.5   0.1   2.5   2   1   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+gi|66361317|pdb|1Z57|A -          Trbl                 -            3.3e-10   30.1   1.3   6.9e-08   22.5   0.8   2.8   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A -          Trbl                 -            2.6e-08   23.9   0.3   2.2e-06   17.6   0.1   2.6   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+CLK_d_Sm               -          Trbl                 -            4.6e-08   23.1   0.0   0.00043   10.1   0.0   3.1   3   0   0   3   3   0   2 (CMGC/CLK/)
+22369_Tt               -          Trbl                 -            2.4e-07   20.7   0.0   4.3e-05   13.4   0.0   2.6   3   0   0   3   3   1   1 (CMGC/CLK/)
+CC1G_04865_Cc          -          Trbl                 -              7e-07   19.2   0.1   1.6e-06   18.0   0.0   1.6   2   0   0   2   2   1   1 (CMGC/DYRK/PRP4)
+hpk-1_Cele             -          Trbl                 -            3.8e-06   16.8   0.0   5.5e-06   16.3   0.0   1.3   1   0   0   1   1   1   1 (CMGC/DYRK/HIPK)
+GK028_Gl               -          Trbl                 -              2e-05   14.5   0.0   6.7e-05   12.7   0.0   1.8   2   0   0   2   2   1   1 (CMGC/CLK/)
+GK034_Gl               -          Trbl                 -            9.7e-05   12.2   0.0   0.00071    9.4   0.0   2.1   2   0   0   2   2   0   1 (CMGC/DYRK/DYRK2)
+CAMKL-consensus         -          Chk1L                -            9.5e-67  215.0   0.0   1.2e-66  214.7   0.0   1.1   1   0   0   1   1   1   1 -
+CDPK-consensus          -          Chk1L                -            6.2e-58  186.1   0.1   8.6e-58  185.7   0.1   1.2   1   0   0   1   1   1   1 -
+DAPK-consensus          -          Chk1L                -            6.7e-47  150.0   0.0   7.5e-47  149.8   0.0   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          Chk1L                -            4.7e-46  147.2   0.0   5.3e-46  147.1   0.0   1.0   1   0   0   1   1   1   1 -
+STE20-consensus         -          Chk1L                -            4.6e-43  137.4   0.0   6.4e-43  137.0   0.0   1.2   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          Chk1L                -            1.1e-37  119.8   0.0   1.8e-37  119.1   0.0   1.3   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          Chk1L                -            6.2e-37  117.3   0.0   1.2e-36  116.4   0.0   1.5   1   1   1   2   2   1   1 -
+SgK495-consensus        -          Chk1L                -            3.3e-31   98.6   0.0   5.1e-31   98.0   0.0   1.2   1   0   0   1   1   1   1 -
+STE7-consensus          -          Chk1L                -            7.5e-28   87.6   0.0   8.3e-28   87.4   0.0   1.0   1   0   0   1   1   1   1 -
+PIM-consensus           -          Chk1L                -            1.9e-27   86.2   0.0     2e-26   82.9   0.0   2.0   1   1   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          Chk1L                -            3.8e-17   52.5   0.4   2.1e-14   43.5   0.3   2.8   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          Chk1L                -            1.1e-16   51.0   0.0   6.9e-16   48.4   0.0   2.2   1   1   0   2   2   1   1 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          Chk1L                -            2.3e-15   46.7   0.5   1.1e-14   44.4   0.5   1.9   1   1   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+22369_Tt                -          Chk1L                -            4.8e-15   45.6   0.5   5.2e-10   29.1   0.1   3.0   2   1   1   3   3   1   2 (CMGC/CLK/)
+GK034_Gl                -          Chk1L                -            6.8e-15   45.1   0.0   1.1e-14   44.4   0.0   1.3   1   0   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+GK032_Gl                -          Chk1L                -            4.3e-14   42.5   0.0     2e-13   40.3   0.0   1.9   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+gi|83755011|pdb|2EXE|A  -          Chk1L                -            7.1e-13   38.5   0.0   1.2e-10   31.2   0.0   2.2   2   0   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+CC1G_04865_Cc           -          Chk1L                -            8.1e-13   38.3   0.0   6.1e-12   35.5   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/PRP4)
+GK028_Gl                -          Chk1L                -            1.3e-09   27.9   0.0   1.1e-08   24.8   0.0   2.3   2   0   0   2   2   1   1 (CMGC/CLK/)
+hpk-1_Cele              -          Chk1L                -              4e-09   26.2   0.0   1.1e-08   24.8   0.0   1.7   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+PPCK-consensus          -          PPCK                 -           2.5e-126  410.5   0.0  2.8e-126  410.3   0.0   1.0   1   0   0   1   1   1   1 -
+CDPK-consensus          -          PPCK                 -            8.5e-93  300.6   0.9   1.5e-92  299.8   0.9   1.4   1   0   0   1   1   1   1 -
+DAPK-consensus          -          PPCK                 -            4.6e-81  262.2   0.0   5.1e-81  262.0   0.0   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          PPCK                 -            2.3e-76  246.8   0.2   3.3e-76  246.3   0.0   1.3   2   0   0   2   2   1   1 -
+STE20-consensus         -          PPCK                 -            1.7e-64  207.9   0.0   2.2e-64  207.5   0.0   1.2   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          PPCK                 -            1.5e-63  204.8   0.0   3.2e-63  203.7   0.0   1.6   1   1   0   1   1   1   1 -
+STE-Unclass-consensus   -          PPCK                 -            7.2e-63  202.6   0.3   1.4e-62  201.7   0.0   1.6   2   0   0   2   2   1   1 -
+PIM-consensus           -          PPCK                 -            7.4e-54  173.1   0.0   8.3e-54  172.9   0.0   1.0   1   0   0   1   1   1   1 -
+STE7-consensus          -          PPCK                 -            1.4e-51  165.6   0.1   1.7e-51  165.3   0.1   1.0   1   0   0   1   1   1   1 -
+CC1G_04865_Cc           -          PPCK                 -            2.3e-41  132.1   0.3   2.7e-35  112.2   0.0   2.4   2   1   0   2   2   2   2 (CMGC/DYRK/PRP4)
+gi|66361317|pdb|1Z57|A  -          PPCK                 -            3.9e-39  124.8   0.5   1.4e-19   60.8   0.1   3.0   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          PPCK                 -            2.5e-38  122.2   0.0   9.1e-21   64.7   0.0   3.0   3   0   0   3   3   3   3 (CMGC/CLK/)
+SgK495-consensus        -          PPCK                 -              4e-37  118.3   0.0   6.7e-37  117.5   0.0   1.3   1   0   0   1   1   1   1 -
+GK034_Gl                -          PPCK                 -            7.1e-37  117.4   0.0   2.9e-33  105.6   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+gi|83755011|pdb|2EXE|A  -          PPCK                 -              1e-36  116.9   0.1   2.5e-17   53.4   0.0   3.0   3   0   0   3   3   3   3 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+hpk-1_Cele              -          PPCK                 -            3.2e-36  115.3   0.0   1.6e-34  109.7   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+22369_Tt                -          PPCK                 -              2e-33  106.1   0.5   1.3e-16   51.0   0.1   3.1   3   0   0   3   3   3   3 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          PPCK                 -            2.1e-29   92.9   0.3   1.1e-17   54.5   0.1   2.9   3   0   0   3   3   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK032_Gl                -          PPCK                 -            1.9e-27   86.6   0.0   6.8e-23   71.6   0.0   2.4   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          PPCK                 -              3e-27   85.9   0.0   9.4e-21   64.6   0.0   3.7   2   1   0   2   2   2   2 (CMGC/CLK/)
+DAPK-consensus          -          Trio                 -            5.7e-95  307.9   0.3   6.3e-95  307.7   0.3   1.0   1   0   0   1   1   1   1 -
+CDPK-consensus          -          Trio                 -            1.5e-77  250.8   0.9     3e-77  249.8   0.9   1.5   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          Trio                 -            5.7e-66  212.8   0.0   7.1e-66  212.5   0.0   1.1   1   0   0   1   1   1   1 -
+PPCK-consensus          -          Trio                 -            2.2e-65  210.9   0.0   2.4e-65  210.8   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          Trio                 -            1.1e-58  189.0   0.1   1.7e-55  178.5   0.0   2.1   1   1   1   2   2   1   2 -
+STE20-consensus         -          Trio                 -            5.7e-54  173.5   0.0   8.1e-54  173.0   0.0   1.2   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          Trio                 -              2e-52  168.4   0.2   2.9e-52  167.9   0.2   1.2   1   0   0   1   1   1   1 -
+STE7-consensus          -          Trio                 -            7.8e-43  137.0   0.1   8.7e-43  136.9   0.1   1.0   1   0   0   1   1   1   1 -
+PIM-consensus           -          Trio                 -            1.6e-35  113.0   0.0     2e-35  112.8   0.0   1.1   1   0   0   1   1   1   1 -
+CC1G_04865_Cc           -          Trio                 -            1.5e-32  103.3   0.0   7.1e-32  101.1   0.0   1.9   2   0   0   2   2   1   1 (CMGC/DYRK/PRP4)
+CLK_d_Sm                -          Trio                 -            2.1e-31   99.6   0.0   6.1e-21   65.3   0.1   2.8   2   1   1   3   3   2   2 (CMGC/CLK/)
+GK034_Gl                -          Trio                 -            3.1e-31   99.0   0.0   7.5e-29   91.2   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+GK032_Gl                -          Trio                 -            1.2e-28   90.5   0.1   2.5e-22   69.8   0.0   2.8   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          Trio                 -            2.5e-28   89.5   0.0   3.5e-28   89.0   0.0   1.3   1   0   0   1   1   1   1 (CMGC/DYRK/HIPK)
+SgK495-consensus        -          Trio                 -            3.3e-27   85.8   0.8   5.9e-27   85.0   0.0   1.6   2   0   0   2   2   1   1 -
+gi|66361317|pdb|1Z57|A  -          Trio                 -            5.6e-27   85.1   0.2   4.1e-24   75.7   0.1   3.0   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|302148765|pdb|3LLT|A -          Trio                 -            6.1e-27   84.9   0.3   9.2e-22   68.0   0.2   3.1   2   1   0   2   2   1   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+22369_Tt                -          Trio                 -            8.1e-25   78.0   2.5   3.7e-17   52.9   0.5   3.0   3   0   0   3   3   2   2 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          Trio                 -            2.4e-22   69.9   0.3   1.2e-20   64.3   0.1   2.8   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK028_Gl                -          Trio                 -            7.6e-16   48.6   0.0   1.5e-10   31.3   0.0   3.6   2   1   1   3   3   1   2 (CMGC/CLK/)
+CDPK-consensus          -          CAMK2                -            6.6e-86  278.2   4.8   9.3e-86  277.7   4.8   1.2   1   0   0   1   1   1   1 -
+DAPK-consensus          -          CAMK2                -              7e-69  222.4   0.1   7.8e-69  222.3   0.1   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          CAMK2                -            1.7e-67  217.9   0.5   2.1e-67  217.6   0.5   1.1   1   0   0   1   1   1   1 -
+PPCK-consensus          -          CAMK2                -            1.2e-63  205.3   0.0   1.3e-63  205.1   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          CAMK2                -            4.2e-62  200.2   0.1   1.1e-56  182.4   0.0   2.1   1   1   1   2   2   2   2 -
+STE20-consensus         -          CAMK2                -            2.9e-45  145.0   0.2   3.7e-45  144.6   0.2   1.1   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          CAMK2                -            1.6e-43  139.3   0.3   2.3e-43  138.8   0.3   1.2   1   0   0   1   1   1   1 -
+PIM-consensus           -          CAMK2                -            9.1e-31   97.5   0.0   1.3e-30   97.0   0.0   1.2   1   0   0   1   1   1   1 -
+SgK495-consensus        -          CAMK2                -            6.9e-30   94.6   0.0   1.1e-29   93.9   0.0   1.3   1   0   0   1   1   1   1 -
+STE7-consensus          -          CAMK2                -            7.4e-30   94.5   0.3   8.3e-30   94.3   0.3   1.0   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          CAMK2                -            2.9e-23   72.9   0.6   5.2e-17   52.4   0.5   2.9   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+GK034_Gl                -          CAMK2                -            3.5e-22   69.3   0.1   1.3e-19   60.9   0.1   2.2   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          CAMK2                -            3.8e-22   69.2   0.0   5.3e-20   62.2   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+GK032_Gl                -          CAMK2                -              5e-22   68.8   0.2     9e-17   51.6   0.1   2.8   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+gi|83755011|pdb|2EXE|A  -          CAMK2                -            1.1e-20   64.4   0.1   8.3e-17   51.7   0.1   2.8   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+gi|302148765|pdb|3LLT|A -          CAMK2                -            5.2e-20   62.2   1.3   4.1e-14   42.9   0.9   2.2   1   1   1   2   2   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+CC1G_04865_Cc           -          CAMK2                -            4.5e-19   59.2   0.1   6.3e-15   45.6   0.1   2.7   2   1   0   2   2   1   2 (CMGC/DYRK/PRP4)
+CLK_d_Sm                -          CAMK2                -            1.5e-18   57.4   0.0   3.6e-10   30.0   0.2   3.3   3   1   0   3   3   2   2 (CMGC/CLK/)
+22369_Tt                -          CAMK2                -            6.5e-18   55.4   0.6   2.7e-12   36.9   0.5   3.1   3   0   0   3   3   1   3 (CMGC/CLK/)
+GK028_Gl                -          CAMK2                -              2e-11   34.1   0.1   1.5e-09   27.9   0.1   3.0   2   1   0   2   2   1   1 (CMGC/CLK/)
+CDPK-consensus          -          CAMK1                -             4e-104  337.9   4.9  7.2e-104  337.0   4.9   1.4   1   0   0   1   1   1   1 -
+DAPK-consensus          -          CAMK1                -            7.1e-89  287.9   0.2     8e-89  287.7   0.2   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          CAMK1                -            1.2e-88  287.1   0.0   1.4e-88  286.9   0.0   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          CAMK1                -            3.9e-88  285.5   0.2   5.1e-88  285.1   0.2   1.2   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          CAMK1                -            3.2e-80  259.5   0.0   9.8e-80  257.9   0.0   1.7   1   1   0   1   1   1   1 -
+STE20-consensus         -          CAMK1                -              1e-68  221.8   0.1   1.8e-68  221.0   0.1   1.4   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          CAMK1                -              3e-68  220.3   0.6   5.1e-68  219.5   0.6   1.4   1   0   0   1   1   1   1 -
+PIM-consensus           -          CAMK1                -            7.9e-58  186.1   0.0   9.1e-58  185.9   0.0   1.0   1   0   0   1   1   1   1 -
+STE7-consensus          -          CAMK1                -            1.8e-56  181.7   0.4   2.2e-56  181.4   0.4   1.0   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          CAMK1                -            1.9e-50  162.0   0.2   1.6e-43  139.2   0.0   2.5   1   1   1   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A  -          CAMK1                -            6.6e-45  143.8   0.3   2.6e-40  128.7   0.1   2.1   2   0   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+CLK_d_Sm                -          CAMK1                -            1.7e-44  142.4   0.0   1.1e-40  129.9   0.0   2.6   2   1   0   2   2   1   2 (CMGC/CLK/)
+CC1G_04865_Cc           -          CAMK1                -            4.8e-43  137.7   0.0   1.1e-38  123.4   0.0   2.2   2   0   0   2   2   2   2 (CMGC/DYRK/PRP4)
+SgK495-consensus        -          CAMK1                -            8.3e-43  136.9   0.1     8e-42  133.7   0.1   2.0   1   1   0   1   1   1   1 -
+hpk-1_Cele              -          CAMK1                -            3.3e-42  135.0   0.0   2.5e-41  132.1   0.0   1.9   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+22369_Tt                -          CAMK1                -            1.4e-40  129.7   1.6   9.5e-22   67.9   0.4   3.1   3   0   0   3   3   3   3 (CMGC/CLK/)
+GK034_Gl                -          CAMK1                -            4.8e-40  127.9   0.0     2e-36  116.0   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+gi|302148765|pdb|3LLT|A -          CAMK1                -            1.1e-38  123.4   0.3   7.9e-38  120.6   0.1   2.0   2   0   0   2   2   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK032_Gl                -          CAMK1                -            1.7e-36  116.2   0.0   3.3e-30   95.6   0.0   2.5   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          CAMK1                -              5e-32  101.6   0.0   1.1e-28   90.6   0.0   2.9   2   1   0   2   2   1   2 (CMGC/CLK/)
+CDPK-consensus          -          CDPK                 -           8.5e-133  431.6   9.3  1.7e-132  430.6   9.3   1.5   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          CDPK                 -            4.9e-93  301.3   1.2   6.7e-93  300.8   1.2   1.2   1   0   0   1   1   1   1 -
+DAPK-consensus          -          CDPK                 -            7.7e-93  300.6   0.4   8.6e-93  300.5   0.4   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          CDPK                 -            7.1e-91  294.2   0.0   7.9e-91  294.1   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          CDPK                 -            1.5e-81  263.6   0.0   3.4e-78  252.7   0.0   2.1   1   1   1   2   2   1   2 -
+STE20-consensus         -          CDPK                 -            2.6e-68  220.3   0.3   2.6e-68  220.3   0.3   1.5   2   0   0   2   2   1   1 -
+STE-Unclass-consensus   -          CDPK                 -              9e-64  205.4   1.1   1.3e-63  204.8   1.1   1.3   1   0   0   1   1   1   1 -
+PIM-consensus           -          CDPK                 -            2.6e-53  171.1   0.0   2.9e-53  170.9   0.0   1.0   1   0   0   1   1   1   1 -
+STE7-consensus          -          CDPK                 -            1.5e-48  155.5   1.0   1.6e-48  155.4   1.0   1.0   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          CDPK                 -            2.2e-39  125.5   0.4   1.3e-33  106.5   0.1   2.7   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+hpk-1_Cele              -          CDPK                 -            7.3e-39  123.8   0.0   6.7e-37  117.3   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+SgK495-consensus        -          CDPK                 -            1.1e-38  123.2   0.0     2e-38  122.3   0.0   1.4   1   1   0   1   1   1   1 -
+CLK_d_Sm                -          CDPK                 -            8.7e-38  120.2   0.0   2.6e-22   69.5   0.0   3.0   3   0   0   3   3   2   3 (CMGC/CLK/)
+GK034_Gl                -          CDPK                 -            1.9e-36  115.8   0.0   4.5e-34  108.1   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+CC1G_04865_Cc           -          CDPK                 -            3.4e-34  108.4   0.0   1.4e-30   96.6   0.0   2.6   2   1   0   2   2   1   2 (CMGC/DYRK/PRP4)
+22369_Tt                -          CDPK                 -            9.7e-34  107.0   2.1   9.6e-19   57.8   0.4   3.1   3   0   0   3   3   2   3 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          CDPK                 -            2.3e-31   99.2   0.6   2.1e-27   86.2   0.3   2.9   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK032_Gl                -          CDPK                 -            1.3e-30   96.7   0.0   1.9e-26   83.1   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+gi|302148765|pdb|3LLT|A -          CDPK                 -            1.7e-29   93.1   2.0   1.1e-19   60.9   0.8   2.6   3   0   0   3   3   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK028_Gl                -          CDPK                 -            2.9e-21   66.1   0.0   1.5e-14   44.1   0.0   3.4   2   1   1   3   3   2   2 (CMGC/CLK/)
+CDPK-consensus          -          MAPKAPK              -            6.4e-92  297.8   4.0   6.4e-92  297.8   4.0   1.5   2   0   0   2   2   1   1 -
+DAPK-consensus          -          MAPKAPK              -            2.7e-73  236.7   0.1   3.3e-73  236.5   0.1   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          MAPKAPK              -            1.4e-68  221.2   0.1     2e-68  220.8   0.1   1.1   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          MAPKAPK              -            6.2e-66  212.6   0.0   2.4e-65  210.7   0.0   1.8   1   1   0   1   1   1   1 -
+PPCK-consensus          -          MAPKAPK              -            1.4e-63  204.9   0.0   1.7e-63  204.6   0.0   1.0   1   0   0   1   1   1   1 -
+STE20-consensus         -          MAPKAPK              -            4.5e-45  144.2   0.1     8e-45  143.4   0.1   1.4   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          MAPKAPK              -              2e-43  138.8   0.2   3.8e-43  137.9   0.2   1.4   1   0   0   1   1   1   1 -
+PIM-consensus           -          MAPKAPK              -            2.2e-38  122.3   0.0   6.5e-38  120.7   0.0   1.6   1   1   0   1   1   1   1 -
+STE7-consensus          -          MAPKAPK              -            9.8e-36  113.6   0.3   1.2e-35  113.4   0.3   1.0   1   0   0   1   1   1   1 -
+SgK495-consensus        -          MAPKAPK              -            6.9e-35  110.8   0.0   1.2e-34  110.0   0.0   1.5   1   1   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          MAPKAPK              -              1e-32  103.7   0.9   8.4e-29   90.9   0.4   2.7   1   1   1   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          MAPKAPK              -            1.6e-29   93.2   0.0   1.2e-17   54.3   0.0   3.0   3   0   0   3   3   2   3 (CMGC/CLK/)
+hpk-1_Cele              -          MAPKAPK              -            9.8e-29   90.6   0.0   5.2e-28   88.3   0.0   1.8   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+gi|83755011|pdb|2EXE|A  -          MAPKAPK              -              2e-28   89.7   1.0   1.2e-25   80.6   0.5   2.7   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+CC1G_04865_Cc           -          MAPKAPK              -            5.7e-27   84.9   0.0   6.8e-26   81.3   0.0   2.1   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+22369_Tt                -          MAPKAPK              -            3.9e-25   78.8   1.4   3.4e-17   52.8   0.4   3.1   3   0   0   3   3   2   3 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          MAPKAPK              -            8.9e-25   77.7   0.4     1e-22   70.9   0.3   2.4   2   1   0   2   2   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK032_Gl                -          MAPKAPK              -            6.5e-24   74.8   0.0   1.9e-21   66.8   0.0   2.2   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+GK034_Gl                -          MAPKAPK              -            8.7e-24   74.4   0.0   5.7e-22   68.5   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          MAPKAPK              -            8.9e-17   51.4   0.0   2.7e-14   43.3   0.0   3.0   2   1   0   2   2   1   1 (CMGC/CLK/)
+CAMKL-consensus         -          ULK                  -              2e-89  289.7   0.7   2.5e-89  289.3   0.7   1.1   1   0   0   1   1   1   1 -
+CDPK-consensus          -          ULK                  -            9.9e-85  274.3   5.9   9.9e-85  274.3   5.9   1.7   2   0   0   2   2   1   1 -
+STE20-consensus         -          ULK                  -            2.5e-78  253.3   0.1   2.5e-78  253.3   0.1   1.5   2   0   0   2   2   1   1 -
+STE-Unclass-consensus   -          ULK                  -            4.8e-78  252.4   0.8   8.4e-78  251.5   0.8   1.4   1   0   0   1   1   1   1 -
+DAPK-consensus          -          ULK                  -            1.6e-76  247.4   0.4   1.7e-76  247.2   0.4   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          ULK                  -            5.7e-75  242.3   0.0   6.3e-75  242.1   0.0   1.0   1   0   0   1   1   1   1 -
+STE7-consensus          -          ULK                  -            1.7e-62  201.4   0.9   1.9e-62  201.2   0.9   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          ULK                  -            3.2e-59  190.7   0.0   5.4e-54  173.5   0.0   2.2   1   1   1   2   2   2   2 -
+PIM-consensus           -          ULK                  -            1.3e-47  152.7   0.0   1.5e-47  152.4   0.0   1.1   1   0   0   1   1   1   1 -
+CC1G_04865_Cc           -          ULK                  -              3e-45  144.9   0.6     4e-43  137.9   0.6   2.8   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+hpk-1_Cele              -          ULK                  -            5.4e-44  140.8   0.0     6e-43  137.3   0.0   1.9   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+gi|66361317|pdb|1Z57|A  -          ULK                  -            1.2e-42  136.3   0.0   4.3e-42  134.5   0.0   1.7   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          ULK                  -            1.7e-41  132.6   0.0   2.1e-40  129.0   0.0   2.3   1   1   0   1   1   1   1 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          ULK                  -            2.9e-41  131.8   1.0   6.8e-41  130.6   1.0   1.6   1   1   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK034_Gl                -          ULK                  -              2e-39  125.8   0.0   2.4e-38  122.3   0.0   1.9   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+gi|83755011|pdb|2EXE|A  -          ULK                  -            9.8e-39  123.5   0.7   4.3e-38  121.4   0.7   1.8   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+SgK495-consensus        -          ULK                  -              1e-38  123.5   0.0   1.7e-38  122.8   0.0   1.3   1   0   0   1   1   1   1 -
+22369_Tt                -          ULK                  -            1.6e-33  106.5   2.4   3.2e-19   59.6   1.1   2.9   2   1   0   2   2   2   2 (CMGC/CLK/)
+GK032_Gl                -          ULK                  -            9.5e-31   97.4   0.0   4.5e-30   95.2   0.0   1.8   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          ULK                  -            4.2e-27   85.4   0.0   2.6e-25   79.6   0.0   2.7   1   1   0   1   1   1   1 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          CMGC                 -           8.1e-103  334.0   0.4  9.2e-103  333.8   0.4   1.0   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A  -          CMGC                 -            2.2e-96  312.8   0.6   2.5e-96  312.7   0.6   1.0   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+CLK_d_Sm                -          CMGC                 -            2.3e-91  296.4   0.0   8.3e-91  294.6   0.0   1.7   1   1   0   1   1   1   1 (CMGC/CLK/)
+GK034_Gl                -          CMGC                 -            2.4e-83  270.1   0.0   3.1e-82  266.4   0.0   1.9   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          CMGC                 -            4.5e-79  256.1   0.0   8.5e-78  251.9   0.0   2.0   1   1   0   1   1   1   1 (CMGC/DYRK/HIPK)
+22369_Tt                -          CMGC                 -            5.7e-75  242.6   0.2     7e-75  242.3   0.2   1.1   1   0   0   1   1   1   1 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          CMGC                 -            3.5e-72  233.5   2.5   4.1e-72  233.2   2.5   1.0   1   0   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+CC1G_04865_Cc           -          CMGC                 -              2e-71  231.0   0.1   1.3e-70  228.3   0.1   1.9   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+STE20-consensus         -          CMGC                 -            2.4e-64  207.7   1.7   6.3e-55  176.8   0.1   2.4   1   1   1   2   2   2   2 -
+CDPK-consensus          -          CMGC                 -            4.3e-64  206.9  15.4   1.6e-57  185.3   5.0   3.0   2   1   1   3   3   2   2 -
+CAMKL-consensus         -          CMGC                 -            1.6e-63  205.0   1.6     1e-55  179.4   0.7   2.1   1   1   1   2   2   2   2 -
+PPCK-consensus          -          CMGC                 -            6.9e-61  196.4   0.0   4.6e-52  167.4   0.0   2.0   1   1   1   2   2   2   2 -
+STE-Unclass-consensus   -          CMGC                 -            6.5e-60  193.2   4.8   4.7e-53  170.7   1.0   2.3   1   1   1   2   2   2   2 -
+DAPK-consensus          -          CMGC                 -            1.7e-58  188.5   0.5   6.6e-52  166.9   0.1   2.0   1   1   1   2   2   2   2 -
+GK028_Gl                -          CMGC                 -            2.7e-57  184.6   0.0   3.4e-57  184.3   0.0   1.1   1   0   0   1   1   1   1 (CMGC/CLK/)
+GK032_Gl                -          CMGC                 -            5.8e-56  180.2   0.0   1.2e-55  179.2   0.0   1.6   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+STE7-consensus          -          CMGC                 -            4.1e-48  154.5   2.4   4.7e-43  137.9   0.4   2.0   1   1   1   2   2   2   2 -
+PIM-consensus           -          CMGC                 -            3.1e-42  135.2   0.0   2.1e-36  116.1   0.0   2.0   1   1   1   2   2   2   2 -
+MLCK-like-consensus     -          CMGC                 -              4e-38  121.7   0.1   1.6e-30   96.8   0.1   3.1   1   1   1   2   2   2   2 -
+SgK495-consensus        -          CMGC                 -            4.5e-21   65.8   0.4   2.1e-17   53.7   0.1   2.4   1   1   1   2   2   1   2 -
+STE-Unclass-consensus   -          STE11                -           9.8e-110  356.2   0.1  1.6e-109  355.6   0.1   1.3   1   0   0   1   1   1   1 -
+STE20-consensus         -          STE11                -            2.6e-95  308.9   0.0   3.9e-95  308.4   0.0   1.3   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          STE11                -            9.7e-76  244.8   0.0   1.2e-75  244.5   0.0   1.1   1   0   0   1   1   1   1 -
+CDPK-consensus          -          STE11                -            1.5e-69  224.6   2.3   1.5e-69  224.6   2.3   1.8   2   0   0   2   2   1   1 -
+STE7-consensus          -          STE11                -            2.3e-68  220.7   0.1   2.5e-68  220.5   0.1   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          STE11                -            1.8e-62  201.3   0.0     2e-62  201.2   0.0   1.0   1   0   0   1   1   1   1 -
+DAPK-consensus          -          STE11                -            1.7e-60  194.9   0.0   1.8e-60  194.8   0.0   1.0   1   0   0   1   1   1   1 -
+PIM-consensus           -          STE11                -            2.9e-45  145.0   0.0   3.9e-45  144.5   0.0   1.2   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          STE11                -            8.7e-45  143.4   0.0   8.9e-44  140.1   0.0   2.0   1   1   0   1   1   1   1 -
+gi|302148765|pdb|3LLT|A -          STE11                -            1.2e-40  129.8   3.2   4.5e-21   65.7   0.7   3.0   1   1   2   3   3   2   3 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+CC1G_04865_Cc           -          STE11                -            1.2e-37  120.0   0.0   6.2e-35  111.1   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/PRP4)
+gi|66361317|pdb|1Z57|A  -          STE11                -            1.8e-36  116.1   0.5   8.2e-21   64.8   0.1   3.0   2   1   1   3   3   2   3 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          STE11                -            2.5e-36  115.7   0.0   3.6e-20   62.7   0.0   3.0   2   1   1   3   3   2   2 (CMGC/CLK/)
+hpk-1_Cele              -          STE11                -            6.3e-36  114.4   0.0   1.2e-35  113.4   0.0   1.4   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+GK034_Gl                -          STE11                -            7.6e-35  110.8   0.0   3.9e-34  108.5   0.0   1.8   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+22369_Tt                -          STE11                -              7e-33  104.4   4.5   8.4e-17   51.7   0.5   3.1   3   0   0   3   3   2   3 (CMGC/CLK/)
+SgK495-consensus        -          STE11                -            9.8e-30   94.1   0.0   1.9e-29   93.1   0.0   1.3   1   0   0   1   1   1   1 -
+gi|83755011|pdb|2EXE|A  -          STE11                -            3.4e-29   92.3   1.0   1.5e-15   47.6   0.1   2.9   3   0   0   3   3   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK032_Gl                -          STE11                -            1.8e-27   86.6   0.0   1.7e-22   70.3   0.0   2.3   2   0   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          STE11                -            4.4e-24   75.5   0.0   4.7e-22   68.9   0.0   3.2   2   1   0   2   2   1   1 (CMGC/CLK/)
+STE-Unclass-consensus   -          STE-Unclassified     -           7.5e-106  343.3   2.6  1.2e-105  342.7   2.6   1.3   1   0   0   1   1   1   1 -
+STE20-consensus         -          STE-Unclassified     -           3.1e-102  331.5   0.8  3.1e-102  331.5   0.8   1.6   2   0   0   2   2   1   1 -
+STE7-consensus          -          STE-Unclassified     -            1.3e-89  290.2   2.3   1.4e-89  290.0   2.3   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          STE-Unclassified     -            2.2e-74  240.2   2.3   2.9e-74  239.9   2.3   1.1   1   0   0   1   1   1   1 -
+CDPK-consensus          -          STE-Unclassified     -            1.4e-70  227.8   9.7   1.4e-70  227.8   9.7   2.3   2   0   0   2   2   1   1 -
+DAPK-consensus          -          STE-Unclassified     -            2.4e-64  207.3   1.3   2.7e-64  207.2   1.3   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          STE-Unclassified     -            1.5e-63  204.7   0.0   1.7e-63  204.6   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          STE-Unclassified     -            4.2e-50  160.7   0.1   2.5e-48  154.9   0.1   2.1   1   1   0   1   1   1   1 -
+PIM-consensus           -          STE-Unclassified     -            1.1e-43  139.6   0.0   1.3e-43  139.4   0.0   1.1   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          STE-Unclassified     -            3.6e-43  137.9   0.2   7.5e-40  127.1   0.0   2.0   2   0   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|302148765|pdb|3LLT|A -          STE-Unclassified     -            5.6e-43  137.3   1.7   1.7e-39  125.9   0.3   2.1   1   1   0   2   2   1   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+hpk-1_Cele              -          STE-Unclassified     -            7.3e-43  137.0   0.0   1.9e-42  135.6   0.0   1.7   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+GK034_Gl                -          STE-Unclassified     -            2.8e-41  131.8   0.0   2.6e-39  125.3   0.0   2.0   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+CC1G_04865_Cc           -          STE-Unclassified     -              2e-40  129.0   0.1   3.4e-36  115.1   0.0   2.1   2   0   0   2   2   2   2 (CMGC/DYRK/PRP4)
+CLK_d_Sm                -          STE-Unclassified     -              2e-39  125.7   0.0   3.3e-37  118.4   0.0   2.8   2   1   0   2   2   1   1 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          STE-Unclassified     -            5.3e-36  114.5   0.5   1.1e-34  110.2   0.1   2.0   2   0   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+22369_Tt                -          STE-Unclassified     -              9e-36  113.7   8.5   6.1e-32  101.2   5.0   2.7   2   1   0   2   2   2   2 (CMGC/CLK/)
+GK032_Gl                -          STE-Unclassified     -            1.8e-34  109.5   0.0   2.7e-29   92.5   0.0   2.1   2   0   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+SgK495-consensus        -          STE-Unclassified     -            3.6e-32  101.9   0.0   1.4e-31  100.0   0.0   1.8   2   0   0   2   2   1   1 -
+GK028_Gl                -          STE-Unclassified     -            1.6e-23   73.6   0.0   1.1e-21   67.6   0.0   2.7   2   1   0   2   2   1   1 (CMGC/CLK/)
+STE20-consensus         -          YSK_STE20            -             1e-119  388.7   0.1  1.3e-119  388.3   0.1   1.2   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          YSK_STE20            -            5.6e-98  317.5   0.2   9.6e-98  316.7   0.2   1.4   1   0   0   1   1   1   1 -
+STE7-consensus          -          YSK_STE20            -            4.4e-75  242.5   0.4   4.9e-75  242.3   0.4   1.0   1   0   0   1   1   1   1 -
+CDPK-consensus          -          YSK_STE20            -            8.8e-66  212.0   3.3   8.8e-66  212.0   3.3   2.0   3   0   0   3   3   1   1 -
+CAMKL-consensus         -          YSK_STE20            -            5.2e-61  196.4   0.2   6.6e-61  196.1   0.2   1.1   1   0   0   1   1   1   1 -
+PPCK-consensus          -          YSK_STE20            -            1.2e-59  192.0   0.0   1.3e-59  191.8   0.0   1.0   1   0   0   1   1   1   1 -
+DAPK-consensus          -          YSK_STE20            -            1.9e-54  174.9   0.1   2.1e-54  174.8   0.1   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          YSK_STE20            -            1.7e-43  139.0   0.1   1.2e-41  133.0   0.1   2.2   1   1   0   1   1   1   1 -
+PIM-consensus           -          YSK_STE20            -            1.3e-39  126.3   0.0   2.3e-39  125.5   0.0   1.4   1   1   0   1   1   1   1 -
+hpk-1_Cele              -          YSK_STE20            -            9.6e-35  110.3   0.0   1.9e-34  109.4   0.0   1.4   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+GK034_Gl                -          YSK_STE20            -            2.2e-33  105.9   0.0   3.4e-31   98.7   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+CLK_d_Sm                -          YSK_STE20            -            2.6e-33  105.6   0.0   5.6e-30   94.7   0.0   3.0   2   1   0   2   2   1   1 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          YSK_STE20            -            4.8e-33  104.8   1.7   2.7e-29   92.5   0.3   2.1   2   0   0   2   2   1   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+CC1G_04865_Cc           -          YSK_STE20            -            1.5e-32  103.1   0.0   6.2e-28   88.0   0.0   2.4   2   1   0   2   2   2   2 (CMGC/DYRK/PRP4)
+gi|66361317|pdb|1Z57|A  -          YSK_STE20            -            2.1e-32  102.7   0.0   6.7e-30   94.5   0.0   2.0   1   1   1   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+GK032_Gl                -          YSK_STE20            -            4.1e-28   88.6   0.0   3.5e-24   75.8   0.0   2.3   2   1   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+22369_Tt                -          YSK_STE20            -            6.5e-28   88.0   2.2   6.9e-24   74.8   0.8   2.4   2   1   0   2   2   2   2 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          YSK_STE20            -            1.5e-26   83.5   0.1     9e-26   81.0   0.0   1.9   2   0   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+SgK495-consensus        -          YSK_STE20            -            1.7e-26   83.4   0.0   3.1e-26   82.5   0.0   1.3   1   0   0   1   1   1   1 -
+GK028_Gl                -          YSK_STE20            -              3e-23   72.7   0.0     1e-21   67.7   0.0   2.5   2   1   0   2   2   1   1 (CMGC/CLK/)
+STE7-consensus          -          STE7                 -           2.3e-122  397.8   0.2  2.5e-122  397.6   0.2   1.0   1   0   0   1   1   1   1 -
+STE20-consensus         -          STE7                 -            4.1e-85  275.7   0.0   5.7e-85  275.2   0.0   1.2   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          STE7                 -            9.2e-82  264.7   0.1   1.4e-81  264.1   0.1   1.3   1   0   0   1   1   1   1 -
+CDPK-consensus          -          STE7                 -            2.8e-54  174.7   2.4   4.8e-54  173.9   2.4   1.4   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          STE7                 -            1.1e-53  172.7   0.1   1.4e-53  172.4   0.1   1.1   1   0   0   1   1   1   1 -
+PPCK-consensus          -          STE7                 -            2.4e-49  158.5   0.0   2.7e-49  158.3   0.0   1.0   1   0   0   1   1   1   1 -
+DAPK-consensus          -          STE7                 -            1.2e-45  146.4   0.0   1.3e-45  146.2   0.0   1.0   1   0   0   1   1   1   1 -
+PIM-consensus           -          STE7                 -            4.7e-35  111.7   0.0   1.3e-34  110.2   0.0   1.6   1   1   0   1   1   1   1 -
+gi|302148765|pdb|3LLT|A -          STE7                 -            9.2e-35  110.7   2.3     8e-19   58.5   0.9   2.6   1   1   1   2   2   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+MLCK-like-consensus     -          STE7                 -            5.5e-34  108.1   0.0   4.1e-33  105.3   0.0   1.9   1   1   0   1   1   1   1 -
+GK034_Gl                -          STE7                 -            1.5e-33  106.7   0.0   1.5e-32  103.5   0.0   2.0   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+CC1G_04865_Cc           -          STE7                 -              6e-33  104.8   0.0   3.4e-32  102.3   0.0   2.2   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+hpk-1_Cele              -          STE7                 -            7.9e-32  101.1   0.0   1.2e-31  100.5   0.0   1.3   1   0   0   1   1   1   1 (CMGC/DYRK/HIPK)
+gi|66361317|pdb|1Z57|A  -          STE7                 -            9.1e-32  100.9   0.2     3e-17   53.3   0.0   2.9   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          STE7                 -            2.4e-30   96.2   0.0   5.1e-17   52.6   0.0   2.2   2   0   0   2   2   2   2 (CMGC/CLK/)
+GK032_Gl                -          STE7                 -            3.6e-26   82.5   0.0   1.9e-25   80.2   0.0   1.8   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+22369_Tt                -          STE7                 -            6.1e-26   81.8   1.8   5.8e-13   39.3   0.2   3.0   2   1   0   2   2   2   2 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          STE7                 -              3e-24   76.3   0.0   5.5e-15   45.9   0.0   2.5   2   1   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+SgK495-consensus        -          STE7                 -            2.4e-23   73.3   0.0   3.6e-23   72.7   0.0   1.3   1   0   0   1   1   1   1 -
+GK028_Gl                -          STE7                 -            1.1e-17   54.7   0.0   1.5e-15   47.8   0.0   3.2   1   1   0   1   1   1   1 (CMGC/CLK/)
+STE20-consensus         -          STE                  -           1.7e-114  371.7   0.3  2.5e-114  371.2   0.3   1.2   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          STE                  -           2.7e-113  367.8   0.9  4.1e-113  367.2   0.9   1.3   1   0   0   1   1   1   1 -
+STE7-consensus          -          STE                  -           1.5e-100  326.1   0.9  1.6e-100  325.9   0.9   1.0   1   0   0   1   1   1   1 -
+CAMKL-consensus         -          STE                  -            3.7e-67  216.6   1.0   4.7e-67  216.3   1.0   1.1   1   0   0   1   1   1   1 -
+CDPK-consensus          -          STE                  -            3.7e-67  216.6   5.5   6.7e-67  215.8   5.5   1.5   1   0   0   1   1   1   1 -
+DAPK-consensus          -          STE                  -            3.4e-56  180.7   0.2   3.8e-56  180.5   0.2   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          STE                  -              1e-55  179.1   0.0   1.1e-55  179.0   0.0   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          STE                  -            1.6e-39  126.1   0.1   4.9e-38  121.2   0.0   2.1   1   1   1   2   2   1   1 -
+PIM-consensus           -          STE                  -            2.9e-39  125.2   0.0   4.3e-39  124.6   0.0   1.3   1   1   0   1   1   1   1 -
+GK034_Gl                -          STE                  -            1.7e-34  109.5   0.0   1.5e-32  103.2   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+gi|302148765|pdb|3LLT|A -          STE                  -            7.9e-34  107.4   5.5   5.2e-16   49.0   1.2   3.1   1   1   0   3   3   3   3 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+gi|66361317|pdb|1Z57|A  -          STE                  -            2.6e-33  105.7   0.8   7.8e-28   87.8   0.0   3.0   2   1   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          STE                  -            3.1e-33  105.4   0.0   7.6e-19   58.3   0.0   3.1   2   1   1   3   3   2   2 (CMGC/CLK/)
+hpk-1_Cele              -          STE                  -            8.3e-32  100.8   0.0   3.4e-30   95.5   0.0   2.0   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+CC1G_04865_Cc           -          STE                  -            9.7e-32  100.6   0.1   9.2e-27   84.3   0.0   2.3   2   1   0   2   2   2   2 (CMGC/DYRK/PRP4)
+22369_Tt                -          STE                  -            3.7e-30   95.4   3.8   5.7e-15   45.6   0.5   3.1   3   0   0   3   3   3   3 (CMGC/CLK/)
+GK032_Gl                -          STE                  -            2.7e-28   89.3   0.0   4.7e-22   68.8   0.0   2.5   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+SgK495-consensus        -          STE                  -              1e-24   77.5   0.0     2e-24   76.6   0.0   1.4   1   0   0   1   1   1   1 -
+gi|83755011|pdb|2EXE|A  -          STE                  -            9.1e-24   74.4   0.3   3.1e-20   62.8   0.0   3.0   2   1   0   2   2   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK028_Gl                -          STE                  -            3.1e-19   59.6   0.2   3.1e-16   49.8   0.0   3.4   2   1   0   2   2   1   1 (CMGC/CLK/)
+CAMKL-consensus         -          Aurora               -            1.8e-89  289.5   0.6   2.6e-89  289.0   0.6   1.2   1   0   0   1   1   1   1 -
+CDPK-consensus          -          Aurora               -            4.9e-84  271.7   6.3   4.9e-84  271.7   6.3   1.8   2   0   0   2   2   1   1 -
+STE20-consensus         -          Aurora               -              6e-70  225.6   0.1   9.2e-70  224.9   0.1   1.3   1   0   0   1   1   1   1 -
+DAPK-consensus          -          Aurora               -            3.7e-69  223.0   0.2   4.1e-69  222.8   0.2   1.0   1   0   0   1   1   1   1 -
+PPCK-consensus          -          Aurora               -            4.6e-69  222.6   0.0   5.1e-69  222.5   0.0   1.0   1   0   0   1   1   1   1 -
+STE-Unclass-consensus   -          Aurora               -            7.2e-69  222.0   0.2   1.1e-68  221.4   0.2   1.2   1   0   0   1   1   1   1 -
+STE7-consensus          -          Aurora               -            8.2e-59  189.1   0.3   9.1e-59  188.9   0.3   1.0   1   0   0   1   1   1   1 -
+MLCK-like-consensus     -          Aurora               -            6.9e-58  186.0   0.0   5.5e-57  183.1   0.0   2.0   1   1   0   1   1   1   1 -
+PIM-consensus           -          Aurora               -            2.1e-52  168.1   0.0   2.4e-52  167.9   0.0   1.0   1   0   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          Aurora               -            3.3e-36  115.0   0.4   4.8e-31   98.1   0.1   2.1   2   0   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A  -          Aurora               -            1.2e-33  106.6   1.1   1.2e-30   96.7   0.7   2.1   2   0   0   2   2   1   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+hpk-1_Cele              -          Aurora               -            1.6e-33  106.2   0.0   3.6e-33  105.1   0.0   1.6   2   0   0   2   2   1   1 (CMGC/DYRK/HIPK)
+CLK_d_Sm                -          Aurora               -            5.3e-33  104.5   0.1   3.8e-18   55.8   0.1   3.0   3   0   0   3   3   2   3 (CMGC/CLK/)
+CC1G_04865_Cc           -          Aurora               -            1.6e-32  103.0   0.2   1.9e-30   96.1   0.1   2.6   2   1   0   2   2   1   1 (CMGC/DYRK/PRP4)
+22369_Tt                -          Aurora               -            7.3e-32  100.8   4.2   4.3e-18   55.7   0.7   3.1   2   1   1   3   3   2   3 (CMGC/CLK/)
+GK034_Gl                -          Aurora               -            8.8e-32  100.5   0.0   1.4e-29   93.3   0.0   2.1   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+SgK495-consensus        -          Aurora               -            8.8e-32  100.5   0.0   2.8e-31   98.9   0.0   1.7   1   1   1   2   2   1   1 -
+gi|302148765|pdb|3LLT|A -          Aurora               -            1.7e-31   99.6   3.2   1.5e-30   96.5   2.2   2.1   2   0   0   2   2   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK032_Gl                -          Aurora               -            4.9e-26   81.7   0.0   1.9e-22   69.9   0.0   2.3   2   1   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          Aurora               -            2.5e-24   76.1   0.0   1.3e-22   70.5   0.0   2.8   2   1   0   2   2   1   1 (CMGC/CLK/)
+CLK_d_Sm                -          CMGC-Unclass         -            1.3e-89  290.7   0.0   1.7e-89  290.2   0.0   1.2   1   0   0   1   1   1   1 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          CMGC-Unclass         -            1.8e-84  273.7   0.0   2.1e-84  273.6   0.0   1.0   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A  -          CMGC-Unclass         -              6e-82  265.5   0.1   6.8e-82  265.3   0.1   1.0   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+GK034_Gl                -          CMGC-Unclass         -            3.9e-81  262.8   0.0   6.3e-81  262.1   0.0   1.3   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          CMGC-Unclass         -            1.6e-75  244.4   0.0   5.2e-75  242.7   0.0   1.7   1   1   0   1   1   1   1 (CMGC/DYRK/HIPK)
+CC1G_04865_Cc           -          CMGC-Unclass         -              2e-74  240.8   0.1     2e-73  237.5   0.1   2.1   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+22369_Tt                -          CMGC-Unclass         -            2.1e-74  240.7   0.1   2.6e-74  240.4   0.1   1.1   1   0   0   1   1   1   1 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          CMGC-Unclass         -            7.5e-74  238.9   1.8   8.6e-74  238.7   1.8   1.0   1   0   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+CAMKL-consensus         -          CMGC-Unclass         -            8.4e-63  202.6  15.0   7.5e-55  176.5   9.8   2.3   1   1   1   2   2   2   2 -
+CDPK-consensus          -          CMGC-Unclass         -            1.3e-62  202.1  26.1   6.5e-58  186.6  16.8   4.4   1   1   3   5   5   2   2 -
+PPCK-consensus          -          CMGC-Unclass         -              6e-62  199.8   3.9   5.8e-54  173.6   1.3   2.0   1   1   1   2   2   2   2 -
+STE20-consensus         -          CMGC-Unclass         -            2.6e-59  191.2  10.7   6.5e-56  180.0   3.4   3.9   1   1   3   4   4   2   2 -
+STE-Unclass-consensus   -          CMGC-Unclass         -            4.4e-58  187.2  20.4     1e-52  169.6  12.0   2.2   1   1   1   2   2   2   2 -
+DAPK-consensus          -          CMGC-Unclass         -            7.2e-58  186.4  10.7     4e-52  167.6   6.5   2.0   1   1   1   2   2   2   2 -
+GK028_Gl                -          CMGC-Unclass         -            1.2e-56  182.5   0.0   1.4e-56  182.2   0.0   1.1   1   0   0   1   1   1   1 (CMGC/CLK/)
+GK032_Gl                -          CMGC-Unclass         -            6.2e-53  170.3   0.0   1.1e-52  169.4   0.0   1.4   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+STE7-consensus          -          CMGC-Unclass         -            1.6e-46  149.2  15.7   9.6e-43  136.8   8.3   2.0   1   1   1   2   2   2   2 -
+PIM-consensus           -          CMGC-Unclass         -            1.9e-42  135.8   0.0   5.9e-37  117.8   0.0   2.0   1   1   1   2   2   2   2 -
+MLCK-like-consensus     -          CMGC-Unclass         -            2.1e-39  125.9   0.5   3.9e-32  102.0   0.5   3.3   1   1   1   2   2   2   2 -
+SgK495-consensus        -          CMGC-Unclass         -            1.8e-22   70.3   2.1   1.3e-18   57.7   0.4   2.3   1   1   1   2   2   2   2 -
+STE-Unclass-consensus   -          CDKL                 -            3.5e-55  177.3   5.3   3.1e-51  164.4   1.3   2.7   2   1   1   3   3   2   2 -
+STE20-consensus         -          CDKL                 -            4.5e-54  173.7   1.3     2e-48  155.1   0.2   2.2   1   1   1   2   2   2   2 -
+CAMKL-consensus         -          CDKL                 -            2.9e-52  167.8   2.5   4.4e-48  154.0   1.0   2.1   1   1   1   2   2   2   2 -
+hpk-1_Cele              -          CDKL                 -            7.2e-50  159.9   0.0   2.1e-47  151.8   0.0   2.4   1   1   2   3   3   1   2 (CMGC/DYRK/HIPK)
+CDPK-consensus          -          CDKL                 -            1.4e-48  155.6  15.7   5.2e-45  143.9   6.3   2.7   1   1   2   3   3   2   2 -
+GK034_Gl                -          CDKL                 -            3.7e-48  154.3   0.0   2.7e-46  148.2   0.0   2.0   2   0   0   2   2   1   1 (CMGC/DYRK/DYRK2)
+PPCK-consensus          -          CDKL                 -            1.3e-47  152.4   0.1   1.8e-42  135.6   0.0   2.0   1   1   1   2   2   2   2 -
+CC1G_04865_Cc           -          CDKL                 -            2.8e-46  148.1   0.4   1.3e-41  132.8   0.1   2.1   1   1   1   2   2   2   2 (CMGC/DYRK/PRP4)
+DAPK-consensus          -          CDKL                 -            8.5e-46  146.5   0.7   2.5e-41  131.9   0.2   2.0   1   1   1   2   2   2   2 -
+CLK_d_Sm                -          CDKL                 -            1.1e-45  146.1   0.1   3.4e-25   78.9   0.3   2.6   2   1   0   2   2   2   2 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          CDKL                 -            6.3e-44  140.4   1.2   1.6e-42  135.7   1.2   2.2   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+STE7-consensus          -          CDKL                 -            3.6e-42  134.6   2.7   7.1e-39  123.8   0.6   2.0   1   1   1   2   2   1   2 -
+22369_Tt                -          CDKL                 -            6.1e-41  130.6   4.2   2.7e-25   79.2   0.1   3.0   2   1   0   2   2   2   2 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          CDKL                 -            1.2e-40  129.6   2.2   3.2e-39  124.9   2.2   2.2   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+gi|302148765|pdb|3LLT|A -          CDKL                 -            8.7e-35  110.4   5.6   1.8e-18   56.9   0.1   2.3   1   1   1   2   2   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+PIM-consensus           -          CDKL                 -            3.1e-31   98.8   0.0     5e-27   84.9   0.0   2.0   1   1   1   2   2   2   2 -
+GK032_Gl                -          CDKL                 -            2.2e-28   89.4   0.0     3e-24   75.8   0.0   2.4   2   1   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          CDKL                 -            5.2e-27   84.9   0.2   4.3e-23   72.0   0.0   3.4   2   1   0   2   2   1   2 (CMGC/CLK/)
+MLCK-like-consensus     -          CDKL                 -            3.3e-25   79.0   0.0   1.2e-20   64.0   0.0   2.9   1   1   1   3   3   1   2 -
+SgK495-consensus        -          CDKL                 -            2.1e-21   66.5   0.1   1.2e-18   57.5   0.0   2.2   1   1   1   2   2   1   2 -
+CLK_d_Sm                -          SRPK                 -            1.9e-67  218.0   0.0   7.9e-37  117.2   0.1   2.1   1   1   0   2   2   2   2 (CMGC/CLK/)
+22369_Tt                -          SRPK                 -            2.4e-66  214.3   1.6   2.9e-66  214.1   1.6   1.1   1   0   0   1   1   1   1 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          SRPK                 -            7.1e-64  206.2   1.0     2e-33  106.0   0.3   2.0   1   1   1   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+gi|66361317|pdb|1Z57|A  -          SRPK                 -            1.8e-63  204.9   1.3     7e-34  107.5   0.3   2.0   1   1   1   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|302148765|pdb|3LLT|A -          SRPK                 -            5.4e-63  203.3   2.2   6.4e-34  107.6   0.9   2.0   1   1   1   2   2   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK034_Gl                -          SRPK                 -            5.9e-60  193.3   0.0   1.9e-35  112.6   0.1   3.0   2   1   1   3   3   2   3 (CMGC/DYRK/DYRK2)
+CC1G_04865_Cc           -          SRPK                 -            5.3e-51  163.8   0.0   1.5e-27   86.6   0.1   2.3   1   1   1   2   2   2   2 (CMGC/DYRK/PRP4)
+GK028_Gl                -          SRPK                 -            2.6e-50  161.5   0.0   1.5e-26   83.3   0.0   2.2   1   1   1   2   2   2   2 (CMGC/CLK/)
+GK032_Gl                -          SRPK                 -            8.4e-50  159.9   0.1   2.2e-31   99.2   0.0   2.9   1   1   1   2   2   2   2 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          SRPK                 -            1.7e-46  149.0   0.0   3.1e-27   85.6   0.0   3.0   2   1   1   3   3   2   2 (CMGC/DYRK/HIPK)
+STE-Unclass-consensus   -          SRPK                 -            1.3e-27   86.8   7.4   6.4e-13   38.4   3.0   4.4   2   1   2   4   4   3   3 -
+DAPK-consensus          -          SRPK                 -            7.1e-26   81.1   0.6   1.3e-14   44.0   0.4   3.4   1   1   2   3   3   3   3 -
+PPCK-consensus          -          SRPK                 -            2.3e-25   79.4   0.4   8.7e-12   34.7   0.0   4.0   2   1   1   3   3   3   3 -
+STE7-consensus          -          SRPK                 -            2.3e-25   79.4   1.5   7.3e-14   41.5   0.4   3.0   1   1   1   3   3   2   3 -
+CDPK-consensus          -          SRPK                 -              4e-25   78.6  20.3   1.7e-15   46.9   2.5   4.9   2   1   2   4   4   3   3 -
+CAMKL-consensus         -          SRPK                 -            6.8e-25   77.9   1.6   2.8e-11   33.0   1.6   3.6   1   1   2   3   3   3   3 -
+STE20-consensus         -          SRPK                 -            9.2e-25   77.4   2.3     6e-16   48.4   0.7   5.0   3   1   1   5   5   3   3 -
+PIM-consensus           -          SRPK                 -            3.7e-24   75.5   0.0   5.6e-13   38.6   0.0   3.0   1   1   2   3   3   2   3 -
+MLCK-like-consensus     -          SRPK                 -            6.9e-16   48.2   0.1   3.6e-08   22.8   0.1   3.4   1   1   2   3   3   3   3 -
+SgK495-consensus        -          SRPK                 -              9e-07   18.2   0.4   0.00041    9.4   0.0   3.0   1   1   2   3   3   0   1 -
+CAMKL-consensus         -          CK2                  -            2.5e-43  138.7   3.2   1.6e-39  126.2   2.1   2.1   1   1   1   2   2   2   2 -
+CDPK-consensus          -          CK2                  -            7.8e-42  133.8  18.7   3.3e-38  121.8   9.2   2.9   2   1   1   3   3   2   2 -
+DAPK-consensus          -          CK2                  -              7e-41  130.6   0.4   3.9e-36  115.0   0.1   2.0   1   1   1   2   2   2   2 -
+PPCK-consensus          -          CK2                  -            5.2e-39  124.5   0.0   6.2e-34  107.8   0.0   2.0   2   0   0   2   2   2   2 -
+GK034_Gl                -          CK2                  -            4.9e-37  118.0   0.0   4.4e-34  108.3   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          CK2                  -            1.8e-36  116.1   0.0   1.3e-33  106.8   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/HIPK)
+CLK_d_Sm                -          CK2                  -            8.6e-36  113.9   0.1   1.1e-23   74.2   0.0   2.4   2   1   0   2   2   2   2 (CMGC/CLK/)
+STE20-consensus         -          CK2                  -            3.9e-35  111.8   0.6   1.4e-31  100.1   0.2   2.2   2   0   0   2   2   1   2 -
+gi|66361317|pdb|1Z57|A  -          CK2                  -            1.9e-32  103.0   0.1   1.6e-31   99.9   0.1   1.9   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A  -          CK2                  -            8.5e-32  100.8   0.1   1.1e-30   97.2   0.1   2.0   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+STE-Unclass-consensus   -          CK2                  -              1e-31  100.5   2.2   4.3e-29   91.9   1.4   2.2   1   1   0   2   2   1   2 -
+CC1G_04865_Cc           -          CK2                  -            3.2e-31   98.9   0.2   2.6e-29   92.7   0.2   2.5   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+PIM-consensus           -          CK2                  -            6.8e-30   94.6   0.0   1.1e-28   90.6   0.0   2.0   1   1   0   2   2   1   1 -
+gi|302148765|pdb|3LLT|A -          CK2                  -            3.6e-29   92.2   7.9   1.2e-16   51.1   4.6   2.5   1   1   1   2   2   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+MLCK-like-consensus     -          CK2                  -            4.7e-25   78.7   0.0     6e-20   61.9   0.0   3.2   2   1   1   3   3   1   3 -
+22369_Tt                -          CK2                  -            7.2e-24   74.8   1.0   3.3e-16   49.7   0.0   2.5   2   1   0   2   2   2   2 (CMGC/CLK/)
+GK032_Gl                -          CK2                  -            1.3e-22   70.7   0.1   1.5e-16   50.8   0.1   2.3   2   1   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+STE7-consensus          -          CK2                  -            1.2e-20   64.2   1.5   1.9e-17   53.7   0.3   2.0   2   0   0   2   2   1   2 -
+GK028_Gl                -          CK2                  -            1.3e-20   64.2   0.0   1.4e-18   57.5   0.0   2.9   1   1   0   1   1   1   1 (CMGC/CLK/)
+SgK495-consensus        -          CK2                  -            5.1e-19   58.9   0.3     1e-15   48.1   0.0   2.3   1   1   1   2   2   1   2 -
+CDPK-consensus          -          CDK                  -            3.8e-63  203.5   4.7   2.4e-57  184.5   2.7   2.4   1   1   1   2   2   2   2 -
+STE20-consensus         -          CDK                  -            4.7e-62  199.9   0.5   2.8e-57  184.3   0.2   2.2   1   1   1   2   2   2   2 -
+STE-Unclass-consensus   -          CDK                  -            1.2e-60  195.3   3.2   1.8e-56  181.6   1.7   2.2   1   1   1   2   2   2   2 -
+CAMKL-consensus         -          CDK                  -            3.7e-60  193.7   0.8   9.3e-54  172.7   0.6   2.1   1   1   1   2   2   2   2 -
+PPCK-consensus          -          CDK                  -            3.5e-58  187.2   0.0   3.9e-51  164.1   0.0   2.0   1   1   1   2   2   2   2 -
+GK034_Gl                -          CDK                  -            1.8e-54  175.0   0.0   1.3e-50  162.4   0.0   2.0   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+CC1G_04865_Cc           -          CDK                  -            4.1e-54  173.9   0.1   1.5e-53  172.1   0.1   1.8   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+hpk-1_Cele              -          CDK                  -              6e-54  173.3   0.0   2.3e-53  171.4   0.0   1.7   1   1   0   1   1   1   1 (CMGC/DYRK/HIPK)
+DAPK-consensus          -          CDK                  -            1.2e-51  165.8   0.4   4.9e-47  150.6   0.2   2.0   1   1   1   2   2   2   2 -
+CLK_d_Sm                -          CDK                  -            6.8e-51  163.3   0.1   3.5e-26   82.2   0.0   2.7   2   1   0   2   2   2   2 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          CDK                  -            1.5e-48  155.6   0.0   1.9e-48  155.3   0.0   1.1   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+22369_Tt                -          CDK                  -            1.9e-48  155.3   0.9   1.2e-26   83.8   0.0   2.3   2   0   0   2   2   2   2 (CMGC/CLK/)
+gi|83755011|pdb|2EXE|A  -          CDK                  -            8.4e-46  146.6   0.1   1.2e-45  146.1   0.1   1.2   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+STE7-consensus          -          CDK                  -            2.2e-41  132.1   2.0   3.8e-39  124.8   0.3   2.0   1   1   1   2   2   1   2 -
+gi|302148765|pdb|3LLT|A -          CDK                  -            4.3e-41  131.2   1.7   1.4e-40  129.5   1.7   1.7   1   1   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+PIM-consensus           -          CDK                  -            3.2e-36  115.2   0.0   2.9e-32  102.2   0.0   2.0   1   1   1   2   2   1   2 -
+MLCK-like-consensus     -          CDK                  -            4.9e-36  114.6   0.0   3.9e-31   98.5   0.0   3.0   1   1   1   2   2   2   2 -
+GK032_Gl                -          CDK                  -            6.2e-36  114.2   0.0   4.8e-31   98.2   0.0   2.1   2   0   0   2   2   2   2 (CMGC/DYRK/DYRK2)
+GK028_Gl                -          CDK                  -            1.4e-33  106.5   0.0   2.5e-32  102.4   0.0   2.1   1   1   0   1   1   1   1 (CMGC/CLK/)
+SgK495-consensus        -          CDK                  -              9e-22   67.8   1.0   1.3e-18   57.4   0.2   2.3   1   1   1   2   2   1   2 -
+CC1G_04865_Cc           -          GSK3                 -            1.1e-59  192.3   0.0   1.9e-59  191.5   0.0   1.4   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+hpk-1_Cele              -          GSK3                 -            6.3e-58  186.5   0.0   2.8e-57  184.4   0.0   1.8   1   1   0   1   1   1   1 (CMGC/DYRK/HIPK)
+GK034_Gl                -          GSK3                 -            9.7e-56  179.4   0.0   2.3e-55  178.1   0.0   1.5   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+CLK_d_Sm                -          GSK3                 -            1.7e-47  152.3   0.0   1.2e-28   90.4   0.0   2.1   2   0   0   2   2   2   2 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          GSK3                 -            1.8e-47  152.2   0.1   1.1e-28   90.6   0.0   2.0   2   0   0   2   2   2   2 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CAMKL-consensus         -          GSK3                 -              3e-47  151.5   0.2   9.5e-43  136.7   0.1   2.1   1   1   1   2   2   2   2 -
+CDPK-consensus          -          GSK3                 -            2.8e-46  148.3   7.1   4.3e-43  137.9   1.5   2.7   2   1   1   3   3   2   2 -
+PPCK-consensus          -          GSK3                 -            2.6e-45  145.1   0.0   1.4e-41  132.9   0.0   2.0   1   1   1   2   2   1   2 -
+STE-Unclass-consensus   -          GSK3                 -            6.9e-45  143.7   0.2   1.5e-40  129.5   0.1   2.2   1   1   1   2   2   2   2 -
+STE20-consensus         -          GSK3                 -            7.9e-45  143.6   0.4   7.1e-40  127.3   0.0   2.5   1   1   1   2   2   2   2 -
+gi|83755011|pdb|2EXE|A  -          GSK3                 -            1.1e-43  139.7   0.2   2.8e-42  135.2   0.2   2.0   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+22369_Tt                -          GSK3                 -            9.8e-42  133.4   1.1   3.8e-27   85.5   0.0   2.2   2   0   0   2   2   2   2 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          GSK3                 -            2.1e-41  132.3   4.4   2.5e-22   69.7   0.1   2.1   2   0   0   2   2   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+DAPK-consensus          -          GSK3                 -              1e-35  113.6   0.0   2.5e-32  102.5   0.0   2.1   1   1   1   2   2   1   2 -
+STE7-consensus          -          GSK3                 -            1.2e-32  103.6   0.3   1.8e-29   93.2   0.0   2.0   1   1   1   2   2   1   2 -
+GK028_Gl                -          GSK3                 -            2.9e-32  102.3   0.0     7e-30   94.5   0.0   3.0   1   1   0   1   1   1   1 (CMGC/CLK/)
+PIM-consensus           -          GSK3                 -            6.5e-32  101.2   0.0   6.3e-28   88.1   0.0   2.2   1   1   1   2   2   1   2 -
+GK032_Gl                -          GSK3                 -            5.7e-31   98.1   0.0   1.2e-30   97.0   0.0   1.5   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+MLCK-like-consensus     -          GSK3                 -            2.4e-28   89.5   0.1   2.5e-22   69.7   0.0   3.2   1   1   2   3   3   1   3 -
+SgK495-consensus        -          GSK3                 -            2.2e-18   56.8   0.1   1.1e-15   47.9   0.0   2.2   1   1   1   2   2   1   2 -
+CDPK-consensus          -          MAPK                 -            7.1e-64  206.1   0.8   5.9e-55  176.8   0.2   2.4   1   1   1   2   2   2   2 -
+CAMKL-consensus         -          MAPK                 -            9.8e-61  195.8   0.0   1.2e-51  165.9   0.0   2.1   1   1   1   2   2   2   2 -
+STE20-consensus         -          MAPK                 -            1.1e-56  182.5   0.5   2.3e-50  161.8   0.0   2.4   2   1   1   3   3   2   2 -
+PPCK-consensus          -          MAPK                 -            2.4e-54  174.8   0.0   2.4e-44  142.0   0.0   2.0   1   1   1   2   2   2   2 -
+STE-Unclass-consensus   -          MAPK                 -            1.4e-53  172.4   0.2   4.6e-48  154.2   0.0   2.3   1   1   1   2   2   2   2 -
+hpk-1_Cele              -          MAPK                 -            1.7e-52  168.8   0.0   4.8e-47  150.9   0.0   2.0   2   0   0   2   2   2   2 (CMGC/DYRK/HIPK)
+CLK_d_Sm                -          MAPK                 -              3e-52  168.0   0.0   8.5e-51  163.2   0.0   2.2   1   1   0   1   1   1   1 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          MAPK                 -            2.9e-51  164.7   0.1   3.8e-50  161.0   0.1   2.0   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+DAPK-consensus          -          MAPK                 -            1.4e-50  162.5   0.0     2e-42  135.7   0.0   2.0   1   1   1   2   2   2   2 -
+CC1G_04865_Cc           -          MAPK                 -            1.2e-47  152.8   0.3   3.3e-46  148.1   0.3   2.4   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+GK034_Gl                -          MAPK                 -            1.9e-47  152.2   0.0   1.5e-43  139.4   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/DYRK2)
+gi|83755011|pdb|2EXE|A  -          MAPK                 -            8.9e-46  146.7   0.1   5.9e-45  144.0   0.1   2.0   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+22369_Tt                -          MAPK                 -            3.2e-45  144.9   2.4   1.9e-27   86.5   0.0   3.0   2   1   0   2   2   2   2 (CMGC/CLK/)
+STE7-consensus          -          MAPK                 -            1.1e-40  130.0   0.1   1.1e-36  116.9   0.0   2.0   1   1   1   2   2   1   2 -
+gi|302148765|pdb|3LLT|A -          MAPK                 -            1.2e-37  120.1   3.7   1.5e-23   73.7   0.0   2.0   2   0   0   2   2   2   2 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+MLCK-like-consensus     -          MAPK                 -            1.2e-37  120.1   0.0     1e-28   90.7   0.0   3.2   2   1   1   3   3   2   3 -
+GK032_Gl                -          MAPK                 -              8e-36  114.0   0.0   1.3e-33  106.7   0.0   2.3   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+PIM-consensus           -          MAPK                 -            1.5e-32  103.3   0.0   8.4e-28   87.7   0.0   2.1   1   1   1   2   2   2   2 -
+GK028_Gl                -          MAPK                 -            3.8e-30   95.4   0.0   1.3e-28   90.4   0.0   2.8   1   1   0   1   1   1   1 (CMGC/CLK/)
+SgK495-consensus        -          MAPK                 -            1.3e-24   77.2   0.1   2.1e-20   63.4   0.0   2.2   1   1   1   2   2   1   2 -
+gi|66361317|pdb|1Z57|A  -          CLK                  -           2.2e-166  542.9   1.1  2.5e-166  542.8   1.1   1.0   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A  -          CLK                  -           9.4e-160  521.1   1.8  1.1e-159  521.0   1.8   1.0   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+CLK_d_Sm                -          CLK                  -           6.2e-151  492.1   0.0    7e-151  492.0   0.0   1.0   1   0   0   1   1   1   1 (CMGC/CLK/)
+22369_Tt                -          CLK                  -           1.1e-132  432.2   3.6  2.9e-132  430.8   3.6   1.6   1   1   0   1   1   1   1 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          CLK                  -             4e-131  427.1   2.6  4.6e-131  426.9   2.6   1.0   1   0   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK028_Gl                -          CLK                  -           9.6e-118  383.1   0.0  1.1e-117  382.9   0.0   1.0   1   0   0   1   1   1   1 (CMGC/CLK/)
+GK034_Gl                -          CLK                  -            5.9e-73  235.9   0.0   1.8e-43  139.0   0.2   3.0   2   1   1   3   3   2   3 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          CLK                  -            3.2e-70  226.9   0.0   5.1e-42  134.2   0.0   3.0   1   1   2   3   3   2   3 (CMGC/DYRK/HIPK)
+CC1G_04865_Cc           -          CLK                  -            6.9e-64  206.1   0.1   1.1e-33  106.9   0.0   2.7   1   1   1   2   2   2   2 (CMGC/DYRK/PRP4)
+GK032_Gl                -          CLK                  -            8.7e-53  169.6   0.1   8.9e-31   97.3   0.0   2.7   1   1   1   2   2   2   2 (CMGC/DYRK/DYRK2)
+DAPK-consensus          -          CLK                  -            1.1e-36  116.7   0.3   4.7e-23   71.9   0.4   3.0   1   1   2   3   3   3   3 -
+CDPK-consensus          -          CLK                  -            8.7e-36  113.8   8.5   1.4e-21   67.1   2.1   3.6   2   1   2   4   4   3   3 -
+CAMKL-consensus         -          CLK                  -            1.2e-35  113.3   0.3   2.7e-21   66.1   1.0   3.1   1   1   2   3   3   3   3 -
+PPCK-consensus          -          CLK                  -            2.8e-34  108.8   0.1   7.1e-16   48.3   0.0   3.1   1   1   1   3   3   3   3 -
+STE20-consensus         -          CLK                  -              1e-32  103.7   8.0     2e-20   63.3   0.4   3.8   2   1   2   4   4   3   3 -
+STE-Unclass-consensus   -          CLK                  -            1.3e-30   96.8   0.3   1.9e-15   46.9   0.6   3.3   1   1   2   3   3   3   3 -
+STE7-consensus          -          CLK                  -            4.1e-30   95.1   0.3   2.9e-13   39.7   0.2   3.0   1   1   2   3   3   3   3 -
+PIM-consensus           -          CLK                  -            4.6e-28   88.4   0.0   7.2e-16   48.3   0.0   3.0   1   1   2   3   3   3   3 -
+MLCK-like-consensus     -          CLK                  -            1.2e-22   70.6   0.1     1e-12   38.0   0.2   4.0   1   1   2   3   3   2   3 -
+SgK495-consensus        -          CLK                  -            6.6e-10   28.7   1.9   1.8e-05   14.1   0.3   3.3   2   1   1   3   3   1   3 -
+GK034_Gl                -          DYRK                 -           2.5e-118  384.9   0.0  3.7e-118  384.4   0.0   1.2   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+hpk-1_Cele              -          DYRK                 -           2.1e-117  381.9   0.0  2.4e-117  381.7   0.0   1.0   1   0   0   1   1   1   1 (CMGC/DYRK/HIPK)
+CC1G_04865_Cc           -          DYRK                 -             3e-114  371.6   0.0  3.5e-114  371.3   0.0   1.0   1   0   0   1   1   1   1 (CMGC/DYRK/PRP4)
+GK032_Gl                -          DYRK                 -            6.6e-95  308.0   0.0   7.4e-95  307.9   0.0   1.0   1   0   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+CLK_d_Sm                -          DYRK                 -            2.6e-92  299.5   0.0   5.3e-50  160.5   0.0   2.0   2   0   0   2   2   2   2 (CMGC/CLK/)
+gi|66361317|pdb|1Z57|A  -          DYRK                 -            4.8e-92  298.6   0.1   7.4e-92  298.0   0.1   1.3   1   1   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+gi|83755011|pdb|2EXE|A  -          DYRK                 -            2.7e-88  286.3   0.4   3.9e-88  285.8   0.4   1.2   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+22369_Tt                -          DYRK                 -            4.9e-81  262.5   2.7   4.5e-41  131.2   1.0   2.3   2   0   0   2   2   2   2 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          DYRK                 -            1.2e-78  254.6   3.3   7.2e-78  252.1   3.3   1.8   1   1   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK028_Gl                -          DYRK                 -            5.8e-61  196.5   0.0   1.8e-58  188.3   0.0   2.3   1   1   0   1   1   1   1 (CMGC/CLK/)
+CDPK-consensus          -          DYRK                 -            7.2e-54  173.2   4.8   1.6e-47  152.4   2.4   2.6   1   1   1   2   2   2   2 -
+CAMKL-consensus         -          DYRK                 -            1.1e-53  172.7   0.6   4.1e-48  154.4   0.2   2.1   1   1   1   2   2   2   2 -
+STE20-consensus         -          DYRK                 -            4.1e-51  164.2   0.6   1.9e-42  135.7   0.1   2.4   1   1   1   2   2   2   2 -
+PPCK-consensus          -          DYRK                 -            4.6e-51  164.0   0.0   6.7e-45  143.8   0.0   2.0   1   1   1   2   2   2   2 -
+DAPK-consensus          -          DYRK                 -            8.7e-46  146.7   0.6     1e-40  130.0   0.1   2.0   1   1   1   2   2   2   2 -
+STE-Unclass-consensus   -          DYRK                 -            2.6e-43  138.6   1.0     1e-36  116.9   0.3   2.3   1   1   1   2   2   2   2 -
+STE7-consensus          -          DYRK                 -            1.7e-42  135.9   1.5   1.6e-37  119.6   0.2   2.0   1   1   1   2   2   2   2 -
+PIM-consensus           -          DYRK                 -              1e-36  116.9   0.0     1e-31  100.5   0.0   2.0   1   1   1   2   2   2   2 -
+MLCK-like-consensus     -          DYRK                 -            1.5e-35  113.0   0.1   7.4e-27   84.5   0.0   3.2   1   1   2   3   3   3   3 -
+SgK495-consensus        -          DYRK                 -            2.4e-17   53.3   0.1   4.2e-15   45.9   0.0   2.3   1   1   1   2   2   1   1 -
+hpk-1_Cele              -          RCK                  -              2e-60  194.6   0.0   2.3e-57  184.6   0.0   2.1   2   0   0   2   2   1   2 (CMGC/DYRK/HIPK)
+CDPK-consensus          -          RCK                  -            6.4e-60  192.9  11.7     1e-55  179.2   4.0   2.6   2   1   1   3   3   2   2 -
+GK034_Gl                -          RCK                  -            4.9e-58  186.8   0.0   7.1e-57  183.0   0.0   2.0   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+CAMKL-consensus         -          RCK                  -            1.2e-57  185.6   0.3   2.8e-52  167.9   0.2   2.1   1   1   1   2   2   2   2 -
+PPCK-consensus          -          RCK                  -            9.9e-57  182.5   0.0   8.9e-52  166.2   0.0   2.0   1   1   0   1   1   1   1 -
+gi|66361317|pdb|1Z57|A  -          RCK                  -            1.1e-54  175.8   0.1   1.3e-54  175.5   0.1   1.1   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of Human Clk1 In Complex With 10z- Hymenialdisine
+CLK_d_Sm                -          RCK                  -            2.8e-54  174.4   0.0     1e-27   87.3   0.1   2.2   2   0   0   2   2   2   2 (CMGC/CLK/)
+CC1G_04865_Cc           -          RCK                  -            1.1e-52  169.2   0.0   2.8e-52  167.9   0.0   1.6   1   1   0   1   1   1   1 (CMGC/DYRK/PRP4)
+STE20-consensus         -          RCK                  -            1.8e-52  168.6   0.2   1.1e-46  149.5   0.1   2.2   1   1   1   2   2   2   2 -
+STE-Unclass-consensus   -          RCK                  -            1.5e-51  165.5   0.7   4.2e-46  147.6   0.4   2.2   1   1   1   2   2   2   2 -
+gi|83755011|pdb|2EXE|A  -          RCK                  -            1.2e-50  162.5   0.2   1.5e-50  162.2   0.2   1.1   1   0   0   1   1   1   1 {<Chordata(m)>}Chain A, Crystal Structure Of The Phosphorylated Clk3
+DAPK-consensus          -          RCK                  -              6e-48  153.7   0.2   5.5e-43  137.4   0.1   2.0   1   1   1   2   2   2   2 -
+22369_Tt                -          RCK                  -            3.9e-47  151.0   2.0   2.7e-26   82.6   0.0   2.6   2   1   0   2   2   2   2 (CMGC/CLK/)
+gi|302148765|pdb|3LLT|A -          RCK                  -            9.1e-45  143.2   1.7   1.2e-44  142.8   1.7   1.2   1   0   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Pf14_0431, Kinase Domain
+GK032_Gl                -          RCK                  -            7.7e-39  123.8   0.0   1.5e-37  119.6   0.0   2.0   1   1   0   1   1   1   1 (CMGC/DYRK/DYRK2)
+PIM-consensus           -          RCK                  -              5e-38  121.1   0.0   9.9e-34  107.0   0.0   2.0   1   1   1   2   2   2   2 -
+STE7-consensus          -          RCK                  -            3.1e-37  118.5   0.2   2.4e-34  109.1   0.1   2.0   1   1   0   2   2   1   2 -
+MLCK-like-consensus     -          RCK                  -            1.5e-35  113.0   0.0   1.7e-29   93.1   0.0   3.1   1   1   0   2   2   2   2 -
+GK028_Gl                -          RCK                  -            1.4e-31  100.0   0.0   1.3e-30   96.8   0.0   2.3   1   1   0   1   1   1   1 (CMGC/CLK/)
+SgK495-consensus        -          RCK                  -            3.3e-19   59.4   0.0     6e-16   48.7   0.0   2.2   1   1   0   2   2   1   2 -
+#
+# Program:         hmmsearch
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SEARCH
+# Query file:      SomeKinases_all.hmm
+# Target file:     twenty.fasta
+# Option settings: hmmsearch --tblout twenty.fasta.tbl --noali -E 0.0001 --domE 0.0001 SomeKinases_all.hmm twenty.fasta 
+# [ok]
