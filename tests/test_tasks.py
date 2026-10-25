@@ -43,8 +43,7 @@ class Recorder:
         Path(task.target).write_text("built")
 
     def task(self, target, depends=None, cleans=None):
-        return Task(str(target), action=self.action, depends=depends,
-                    cleans=cleans)
+        return Task(str(target), action=self.action, depends=depends, cleans=cleans)
 
 
 class Boom(Exception):
@@ -60,25 +59,32 @@ def is_stale(target_mtime, dep_mtimes):
     return target_mtime is None or any(dep > target_mtime for dep in dep_mtimes)
 
 
-@pytest.mark.parametrize("target_present", [False, True],
-                         ids=["target-missing", "target-present"])
+@pytest.mark.parametrize(
+    "target_present", [False, True], ids=["target-missing", "target-present"]
+)
 @pytest.mark.parametrize(
     "offsets",
     [combo for n in range(4) for combo in itertools.product(OFFSETS, repeat=n)],
-    ids=lambda combo: "deps[" + ",".join("%+d" % o for o in combo) + "]")
-def test_file_dependencies_follow_the_staleness_model(tmp_path, target_present,
-                                                      offsets):
+    ids=lambda combo: "deps[" + ",".join("%+d" % o for o in combo) + "]",
+)
+def test_file_dependencies_follow_the_staleness_model(
+    tmp_path, target_present, offsets
+):
     """Build runs the action exactly for a missing or strictly older target."""
     target_mtime = BASE + 100
-    deps = [make_file(tmp_path / ("dep%d" % i), target_mtime + off)
-            for i, off in enumerate(offsets)]
+    deps = [
+        make_file(tmp_path / ("dep%d" % i), target_mtime + off)
+        for i, off in enumerate(offsets)
+    ]
     target = tmp_path / "target"
     if target_present:
         make_file(target, target_mtime)
     recorder = Recorder()
     task = recorder.task(target, depends=deps)
-    stale = is_stale(target_mtime if target_present else None,
-                     [target_mtime + off for off in offsets])
+    stale = is_stale(
+        target_mtime if target_present else None,
+        [target_mtime + off for off in offsets],
+    )
 
     assert task.is_up_to_date() is (not stale)
     task.build()
@@ -88,14 +94,20 @@ def test_file_dependencies_follow_the_staleness_model(tmp_path, target_present,
     assert recorder.calls == (["target"] if stale else [])
 
 
-@pytest.mark.parametrize("target_present", [False, True],
-                         ids=["target-missing", "target-present"])
-@pytest.mark.parametrize("kinds", [("file", "task"), ("task", "file"),
-                                   ("task", "task")])
-@pytest.mark.parametrize("offsets", list(itertools.product(OFFSETS, repeat=2)),
-                         ids=lambda combo: "deps[%+d,%+d]" % combo)
-def test_task_dependencies_count_like_file_dependencies(tmp_path, target_present,
-                                                        kinds, offsets):
+@pytest.mark.parametrize(
+    "target_present", [False, True], ids=["target-missing", "target-present"]
+)
+@pytest.mark.parametrize(
+    "kinds", [("file", "task"), ("task", "file"), ("task", "task")]
+)
+@pytest.mark.parametrize(
+    "offsets",
+    list(itertools.product(OFFSETS, repeat=2)),
+    ids=lambda combo: "deps[%+d,%+d]" % combo,
+)
+def test_task_dependencies_count_like_file_dependencies(
+    tmp_path, target_present, kinds, offsets
+):
     """A dependency that is itself an up-to-date Task is judged by its file."""
     target_mtime = BASE + 100
     recorder = Recorder()
@@ -107,8 +119,10 @@ def test_task_dependencies_count_like_file_dependencies(tmp_path, target_present
     if target_present:
         make_file(target, target_mtime)
     task = recorder.task(target, depends=deps)
-    stale = is_stale(target_mtime if target_present else None,
-                     [target_mtime + off for off in offsets])
+    stale = is_stale(
+        target_mtime if target_present else None,
+        [target_mtime + off for off in offsets],
+    )
 
     assert task.is_up_to_date() is (not stale)
     task.build()
@@ -117,11 +131,13 @@ def test_task_dependencies_count_like_file_dependencies(tmp_path, target_present
     assert task.is_up_to_date()
 
 
-@pytest.mark.parametrize("target_present", [False, True],
-                         ids=["target-missing", "target-present"])
+@pytest.mark.parametrize(
+    "target_present", [False, True], ids=["target-missing", "target-present"]
+)
 @pytest.mark.parametrize("target_offset", [-10, 0, 10])
-def test_a_missing_file_dependency_is_never_up_to_date(tmp_path, target_present,
-                                                       target_offset):
+def test_a_missing_file_dependency_is_never_up_to_date(
+    tmp_path, target_present, target_offset
+):
     """Absence of any dependency makes the target stale, whatever the times."""
     present = make_file(tmp_path / "present", BASE)
     target = tmp_path / "target"
@@ -133,10 +149,12 @@ def test_a_missing_file_dependency_is_never_up_to_date(tmp_path, target_present,
 
 
 @pytest.mark.parametrize("variant", ["older", "missing"])
-@pytest.mark.parametrize("depth,stale_level", [(d, k) for d in (2, 3, 4)
-                                               for k in range(d)])
-def test_chain_rebuilds_from_the_stale_level_upward(tmp_path, depth,
-                                                    stale_level, variant):
+@pytest.mark.parametrize(
+    "depth,stale_level", [(d, k) for d in (2, 3, 4) for k in range(d)]
+)
+def test_chain_rebuilds_from_the_stale_level_upward(
+    tmp_path, depth, stale_level, variant
+):
     """Only the first stale level and the levels above it are rebuilt."""
     source = make_file(tmp_path / "source", BASE)
     names = ["level%d" % i for i in range(depth)]
@@ -153,8 +171,7 @@ def test_chain_rebuilds_from_the_stale_level_upward(tmp_path, depth,
         upstream = tasks[-1]
 
     # Level i is up to date exactly when no level at or below i is stale.
-    assert [t.is_up_to_date() for t in tasks] == [i < stale_level
-                                                  for i in range(depth)]
+    assert [t.is_up_to_date() for t in tasks] == [i < stale_level for i in range(depth)]
     tasks[-1].build()
     assert recorder.calls == names[stale_level:]
     assert all(t.is_up_to_date() for t in tasks)
@@ -183,18 +200,17 @@ def test_single_string_or_task_dependency_is_not_iterated(tmp_path):
     source = make_file(tmp_path / "source", BASE + 10)
     recorder = Recorder()
     from_string = recorder.task(make_file(tmp_path / "a", BASE), depends=source)
-    from_task = recorder.task(make_file(tmp_path / "b", BASE + 20),
-                              depends=from_string)
+    from_task = recorder.task(make_file(tmp_path / "b", BASE + 20), depends=from_string)
 
     assert not from_string.is_up_to_date()
     from_task.build()
     assert recorder.calls == ["a", "b"]
 
 
-@pytest.mark.parametrize("target_present", [False, True],
-                         ids=["target-missing", "target-present"])
-def test_failing_action_propagates_and_leaves_target_stale(tmp_path,
-                                                           target_present):
+@pytest.mark.parametrize(
+    "target_present", [False, True], ids=["target-missing", "target-present"]
+)
+def test_failing_action_propagates_and_leaves_target_stale(tmp_path, target_present):
     """The action's own exception reaches the caller; the task stays stale."""
     source = make_file(tmp_path / "source", BASE + 10)
     target = tmp_path / "target"
@@ -227,19 +243,20 @@ def test_clean_removes_only_listed_existing_files_recursively(tmp_path):
     leaf_junk = make_file(tmp_path / "leaf.tmp", BASE)
     mid_junk = make_file(tmp_path / "mid.tmp", BASE)
     top_junk = make_file(tmp_path / "top.tmp", BASE)
-    kept = [make_file(tmp_path / name, BASE)
-            for name in ("unlisted.txt", "leaf", "mid", "top")]
+    kept = [
+        make_file(tmp_path / name, BASE)
+        for name in ("unlisted.txt", "leaf", "mid", "top")
+    ]
     directory = tmp_path / "listed-directory"
     directory.mkdir()
     absent = str(tmp_path / "never-created.tmp")
 
     recorder = Recorder()
-    leaf = recorder.task(tmp_path / "leaf", depends=source,
-                         cleans=[leaf_junk, absent])
-    mid = recorder.task(tmp_path / "mid", depends=[leaf, source],
-                        cleans=mid_junk)
-    top = recorder.task(tmp_path / "top", depends=mid,
-                        cleans=[top_junk, str(directory)])
+    leaf = recorder.task(tmp_path / "leaf", depends=source, cleans=[leaf_junk, absent])
+    mid = recorder.task(tmp_path / "mid", depends=[leaf, source], cleans=mid_junk)
+    top = recorder.task(
+        tmp_path / "top", depends=mid, cleans=[top_junk, str(directory)]
+    )
 
     top.clean()
 

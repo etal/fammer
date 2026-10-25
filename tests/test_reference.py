@@ -34,7 +34,9 @@ def difference_entries():
 
 
 def library_entries():
-    return [entry for entry in difference_entries() if entry["file"] != UPDATE_FASTA_RUNS]
+    return [
+        entry for entry in difference_entries() if entry["file"] != UPDATE_FASTA_RUNS
+    ]
 
 
 @cache

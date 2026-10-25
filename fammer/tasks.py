@@ -9,7 +9,7 @@ def ext(path, extension):
     if isinstance(path, Task):
         return ext(path.target, extension)
     if isinstance(path, str):
-        return path.rsplit('.', 1)[0] + '.' + extension
+        return path.rsplit(".", 1)[0] + "." + extension
     return [ext(p, extension) for p in path]
 
 
@@ -18,7 +18,7 @@ def noext(path):
     if isinstance(path, Task):
         return noext(path.target)
     if isinstance(path, str):
-        return path.rsplit('.', 1)[0]
+        return path.rsplit(".", 1)[0]
     return [noext(p) for p in path]
 
 
@@ -31,9 +31,10 @@ def sh(cmd):
         logging.warning("*** Failed command: %s", str(cmd))
         raise
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError("Failed command (returned %s):\n%s\n\n%s"
-                           % (exc.returncode, str(cmd),
-                              exc.output.decode('utf-8', 'replace')))
+        raise RuntimeError(
+            "Failed command (returned %s):\n%s\n\n%s"
+            % (exc.returncode, str(cmd), exc.output.decode("utf-8", "replace"))
+        )
 
 
 def which(exenames):
@@ -46,7 +47,7 @@ def which(exenames):
     """
     for exe in exenames:
         try:
-            path = subprocess.check_output(['which', exe], text=True)
+            path = subprocess.check_output(["which", exe], text=True)
             return path.strip()
         except subprocess.CalledProcessError:
             pass
@@ -86,8 +87,9 @@ class Task(object):
             return [x]
         return list(x)
 
-    def __init__(self, target, action=lambda x: None, depends=None, cleans=None,
-            kwargs=None):
+    def __init__(
+        self, target, action=lambda x: None, depends=None, cleans=None, kwargs=None
+    ):
         # Filename or directory to build
         assert callable(action)
         self.target = target
@@ -100,8 +102,7 @@ class Task(object):
         for dep in self.depends:
             if isinstance(dep, Task) and not dep.is_up_to_date():
                 dep.build()
-        if exists(self.target) and all(self.is_newer_than(dep)
-                for dep in self.depends):
+        if exists(self.target) and all(self.is_newer_than(dep) for dep in self.depends):
             logging.info("%s: Up to date.", self.target)
         else:
             logging.info("%s: Building...", self.target)
@@ -114,23 +115,21 @@ class Task(object):
     def is_newer_than(self, dep):
         if not exists(self.target):
             return False
-        return (os.stat(self.target).st_mtime
-                >= os.stat(str(dep)).st_mtime)
+        return os.stat(self.target).st_mtime >= os.stat(str(dep)).st_mtime
 
     def is_up_to_date(self):
         """True if the target does not need to be rebuilt."""
         return exists(self.target) and all(
-                (dep.is_up_to_date()
-                    if isinstance(dep, Task)
-                    else exists(dep))
-                and self.is_newer_than(dep)
-                for dep in self.depends)
+            (dep.is_up_to_date() if isinstance(dep, Task) else exists(dep))
+            and self.is_newer_than(dep)
+            for dep in self.depends
+        )
 
     def clean(self):
         """Recursively delete auxilliary files."""
         for fname in self.cleans:
             if isfile(fname):
-                logging.info('rm %s', fname)
+                logging.info("rm %s", fname)
                 os.remove(fname)
         for dep in self.depends:
             if isinstance(dep, Task):
@@ -138,4 +137,3 @@ class Task(object):
 
     def __str__(self):
         return self.target
-

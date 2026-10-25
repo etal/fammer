@@ -62,14 +62,21 @@ def run_fammer(workspace, argv):
     """
     env = dict(os.environ)
     env["PATH"] = str(DATA / "tool-shims") + os.pathsep + env["PATH"]
-    return subprocess.run(["fammer", *argv], cwd=workspace, env=env,
-                          capture_output=True, text=True, check=False)
+    return subprocess.run(
+        ["fammer", *argv],
+        cwd=workspace,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 def files_under(root):
     """Paths of the files under root, relative to it."""
-    return {path.relative_to(root).as_posix()
-            for path in root.rglob("*") if path.is_file()}
+    return {
+        path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()
+    }
 
 
 def copy_tracked_profiles(dest):
@@ -82,8 +89,12 @@ def copy_tracked_profiles(dest):
         skip_unless_required("not a Git checkout, as in an sdist")
     # Only stdout is piped, so git's own error message reaches pytest's output.
     listing = subprocess.run(
-        ["git", "ls-files", "-z", "--", "profiles/SomeKinases"], cwd=REPO,
-        stdout=subprocess.PIPE, text=True, check=True)
+        ["git", "ls-files", "-z", "--", "profiles/SomeKinases"],
+        cwd=REPO,
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
+    )
     names = [name for name in listing.stdout.split("\0") if name]
     # pytest.fail, not assert: the structures test would report an
     # AssertionError raised here as its expected failure.
@@ -113,8 +124,7 @@ def built_tree(tmp_path_factory):
     copy_tracked_profiles(root)
     proc = run_fammer(root, recorded("build.json")["argv"])
     if proc.returncode != 0:
-        pytest.fail(f"fammer build exited with {proc.returncode}: "
-                    f"{proc.stderr}")
+        pytest.fail(f"fammer build exited with {proc.returncode}: {proc.stderr}")
     return root
 
 
@@ -155,21 +165,29 @@ def test_build_hmmer_without_structures(workspace):
     proc = run_fammer(workspace, reference["argv"])
     assert proc.returncode == 0, proc.stderr
     assert files_under(workspace) == inputs | set(reference["created"])
-    hashed = {name: digest for name, _size, digest, kind
-              in reference["manifest"] if kind == "sha256"}
+    hashed = {
+        name: digest
+        for name, _size, digest, kind in reference["manifest"]
+        if kind == "sha256"
+    }
     assert hashed
-    differing = [name for name in sorted(hashed)
-                 if hashlib.sha256((workspace / name).read_bytes()).hexdigest()
-                 != hashed[name]]
+    differing = [
+        name
+        for name in sorted(hashed)
+        if hashlib.sha256((workspace / name).read_bytes()).hexdigest() != hashed[name]
+    ]
     assert differing == []
 
 
 # Only the assertion on the build's exit status is expected to fail; a missing
 # program or checkout under FAMMER_REQUIRE_TOOLS is reported as a failure or a
 # setup error.
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="fammer.tmalign cannot read the output of TM-align "
-                   "20240303 and puts unhashable SeqRecords in its graph")
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="fammer.tmalign cannot read the output of TM-align "
+    "20240303 and puts unhashable SeqRecords in its graph",
+)
 def test_build_hmmer_with_structures(workspace):
     """The same build with the structure alignments enabled."""
     require("fammer", "mafft", "hmmbuild", "hmmpress", "TMalign")
@@ -185,14 +203,14 @@ SCAN_RUNS = recorded("scan.json")
 # Eight TgME49 proteins, each with a strong hit (an E-value below 1e-60) and
 # each assigned a different profile by the recorded scan of all 8,320 proteins.
 TGME49_SELECTION = [
-    "TGME49_203010",   # Aurora
-    "TGME49_218220",   # CDK
-    "TGME49_233010",   # MAPK
-    "TGME49_244620",   # STE11
-    "TGME49_265330",   # GSK3
-    "TGME49_305860",   # CDPK
-    "TGME49_306480",   # SomeKinases
-    "TGME49_316150",   # ULK
+    "TGME49_203010",  # Aurora
+    "TGME49_218220",  # CDK
+    "TGME49_233010",  # MAPK
+    "TGME49_244620",  # STE11
+    "TGME49_265330",  # GSK3
+    "TGME49_305860",  # CDPK
+    "TGME49_306480",  # SomeKinases
+    "TGME49_316150",  # ULK
 ]
 
 
@@ -236,8 +254,9 @@ def test_scan_reproduces_recorded_run(scan_workspace, name):
     assert proc.returncode == run["returncode"], proc.stderr
     assert proc.stdout == run["stdout"]
     assert log_messages(proc.stderr) == log_messages(run["stderr"])
-    assert (files_under(scan_workspace) - before
-            == set(run["created"]) | set(run["modified"]))
+    assert files_under(scan_workspace) - before == set(run["created"]) | set(
+        run["modified"]
+    )
     for fname, recorded_text in run["written_files"].items():
         written = (scan_workspace / fname).read_text(encoding="utf-8")
         assert fasta_records(written) == fasta_records(recorded_text), fname
@@ -251,27 +270,29 @@ def test_scan_of_selected_sequences_agrees_with_scan_of_all(scan_workspace):
     hit keeps its best profile. The sequences of ``-o`` are the selected ones.
     """
     require("fammer", "hmmsearch")
-    full = dict(line.split("\t")
-                for line in SCAN_RUNS["TgME49.table"]["stdout"].splitlines())
+    full = dict(
+        line.split("\t") for line in SCAN_RUNS["TgME49.table"]["stdout"].splitlines()
+    )
     expected = {name: full[name] for name in TGME49_SELECTION}
     with open(scan_workspace / "TgME49.pep", encoding="utf-8") as handle:
-        selected = [rec for rec in SeqIO.parse(handle, "fasta")
-                    if rec.id in expected]
+        selected = [rec for rec in SeqIO.parse(handle, "fasta") if rec.id in expected]
     assert len(selected) == len(expected)
     with open(scan_workspace / "selected.pep", "w", encoding="utf-8") as handle:
         SeqIO.write(selected, handle, "fasta")
 
-    proc = run_fammer(scan_workspace, ["scan", "SomeKinases", "selected.pep",
-                                       "--table", "-o", "selected.hits.fasta"])
+    proc = run_fammer(
+        scan_workspace,
+        ["scan", "SomeKinases", "selected.pep", "--table", "-o", "selected.hits.fasta"],
+    )
     assert proc.returncode == 0, proc.stderr
-    assert dict(line.split("\t") for line in proc.stdout.splitlines()) \
-        == expected
+    assert dict(line.split("\t") for line in proc.stdout.splitlines()) == expected
     assert len(proc.stdout.splitlines()) == len(expected)
     with open(scan_workspace / "selected.hits.fasta", encoding="utf-8") as handle:
-        hits = Counter((rec.id, rec.description, str(rec.seq))
-                       for rec in SeqIO.parse(handle, "fasta"))
-    assert hits == Counter((rec.id, rec.description, str(rec.seq))
-                           for rec in selected)
+        hits = Counter(
+            (rec.id, rec.description, str(rec.seq))
+            for rec in SeqIO.parse(handle, "fasta")
+        )
+    assert hits == Counter((rec.id, rec.description, str(rec.seq)) for rec in selected)
 
 
 def test_scan_without_hits_writes_nothing_and_succeeds(scan_workspace):
@@ -286,22 +307,28 @@ def test_scan_without_hits_writes_nothing_and_succeeds(scan_workspace):
 
 def alignment_pairs(root):
     """The (alignment, FASTA file) paths that share a base name under root."""
-    return sorted((aln, aln.with_suffix(".fasta"))
-                  for aln in root.rglob("*.aln")
-                  if aln.with_suffix(".fasta").is_file())
+    return sorted(
+        (aln, aln.with_suffix(".fasta"))
+        for aln in root.rglob("*.aln")
+        if aln.with_suffix(".fasta").is_file()
+    )
 
 
 def ungapped_alignment(path):
     """The (identifier, ungapped upper-case sequence) pairs of a Clustal file."""
-    return [(name, seq.replace("-", "").replace(".", "").upper())
-            for name, seq in read_records(path, "clustal")]
+    return [
+        (name, seq.replace("-", "").replace(".", "").upper())
+        for name, seq in read_records(path, "clustal")
+    ]
 
 
 def snapshot(root):
     """The modification time and contents of every file under root."""
-    return {path.relative_to(root).as_posix():
-            (path.stat().st_mtime_ns, path.read_bytes())
-            for path in root.rglob("*") if path.is_file()}
+    return {
+        path.relative_to(root).as_posix(): (path.stat().st_mtime_ns, path.read_bytes())
+        for path in root.rglob("*")
+        if path.is_file()
+    }
 
 
 def test_update_fasta_leaves_a_fresh_build_unchanged(built_workspace):
@@ -312,11 +339,9 @@ def test_update_fasta_leaves_a_fresh_build_unchanged(built_workspace):
     """
     require("fammer")
     pairs = alignment_pairs(built_workspace)
-    assert {fasta for _aln, fasta in pairs} \
-        == set(built_workspace.rglob("*.fasta"))
+    assert {fasta for _aln, fasta in pairs} == set(built_workspace.rglob("*.fasta"))
     for aln, fasta in pairs:
-        assert set(ungapped_alignment(aln)) \
-            == set(read_records(fasta, "fasta")), fasta
+        assert set(ungapped_alignment(aln)) == set(read_records(fasta, "fasta")), fasta
     before = snapshot(built_workspace)
     proc = run_fammer(built_workspace, ["update-fasta", "SomeKinases"])
     assert proc.returncode == 0, proc.stderr
@@ -342,27 +367,33 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
         aligned[fasta] = ungapped_alignment(aln)
         first_id, first_seq = aligned[fasta][0]
         fasta.write_text(f">{first_id}\n{first_seq}\n", encoding="utf-8")
-        stale = aln.stat().st_mtime_ns - 10 ** 10
+        stale = aln.stat().st_mtime_ns - 10**10
         os.utime(fasta, ns=(stale, stale))
 
     proc = run_fammer(built_workspace, ["update-fasta", "SomeKinases"])
     assert proc.returncode == 0, proc.stderr
-    purged = {match.group(1): int(match.group(2) or 0)
-              for match in re.finditer(
-                  r"Updated (\S+)(?: \(purged (\d+) sequences?\))?$",
-                  proc.stderr, re.MULTILINE)}
+    purged = {
+        match.group(1): int(match.group(2) or 0)
+        for match in re.finditer(
+            r"Updated (\S+)(?: \(purged (\d+) sequences?\))?$",
+            proc.stderr,
+            re.MULTILINE,
+        )
+    }
     for _aln, fasta in pairs:
         records = aligned[fasta]
         kept = read_records(fasta, "fasta")
         kept_seqs = [seq for _name, seq in kept]
         assert set(kept) <= set(records), fasta
         assert len(kept) == len(set(kept)), fasta
-        assert len(records) - len(kept) \
-            == purged.get(fasta.relative_to(built_workspace).as_posix(), 0)
+        assert len(records) - len(kept) == purged.get(
+            fasta.relative_to(built_workspace).as_posix(), 0
+        )
         for i, seq in enumerate(kept_seqs):
             if "X" not in seq:
-                assert not any(seq in other for j, other
-                               in enumerate(kept_seqs) if j != i), fasta
+                assert not any(
+                    seq in other for j, other in enumerate(kept_seqs) if j != i
+                ), fasta
         for _name, seq in set(records) - set(kept):
             if "X" not in seq:
                 assert any(seq in other for other in kept_seqs), fasta
@@ -388,26 +419,29 @@ def test_cluster_partitions_the_input_sequences(tmp_path):
     assert proc.returncode == 0, proc.stderr
 
     given = read_records(tmp_path / "DYRK.fasta", "fasta")
-    numbered = sorted((path for path in tmp_path.glob("DYRK.fasta.*")
-                       if path.suffix[1:].isdigit()),
-                      key=lambda path: int(path.suffix[1:]))
-    assert [path.suffix[1:] for path in numbered] \
-        == [str(i) for i in range(len(numbered))]
+    numbered = sorted(
+        (path for path in tmp_path.glob("DYRK.fasta.*") if path.suffix[1:].isdigit()),
+        key=lambda path: int(path.suffix[1:]),
+    )
+    assert [path.suffix[1:] for path in numbered] == [
+        str(i) for i in range(len(numbered))
+    ]
     parts = [read_records(path, "fasta") for path in numbered]
     assert all(len(part) >= 4 for part in parts)
-    assert [len(part) for part in parts] \
-        == sorted((len(part) for part in parts), reverse=True)
+    assert [len(part) for part in parts] == sorted(
+        (len(part) for part in parts), reverse=True
+    )
     unique = tmp_path / "DYRK.fasta.Unique"
     if unique.exists():
         parts.append(read_records(unique, "fasta"))
     assert parts
-    assert sorted(record for part in parts for record in part) \
-        == sorted(given)
+    assert sorted(record for part in parts for record in part) == sorted(given)
 
     with open(tmp_path / "DYRK.fasta.xml", encoding="utf-8") as handle:
         tree = Phylo.read(handle, "phyloxml")
-    assert sorted(tip.name for tip in tree.get_terminals()) \
-        == sorted(name for name, _seq in given)
+    assert sorted(tip.name for tip in tree.get_terminals()) == sorted(
+        name for name, _seq in given
+    )
 
 
 # The recorded calls ran in the workspace of the recorded build, with paths
@@ -419,11 +453,12 @@ HMMER_CALLS = recorded("hmmer.json", "library")
 
 @pytest.mark.parametrize("hmm_name", sorted(HMMER_CALLS["get_hmm_evalues"]))
 def test_get_hmm_evalues_reproduces_recorded_values(
-        built_workspace, monkeypatch, hmm_name):
+    built_workspace, monkeypatch, hmm_name
+):
     """The best E-value of each sequence of a family against its own profile."""
     require("hmmsearch")
     monkeypatch.chdir(built_workspace)
-    hits = _share.get_hmm_evalues(hmm_name, hmm_name[:-len(".hmm")] + ".fasta")
+    hits = _share.get_hmm_evalues(hmm_name, hmm_name[: -len(".hmm")] + ".fasta")
     expected = HMMER_CALLS["get_hmm_evalues"][hmm_name]["value"]
     assert sorted(hits.items()) == [tuple(pair) for pair in expected]
 
@@ -431,19 +466,22 @@ def test_get_hmm_evalues_reproduces_recorded_values(
 def test_get_hmm_len_reproduces_recorded_lengths(built_workspace, monkeypatch):
     """Every built profile, even the combined one, has its recorded length."""
     monkeypatch.chdir(built_workspace)
-    built = {path.relative_to(built_workspace).as_posix()
-             for path in built_workspace.rglob("*.hmm")
-             if "_all" not in path.name}
+    built = {
+        path.relative_to(built_workspace).as_posix()
+        for path in built_workspace.rglob("*.hmm")
+        if "_all" not in path.name
+    }
     expected = dict(HMMER_CALLS["get_hmm_len"])
     assert built == set(expected)
-    assert {name: add.get_hmm_len(name) for name in built} \
-        == {name: call["value"] for name, call in expected.items()}
+    assert {name: add.get_hmm_len(name) for name in built} == {
+        name: call["value"] for name, call in expected.items()
+    }
 
 
-def test_walk_profiles_pairs_every_fasta_with_its_profile(
-        built_workspace, monkeypatch):
+def test_walk_profiles_pairs_every_fasta_with_its_profile(built_workspace, monkeypatch):
     """The recorded pairs are found, in whatever order the file system lists."""
     monkeypatch.chdir(built_workspace)
     expected = HMMER_CALLS["walk_profiles"]["value"]
-    assert sorted(add.walk_profiles("SomeKinases")) \
-        == sorted(tuple(pair) for pair in expected)
+    assert sorted(add.walk_profiles("SomeKinases")) == sorted(
+        tuple(pair) for pair in expected
+    )

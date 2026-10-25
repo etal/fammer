@@ -28,9 +28,11 @@ FOOTER = [
 
 def tblout_line(seq, prof, dom_eval, seq_eval="1e-20", description="-"):
     """One data line with the 18 fixed columns and a free-text description."""
-    return ("%-24s -          %-12s -          %9s  100.0   0.1 %9s  99.0   0.1"
-            "   1.0   1   0   0   1   1   1   1 %s\n"
-            % (seq, prof, seq_eval, dom_eval, description))
+    return (
+        "%-24s -          %-12s -          %9s  100.0   0.1 %9s  99.0   0.1"
+        "   1.0   1   0   0   1   1   1   1 %s\n"
+        % (seq, prof, seq_eval, dom_eval, description)
+    )
 
 
 def oracle(rows):
@@ -65,43 +67,64 @@ def test_every_row_order_gives_the_minimum_with_first_row_winning_ties():
         rows = list(order)
         # Descriptions with spaces, and a full-sequence E-value that varies
         # independently of the domain E-value.
-        lines = [tblout_line(seq, prof, dom, seq_eval="%de-30" % (i + 1),
-                             description="symbol:X species:1 \"A b\"  tail %d" % i)
-                 for i, (seq, prof, dom) in enumerate(rows)]
+        lines = [
+            tblout_line(
+                seq,
+                prof,
+                dom,
+                seq_eval="%de-30" % (i + 1),
+                description='symbol:X species:1 "A b"  tail %d' % i,
+            )
+            for i, (seq, prof, dom) in enumerate(rows)
+        ]
         assert parse(lines) == oracle(rows), rows
 
 
 def test_tied_rows_keep_the_first_whatever_profile_name_or_full_evalue():
     """A tie is resolved by row position, not by profile name or full E-value."""
-    lines = [tblout_line("s", "zzz", "1e-8", seq_eval="1e-1"),
-             tblout_line("s", "aaa", "1e-8", seq_eval="1e-99")]
+    lines = [
+        tblout_line("s", "zzz", "1e-8", seq_eval="1e-1"),
+        tblout_line("s", "aaa", "1e-8", seq_eval="1e-99"),
+    ]
     assert parse(lines) == {"s": ("zzz", 1e-8)}
     assert parse(lines[::-1]) == {"s": ("aaa", 1e-8)}
 
 
 def test_selection_uses_the_domain_evalue_not_the_full_sequence_evalue():
     """Column 8 decides, although column 5 orders the profiles the other way."""
-    lines = [tblout_line("s", "wholeBest", "1e-3", seq_eval="1e-50"),
-             tblout_line("s", "domainBest", "1e-9", seq_eval="1e-5")]
+    lines = [
+        tblout_line("s", "wholeBest", "1e-3", seq_eval="1e-50"),
+        tblout_line("s", "domainBest", "1e-9", seq_eval="1e-5"),
+    ]
     assert parse(lines) == {"s": ("domainBest", 1e-9)}
 
 
 def test_comment_lines_are_ignored_wherever_they_occur():
     """Header, interleaved and trailing comments contribute no hits."""
     data = [tblout_line("s1", "p1", "1e-7"), tblout_line("s2", "p2", "5e-3")]
-    lines = (HEADER + [data[0], "# s3 - p9 - 1e-9 1e-9 1 0 1e-300 1 0\n"]
-             + [data[1]] + FOOTER)
+    lines = (
+        HEADER
+        + [data[0], "# s3 - p9 - 1e-9 1e-9 1 0 1e-300 1 0\n"]
+        + [data[1]]
+        + FOOTER
+    )
     assert parse(lines) == {"s1": ("p1", 1e-7), "s2": ("p2", 5e-3)}
 
 
 def test_the_description_does_not_affect_the_result():
     """Descriptions with spaces, numbers and tabs are skipped as free text."""
-    descriptions = ["-", "one two three", "1e-300 2 3 4 5 6 7 8 9 10",
-                    "{<Apicomplexa(e)>}Chain A, Crystal Structure",
-                    "symbol:CDPK1 species:3702 \"Arabidopsis thaliana\"  AT1G18890",
-                    "tab\tseparated\ttext"]
-    rows = [("gi|254575025|pdb|3HX4|A", "Testfam", "1.6e-150"),
-            ("TAIR|locus:2011201", "Testfam", "2.7e-137")]
+    descriptions = [
+        "-",
+        "one two three",
+        "1e-300 2 3 4 5 6 7 8 9 10",
+        "{<Apicomplexa(e)>}Chain A, Crystal Structure",
+        'symbol:CDPK1 species:3702 "Arabidopsis thaliana"  AT1G18890',
+        "tab\tseparated\ttext",
+    ]
+    rows = [
+        ("gi|254575025|pdb|3HX4|A", "Testfam", "1.6e-150"),
+        ("TAIR|locus:2011201", "Testfam", "2.7e-137"),
+    ]
     reference = parse([tblout_line(*row) for row in rows])
     assert reference == oracle(rows)
     for description in descriptions:
@@ -113,13 +136,18 @@ def test_sequences_are_independent_and_input_without_hits_is_empty():
     """Rows of one sequence never displace another; no data lines, no hits."""
     assert parse(HEADER + FOOTER) == {}
     assert parse([]) == {}
-    lines = [tblout_line("a", "p1", "1e-2"), tblout_line("b", "p2", "1e-9"),
-             tblout_line("a", "p3", "1e-4"), tblout_line("b", "p1", "1e-1")]
+    lines = [
+        tblout_line("a", "p1", "1e-2"),
+        tblout_line("b", "p2", "1e-9"),
+        tblout_line("a", "p3", "1e-4"),
+        tblout_line("b", "p1", "1e-1"),
+    ]
     assert parse(lines) == {"a": ("p3", 1e-4), "b": ("p2", 1e-9)}
 
 
-@pytest.mark.parametrize("text, value", [("0", 0.0), ("0.0", 0.0),
-                                         ("1e-200", 1e-200), ("5.5", 5.5)])
+@pytest.mark.parametrize(
+    "text, value", [("0", 0.0), ("0.0", 0.0), ("1e-200", 1e-200), ("5.5", 5.5)]
+)
 def test_evalue_notations_are_returned_as_floats(text, value):
     """The E-value is a float whatever its textual form; zero is a valid value."""
     hits = parse([tblout_line("s", "p", text)])

@@ -142,7 +142,9 @@ def outcome(func, *args, log=False, stdout=False, **kwargs):
         root.setLevel(logging.INFO)
         root.addHandler(recorder)
     try:
-        with contextlib.redirect_stdout(printed) if stdout else contextlib.nullcontext():
+        with (
+            contextlib.redirect_stdout(printed) if stdout else contextlib.nullcontext()
+        ):
             try:
                 value = func(*args, **kwargs)
             except Exception as exc:
@@ -408,7 +410,9 @@ def tasks_cases():
     for index, (cmd, recorded) in enumerate(data["sh"]):
         yield Case(file, "sh", index, partial(tasks.sh, cmd), recorded)
     call = partial(tasks.which, ["fammer-no-such-program"])
-    yield Case(file, "which_missing", "fammer-no-such-program", call, data["which_missing"])
+    yield Case(
+        file, "which_missing", "fammer-no-such-program", call, data["which_missing"]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -497,9 +501,13 @@ def build_cases(file):
     tree = os.path.basename(relpath)
     added = data.get("added_files", [])
     call = partial(in_tree_copy, relpath, added, build.treeify_subdirs, tree)
-    yield Case(file, "treeify_subdirs", tree, call, data["treeify_subdirs"], (CHECKOUT,))
+    yield Case(
+        file, "treeify_subdirs", tree, call, data["treeify_subdirs"], (CHECKOUT,)
+    )
     for index, graph in enumerate(data["taskify_subdirs"]):
-        call = partial(in_tree_copy, relpath, added, taskify_graph, tree, graph["kwargs"])
+        call = partial(
+            in_tree_copy, relpath, added, taskify_graph, tree, graph["kwargs"]
+        )
         yield Case(file, "taskify_subdirs", index, call, graph["graph"], (CHECKOUT,))
 
 
@@ -587,7 +595,12 @@ def mapgaps_cases():
         else:
             recorded = rec["mg_aln2cma"]
         yield Case(
-            file, "mg_aln2cma", target, partial(run_mg_aln2cma, rec), recorded, (BIOCMA,)
+            file,
+            "mg_aln2cma",
+            target,
+            partial(run_mg_aln2cma, rec),
+            recorded,
+            (BIOCMA,),
         )
         yield Case(
             file,
@@ -687,7 +700,9 @@ def share_cases():
 
 
 def ungap_rows(rows):
-    return records_table(update_fasta.ungap_and_unique(make_records(rows), "target.fasta"))
+    return records_table(
+        update_fasta.ungap_and_unique(make_records(rows), "target.fasta")
+    )
 
 
 def ungap_file(relpath):
@@ -750,7 +765,9 @@ def parse_tmalign(relpath, variant, ref, eqv):
 def deduped(rows, best_score):
     return [
         [rec.id, rec.name, rec.description, str(rec.seq)]
-        for rec in tmalign.clean_and_dedupe_seqs(make_records(rows), best_score=best_score)
+        for rec in tmalign.clean_and_dedupe_seqs(
+            make_records(rows), best_score=best_score
+        )
     ]
 
 
@@ -773,7 +790,9 @@ def mst(names, scores, cls):
                 (cls(Seq("ACDE"), id=left), cls(Seq("ACDE"), id=right), scores[index])
             )
             index += 1
-    return sorted(sorted([left.id, right.id]) for left, right in tmalign.mst_pairs(pairs))
+    return sorted(
+        sorted([left.id, right.id]) for left, right in tmalign.mst_pairs(pairs)
+    )
 
 
 def tmalign_cases():
@@ -781,9 +800,15 @@ def tmalign_cases():
     data = load(file)
     for relpath, rec in data["read_tmalign_as_seqrec_pair"].items():
         for variant in ("as_written", "without_cpu_time_line"):
-            call = partial(parse_tmalign, relpath, variant, rec["ref_id"], rec["eqv_id"])
+            call = partial(
+                parse_tmalign, relpath, variant, rec["ref_id"], rec["eqv_id"]
+            )
             yield Case(
-                file, "read_tmalign_as_seqrec_pair", f"{relpath}:{variant}", call, rec[variant]
+                file,
+                "read_tmalign_as_seqrec_pair",
+                f"{relpath}:{variant}",
+                call,
+                rec[variant],
             )
     for index, (text, recorded) in enumerate(data["tmscore_from_description"]):
         call = partial(tmalign.tmscore_from_description, text)
@@ -847,7 +872,11 @@ def cluster_cases():
         yield Case(file, "write_fasta", name, call, rec["result"])
     call = partial(cluster.load_tree, "sequences.txt")
     yield Case(
-        file, "load_tree_other_suffix", "sequences.txt", call, data["load_tree_other_suffix"]
+        file,
+        "load_tree_other_suffix",
+        "sequences.txt",
+        call,
+        data["load_tree_other_suffix"],
     )
 
 
@@ -997,7 +1026,10 @@ def update_fasta_run_differences():
                 after = snapshot(root)
                 current = {
                     "outcome": {key: result[key] for key in result if key != "log"},
-                    "log": [f"{module}: {message}" for _level, module, message in result["log"]],
+                    "log": [
+                        f"{module}: {message}"
+                        for _level, module, message in result["log"]
+                    ],
                     "created": sorted(set(after) - set(before)),
                     "modified": sorted(
                         n for n in after if n in before and after[n] != before[n]

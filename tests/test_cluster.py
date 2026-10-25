@@ -183,9 +183,7 @@ def test_log_matches_the_recording(replay):
 
 
 @pytest.mark.parametrize("name", ["DYRK.fasta", "PKL.aln"])
-def test_clusters_and_unique_partition_the_input(
-    name, tmp_path, monkeypatch, caplog
-):
+def test_clusters_and_unique_partition_the_input(name, tmp_path, monkeypatch, caplog):
     """Every input identifier is written to exactly one cluster or Unique file."""
     error, written, _, _ = run_case(name, tmp_path, monkeypatch, caplog)
     assert error is None
@@ -200,9 +198,7 @@ def test_clusters_and_unique_partition_the_input(
 
 
 @pytest.mark.parametrize("name", ["DYRK.fasta", "PKL.aln"])
-def test_cluster_numbers_follow_decreasing_size(
-    name, tmp_path, monkeypatch, caplog
-):
+def test_cluster_numbers_follow_decreasing_size(name, tmp_path, monkeypatch, caplog):
     """Cluster file 0 is the largest, and sizes never increase with the number."""
     error, written, _, _ = run_case(name, tmp_path, monkeypatch, caplog)
     assert error is None

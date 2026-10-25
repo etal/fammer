@@ -11,6 +11,7 @@ Depends:
     mafft (apt-get install mafft)
 
 """
+
 import functools
 import logging
 import math
@@ -39,7 +40,7 @@ def cmd_cluster(args):
     tree = load_tree(args.sequences)
 
     # Extract clusters of acceptable size
-    MIN_CLUSTER_SIZE = max(4, int(round(tree.count_terminals() ** .4)))
+    MIN_CLUSTER_SIZE = max(4, int(round(tree.count_terminals() ** 0.4)))
     clusters = {}
     unclustered = set()
     seen_subnodes = set([tree.root])
@@ -57,7 +58,7 @@ def cmd_cluster(args):
 
     # Find any remaining supported clades & assign those to clusters too
     # Any tips not assigned to a cluster -> Unique
-    for clade in tree.find_clades(order='level'):
+    for clade in tree.find_clades(order="level"):
         if clade in seen_subnodes:
             continue
         elif clade.is_terminal():
@@ -81,36 +82,36 @@ def cmd_cluster(args):
 
 def load_tree(seqfname):
     """Load an alignment, build & prep a tree, return the tree object."""
-    if seqfname.endswith('.aln'):
-        aln = AlignIO.read(seqfname, 'clustal')
-    elif seqfname.endswith('.fasta'):
+    if seqfname.endswith(".aln"):
+        aln = AlignIO.read(seqfname, "clustal")
+    elif seqfname.endswith(".fasta"):
         # Run MAFFT quickly
-        alndata = subprocess.check_output(['mafft', '--quiet', '--auto',
-                                           seqfname], text=True)
-        aln = AlignIO.read(StringIO(alndata), 'fasta')
+        alndata = subprocess.check_output(
+            ["mafft", "--quiet", "--auto", seqfname], text=True
+        )
+        aln = AlignIO.read(StringIO(alndata), "fasta")
     else:
-        raise ValueError("Input sequences must be a Clustal alignment (.aln) "
-                         "or unaligned FASTA (.fasta)")
+        raise ValueError(
+            "Input sequences must be a Clustal alignment (.aln) "
+            "or unaligned FASTA (.fasta)"
+        )
 
     # Use conserved (less-gappy) blocks to build the tree
     aln = alnutils.blocks(aln, 0.4)
-    with tempfile.NamedTemporaryFile(mode='w') as tmp:
-        AlignIO.write(aln, tmp, 'fasta')
+    with tempfile.NamedTemporaryFile(mode="w") as tmp:
+        AlignIO.write(aln, tmp, "fasta")
         tmp.flush()
-        treedata = subprocess.check_output(['fasttree',
-                                            '-pseudo', '-gamma', '-wag',
-                                            tmp.name], text=True)
-    tree = Phylo.read(StringIO(treedata), 'newick')
+        treedata = subprocess.check_output(
+            ["fasttree", "-pseudo", "-gamma", "-wag", tmp.name], text=True
+        )
+    tree = Phylo.read(StringIO(treedata), "newick")
 
     # Collapse weakly supported splits
-    confs = [c.confidence
-             for c in tree.find_clades()
-             if c.confidence is not None]
+    confs = [c.confidence for c in tree.find_clades() if c.confidence is not None]
     # ENH: accept min_confidence as an option
     min_confidence = math.fsum(confs) / len(confs)
     # A clade without a support value counts as weakly supported.
-    tree.collapse_all(lambda c: c.confidence is None
-                      or c.confidence < min_confidence)
+    tree.collapse_all(lambda c: c.confidence is None or c.confidence < min_confidence)
     tree.ladderize(reverse=True)
     tree.root.branch_length = 0.0
     return tree
@@ -128,8 +129,9 @@ def get_clades_to_cut(tree):
             inner_branch_lengths.append(clade.branch_length)
     # tip_mean = math.fsum(tip_branch_lengths) / len(tip_branch_lengths)
     tip_mean = geom_mean(tip_branch_lengths)
-    clades_to_cut = [cl for cl in tree.get_nonterminals()
-                    if cl.branch_length >= tip_mean]
+    clades_to_cut = [
+        cl for cl in tree.get_nonterminals() if cl.branch_length >= tip_mean
+    ]
     clades_to_cut.sort(key=lambda cl: cl.branch_length, reverse=True)
     logging.info("# to cut (up to): %s", len(clades_to_cut))
     return clades_to_cut
@@ -138,46 +140,48 @@ def get_clades_to_cut(tree):
 def geom_mean(arr):
     """Geometric mean of an array of numbers."""
     prod = functools.reduce(float.__mul__, map(float, arr))
-    return pow(prod, 1./len(arr))
+    return pow(prod, 1.0 / len(arr))
 
-   
+
 def write_clusters(seqfname, tree, clusters, unclustered):
     """Write output files: clusters & unique as FASTA, tree as phyloXML."""
-    is_aln = seqfname.endswith('.aln')
-    seq_idx = SeqIO.to_dict(SeqIO.parse(seqfname,
-                                        'clustal' if is_aln else 'fasta'))
+    is_aln = seqfname.endswith(".aln")
+    seq_idx = SeqIO.to_dict(SeqIO.parse(seqfname, "clustal" if is_aln else "fasta"))
+
     def write_cluster(cluster, fname):
         """Write the sequences of cluster tips to a FASTA file."""
         records = [seq_idx[seqid] for seqid in sorted(cluster)]
-        with open(fname, 'w+') as handle:
+        with open(fname, "w+") as handle:
             for rec in records:
                 write_fasta(rec, handle, do_ungap=is_aln)
         logging.info("Wrote %s (%d sequences)", fname, len(records))
 
-    colors = [BranchColor(*map(lambda x: int(x*255), rgb))
-            for rgb in ColorSpiral().get_colors(len(clusters))]
-    for i, item in enumerate(sorted(clusters.items(), reverse=True,
-                                    key=lambda kv: len(kv[1]))):
+    colors = [
+        BranchColor(*map(lambda x: int(x * 255), rgb))
+        for rgb in ColorSpiral().get_colors(len(clusters))
+    ]
+    for i, item in enumerate(
+        sorted(clusters.items(), reverse=True, key=lambda kv: len(kv[1]))
+    ):
         clade, cluster = item
-        write_cluster(cluster, os.path.basename(seqfname) + '.' + str(i))
+        write_cluster(cluster, os.path.basename(seqfname) + "." + str(i))
         clade.color = colors[i]
         clade.width = 2
     if unclustered:
-        write_cluster(unclustered, os.path.basename(seqfname) + '.Unique')
+        write_cluster(unclustered, os.path.basename(seqfname) + ".Unique")
 
-    treefname = os.path.basename(seqfname) + '.xml'
-    Phylo.write(tree, treefname, 'phyloxml') 
+    treefname = os.path.basename(seqfname) + ".xml"
+    Phylo.write(tree, treefname, "phyloxml")
     logging.info("Wrote %s", treefname)
 
 
 def write_fasta(record, handle, do_ungap=False):
     """Ungap and write a SeqRecord to a handle in single-line FASTA format."""
     if record.description:
-        topline = '>%s %s' % (record.id, record.description)
+        topline = ">%s %s" % (record.id, record.description)
     else:
-        topline = '>' + record.id + '\n'
+        topline = ">" + record.id + "\n"
     seq = str(record.seq).strip()
     if do_ungap:
-        seq = seq.replace('-', '').replace('.', '').upper()
-    handle.write(topline + '\n' + seq + '\n')
-
+        seq = seq.replace("-", "").replace(".", "").upper()
+    handle.write(topline + "\n" + seq + "\n")

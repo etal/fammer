@@ -29,8 +29,12 @@ def copy_tracked_profiles(name, dest):
     if not (REPO / ".git").exists():
         pytest.skip("not a Git checkout, as in an sdist")
     listing = subprocess.run(
-        ["git", "ls-files", "-z", "--", "profiles/" + name], cwd=REPO,
-        stdout=subprocess.PIPE, text=True, check=True)
+        ["git", "ls-files", "-z", "--", "profiles/" + name],
+        cwd=REPO,
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
+    )
     names = [item for item in listing.stdout.split("\0") if item]
     if not names:
         pytest.fail("git lists no files under profiles/" + name)
@@ -57,12 +61,23 @@ def make_synthetic_tree(base):
     not become tips.
     """
     top = base / "top"
-    write_files(top, [
-        "alpha.fasta", "beta.fasta", "a.b.fasta", "grp.fasta", "empty.fasta",
-        "notes.txt", "other.aln",
-        "grp/x.fasta", "grp/y.fasta", "grp/sub.fasta", "grp/readme.txt",
-        "grp/sub/z.fasta",
-    ])
+    write_files(
+        top,
+        [
+            "alpha.fasta",
+            "beta.fasta",
+            "a.b.fasta",
+            "grp.fasta",
+            "empty.fasta",
+            "notes.txt",
+            "other.aln",
+            "grp/x.fasta",
+            "grp/y.fasta",
+            "grp/sub.fasta",
+            "grp/readme.txt",
+            "grp/sub/z.fasta",
+        ],
+    )
     (top / "empty").mkdir()
     return str(top)
 
@@ -72,10 +87,13 @@ def expected_structure(path):
     entries = sorted(os.listdir(path))
     dirs = [e for e in entries if os.path.isdir(os.path.join(path, e))]
     children = [expected_structure(os.path.join(path, d)) for d in dirs]
-    children += [(TIP, e[:-len(".fasta")], ())
-                 for e in entries
-                 if e.endswith(".fasta") and e[:-len(".fasta")] not in dirs
-                 and os.path.isfile(os.path.join(path, e))]
+    children += [
+        (TIP, e[: -len(".fasta")], ())
+        for e in entries
+        if e.endswith(".fasta")
+        and e[: -len(".fasta")] not in dirs
+        and os.path.isfile(os.path.join(path, e))
+    ]
     return (GROUP, os.path.basename(path), tuple(sorted(children)))
 
 
@@ -87,8 +105,9 @@ def parsed_structure(clade):
     """
     if not clade.clades:
         return (TIP, clade.name, ())
-    children = [parsed_structure(c) for c in clade.clades
-                if c.name is not None or c.clades]
+    children = [
+        parsed_structure(c) for c in clade.clades if c.name is not None or c.clades
+    ]
     return (GROUP, clade.name, tuple(sorted(children)))
 
 
@@ -142,7 +161,7 @@ def family_fastas(top):
     found = []
     for dirpath, dirnames, filenames in os.walk(top):
         for name in filenames:
-            stem = name[:-len(".fasta")]
+            stem = name[: -len(".fasta")]
             if name.endswith(".fasta") and stem not in dirnames:
                 found.append(os.path.join(dirpath, name))
     return found
@@ -154,12 +173,11 @@ def group_dirs(top):
 
 def test_one_aln_task_per_family_fasta_and_per_directory(tree):
     """Every family and every directory has exactly one .aln task, no other does."""
-    result = taskify_subdirs(tree, hmmer=True, mapgaps=False, use_pdb=False,
-                             level=0)
+    result = taskify_subdirs(tree, hmmer=True, mapgaps=False, use_pdb=False, level=0)
     tasks = list(walk(result.hmm))
     aln_targets = sorted(t.target for t in tasks if t.target.endswith(".aln"))
 
-    family_alns = [f[:-len(".fasta")] + ".aln" for f in family_fastas(tree)]
+    family_alns = [f[: -len(".fasta")] + ".aln" for f in family_fastas(tree)]
     group_alns = [d + ".aln" for d in group_dirs(tree)]
     assert aln_targets == sorted(family_alns + group_alns)
     # No two distinct tasks claim the same target; a group FASTA in particular
@@ -169,9 +187,8 @@ def test_one_aln_task_per_family_fasta_and_per_directory(tree):
 
 def test_family_aln_tasks_depend_on_their_own_fasta(tree):
     """Each family-level .aln task has its FASTA, and only that, as its input."""
-    result = taskify_subdirs(tree, hmmer=True, mapgaps=False, use_pdb=False,
-                             level=0)
+    result = taskify_subdirs(tree, hmmer=True, mapgaps=False, use_pdb=False, level=0)
     by_target = {t.target: t for t in walk(result.hmm)}
     for fasta in family_fastas(tree):
-        task = by_target[fasta[:-len(".fasta")] + ".aln"]
+        task = by_target[fasta[: -len(".fasta")] + ".aln"]
         assert task.depends == [fasta]
