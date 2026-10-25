@@ -42,10 +42,10 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from fammerlib import update_fasta
+from fammer import update_fasta
 
 assert os.path.dirname(os.path.abspath(update_fasta.__file__)) == \
-    os.path.join(REPO, 'fammerlib'), update_fasta.__file__
+    os.path.join(REPO, 'fammer'), update_fasta.__file__
 
 
 def load(relpath):

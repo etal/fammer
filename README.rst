@@ -20,8 +20,8 @@ Freely distributed under the permissive BSD 2-clause license (see LICENSE).
 Installation
 ------------
 
-The installation consists of a Python library, ``fammerlib``, and two scripts,
-``fammer.py`` and ``tmalign.py``.
+The installation provides a Python library, ``fammer``, and two commands,
+``fammer`` and ``fammer-tmalign``.
 
 Download the .zip file and unpack it, or clone this Git repository, to get the
 source code.
@@ -51,33 +51,24 @@ first to save yourself some time::
 
     sudo apt-get install mafft hmmer tm-align fasttree python3-pip
 
-Then, install the Python library dependencies and Fammer itself as follows.
+Then install Fammer and its Python dependencies (Biopython_, biofrills_,
+networkx_ and ReportLab_) with pip. Fammer requires biofrills 0.4, which is not
+yet released on PyPI, so install biofrills from its repository first; then,
+from the Fammer source directory::
 
-Recommended:
-````````````
+    pip install git+https://github.com/etal/biofrills
+    pip install .
 
-Install the Python packaging system pip or setuptools. Then run the setup
-script, and all required Python dependencies will be pulled in::
-
-    python setup.py build
-    python setup.py install
-
-(You might need root privileges for the last step.)
-
-The ``--mapgaps`` option also needs biocma_, which the setup script does not
-install. Add it with ``pip install biocma``, or install Fammer from the source
-directory with ``pip install '.[mapgaps]'`` in place of the steps above.
-
-Manual:
-```````
-
-Install the Python libraries Biopython_, biofrills_ and networkx_, plus biocma_
-for ``--mapgaps``. Then run the setup script as above.
+The ``--mapgaps`` option also needs biocma_ 0.3, which is not installed by
+default and is likewise not yet on PyPI. To include it, run
+``pip install git+https://github.com/etal/biocma`` and then install Fammer with
+``pip install '.[mapgaps]'``.
 
 .. _Biopython: http://biopython.org/wiki/Download
 .. _biofrills: https://github.com/etal/biofrills
 .. _biocma: https://github.com/etal/biocma
 .. _networkx: http://networkx.lanl.gov/
+.. _ReportLab: https://www.reportlab.com/opensource/
 
 
 
@@ -118,7 +109,7 @@ build
 Construct a profile database from a directory tree of family profile alignments.
 
 Assume we have a directory tree set up under ``Superfamily/`` as above.
-Next, run ``fammer.py build Superfamily`` to align all sequence files with
+Next, run ``fammer build Superfamily`` to align all sequence files with
 MAFFT, and (recursively up) align the consensus sequences of each subfamily
 together::
 
@@ -144,7 +135,7 @@ The alignments are in un-wrapped Clustal format.
 You can manually adjust the alignments and rebuild, if desired, perhaps
 iteratively. Only the "parent" family alignments will be rebuilt as needed, e.g.
 if ``subfam1_Group1.aln`` is edited, then only ``Group1.aln`` and
-``Superfamily.aln`` will be rebuilt the next time ``fammer.py build
+``Superfamily.aln`` will be rebuilt the next time ``fammer build
 Superfamily`` is called because the consensus sequences that constitute those
 alignments may have changed. (It's like Make.)
 
@@ -324,8 +315,8 @@ tmalign
 
 Align multiple structures using TMalign_ for pairwise alignments and a minimum
 spanning tree constructed from the pairwise TM-scores to assemble the pairwise
-alignments into a multiple sequence alignment. This module can also be used as a
-command-line script.
+alignments into a multiple sequence alignment. The ``fammer-tmalign`` command
+runs it from the shell.
 
 How to curate profiles
 ----------------------
@@ -383,7 +374,7 @@ levels of organization of the superfamily.
 
 Now build the initial alignments::
 
-    fammer.py build --clean Superfamily/
+    fammer build --clean Superfamily/
 
 
 Trim the tails
@@ -406,11 +397,11 @@ subfamily-level alignments have extended tails, then edit those .aln files.
 When you think you've trimmed all the .aln files to the conserved domain
 region, update the corresponding unaligned sequence files (.fasta) to match::
 
-    fammer.py update-fasta Superfamily/
+    fammer update-fasta Superfamily/
 
 Rebuild the alignments whose source sequence sets have changed::
 
-    fammer.py build --clean Superfamily/
+    fammer build --clean Superfamily/
 
 MAFFT may create better alignments for sets where the unalignable regions have
 now been removed. When this step completes, examine the top-level alignment
@@ -460,7 +451,7 @@ accurately.
 
 Save the edited .pdb file, and rebuild the higher-level profiles::
 
-    fammer.py build --clean Superfamily/
+    fammer build --clean Superfamily/
 
 Now that PDB files are present in the directory tree, Fammer will writes
 structural alignments in FASTA format to the .pdb.seq files.

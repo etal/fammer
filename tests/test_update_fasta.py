@@ -8,7 +8,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from fammerlib.update_fasta import ungap_and_unique
+from fammer.update_fasta import ungap_and_unique
 
 CDK_ALN = os.path.join(os.path.dirname(__file__), 'data', 'py27', 'e2e',
                        'build', 'SomeKinases', 'CMGC', 'CDK.aln')

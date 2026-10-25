@@ -18,5 +18,17 @@ profiles/SomeKinases/CMGC/*.cma
 profiles/SomeKinases/STE/*.aln
 profiles/SomeKinases/STE/*.cma
 profiles/ROPK/*.aln
+!profiles/ROPK/PKL.aln
 profiles/ROPK/*.cma
+
+# Build and environment artifacts. The leading slashes keep /build/ from also
+# matching the tracked fixture tree tests/data/py27/e2e/build/.
+__pycache__/
+/build/
+/dist/
+/*.egg-info/
+/.venv/
+/.pixi/
+/.pytest_cache/
+/.ruff_cache/
 

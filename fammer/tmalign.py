@@ -1,4 +1,16 @@
-"""Align multiple structures with TMalign."""
+"""Use TMalign for multiple structure alignment.
+
+Procedure:
+
+1. Run all-vs-all pairwise alignments with TMalign; keep the alignments and
+   also the TM-score (a metric of structural similarity/alignability).
+2. Build a graph of structure similarities based on TM-scores. Determine the
+   minimum spanning tree (MST) for the graph.
+3. Take the pairwise alignments corresponding to the edges (connected nodes) of
+   the MST, and use them as seeds in MAFFT (--localpair).
+4. Remove duplicated sequences and all-gap columns from the resulting alignment.
+
+"""
 import itertools
 import logging
 import math

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fammer"
+dynamic = ["version"]
+description = "Tools for protein superfamily sequence profile alignment and curation."
+readme = "README.rst"
+requires-python = ">=3.12"
+license = "BSD-2-Clause"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Eric Talevich", email = "me+code@etal.mozmail.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+# biopython, networkx and reportlab floors follow the versions Ubuntu 26.04
+# ships. reportlab is required by every command: fammer.cli imports
+# fammer.cluster, which imports Bio.Graphics.ColorSpiral. The biofrills and
+# biocma floors are development versions, because biofrills 0.4.0 and biocma
+# 0.3.0 are not yet released and PEP 440 orders 0.4.0.dev0 below 0.4. A
+# development floor also admits later pre-releases, so raise both floors to
+# the release versions once those exist.
+dependencies = [
+    "biofrills>=0.4.0.dev0",
+    "biopython>=1.86",
+    "networkx>=3.2.1",
+    "reportlab>=4.4.10",
+]
+
+[project.optional-dependencies]
+mapgaps = ["biocma>=0.3.0.dev0"]
+
+[project.scripts]
+fammer = "fammer.cli:main"
+fammer-tmalign = "fammer.cli:tmalign_main"
+
+[project.urls]
+homepage = "https://github.com/etal/fammer"
+
+# Named explicitly: automatic discovery in this flat layout also finds the
+# example data under profiles/ and refuses to build.
+[tool.setuptools]
+packages = ["fammer"]
+
+[tool.setuptools.dynamic]
+version = {attr = "fammer.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

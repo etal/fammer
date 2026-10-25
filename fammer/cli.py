@@ -1,24 +1,37 @@
-#!/usr/bin/env python3
+"""Command-line entry points: the fammer and fammer-tmalign programs."""
 
-"""A toolkit for protein superfamily sequence profile alignment and curation.
-
-Manages a hierarchical directory tree containing sequence sets (FASTA files)
-corresponding to each subfamily of a protein superfamily.
-"""
 import logging
 import argparse
+import sys
 
-from fammerlib.build import cmd_build
-from fammerlib.scan import cmd_scan
-from fammerlib.add import cmd_add
-from fammerlib.refine import cmd_refine
-from fammerlib.cluster import cmd_cluster
-from fammerlib.update_fasta import cmd_update_fasta
+from Bio import SeqIO
+
+from . import tmalign
+from .build import cmd_build
+from .scan import cmd_scan
+from .add import cmd_add
+from .refine import cmd_refine
+from .cluster import cmd_cluster
+from .update_fasta import cmd_update_fasta
 
 
-if __name__ == '__main__':
+def _configure_logging(quiet=False):
+    """Set the log format and level shared by both programs."""
+    if quiet:
+        logging.basicConfig(level=logging.WARNING,
+                format="%(module)s: %(message)s")
+    else:
+        logging.basicConfig(level=logging.INFO,
+                format="%(module)s [@%(lineno)s]: %(message)s")
+
+
+def main():
+    """Run the fammer program."""
     AP = argparse.ArgumentParser(
-            description=__doc__,
+            description="""A toolkit for protein superfamily sequence profile
+            alignment and curation. Manages a hierarchical directory tree
+            containing sequence sets (FASTA files) corresponding to each
+            subfamily of a protein superfamily.""",
             epilog="Contact Eric <etal@uga.edu> for help.")
 
     # Global options
@@ -132,12 +145,31 @@ if __name__ == '__main__':
 
     args = AP.parse_args()
     # Handle global options here
-    if args.quiet:
-        logging.basicConfig(level=logging.WARNING,
-                format="%(module)s: %(message)s")
-    else:
-        logging.basicConfig(level=logging.INFO,
-                format="%(module)s [@%(lineno)s]: %(message)s")
+    _configure_logging(args.quiet)
     # Pass the rest along to the sub-command implementation
     args.func(args)
+
+
+def tmalign_main():
+    """Run the fammer-tmalign program."""
+    AP = argparse.ArgumentParser(
+            description=tmalign.__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
+    AP.add_argument('pdbfnames', nargs='+',
+            help="PDB file names of the structures to align.")
+    AP.add_argument('-s', '--seed', action='append', default=[],
+            help="Aligned FASTA sequences to include in the output alignment.")
+    AP.add_argument('-o', '--output',
+                  default=sys.stdout,
+                  type=argparse.FileType('w+'),
+                  help="Filename for the output FASTA alignment.")
+    args = AP.parse_args()
+    _configure_logging()
+
+    if args.seed:
+        print("tmalign: Using seed alignments", ' '.join(args.seed),
+              file=sys.stderr)
+    out_seqrecs = tmalign.align_structs(args.pdbfnames, seed_fnames=args.seed)
+    SeqIO.write(out_seqrecs, args.output, 'fasta')
+    print("tmalign: Wrote", args.output.name, file=sys.stderr)
 
