@@ -497,6 +497,11 @@ Two known defects shape these tests.
 The build with structure alignments fails, so its test is expected to fail.
 MAPGAPS is not packaged for either workflow, so ``--mapgaps`` cannot be run end to end.
 
+Code is formatted with ``ruff format``, and the formatting-only commits are listed in ``.git-blame-ignore-revs``.
+To skip them in ``git blame``::
+
+    git config blame.ignoreRevsFile .git-blame-ignore-revs
+
 .. _uv: https://docs.astral.sh/uv/
 .. _pixi: https://pixi.sh/
 
