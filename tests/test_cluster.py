@@ -10,27 +10,21 @@ compared with the recording on any machine.
 """
 
 import argparse
-import json
 import logging
 import os
 import shutil
-from pathlib import Path
 
 import pytest
 from Bio import AlignIO, SeqIO
+from reference_cases import DATA, FIXTURES, REPO, is_checkout, load
 
 from fammer import cluster
 
-HERE = Path(__file__).resolve().parent
-REPO = HERE.parent
-DATA = HERE / "data"
-RECORDED = json.loads(
-    (DATA / "py27" / "e2e" / "cluster.json").read_text(encoding="utf-8")
-)
+RECORDED = load("e2e/cluster.json")
 
 # Where the capture script took each input from.
 INPUTS = {
-    "CDK.aln": DATA / "py27" / "e2e" / "build" / "SomeKinases" / "CMGC" / "CDK.aln",
+    "CDK.aln": FIXTURES / "e2e" / "build" / "SomeKinases" / "CMGC" / "CDK.aln",
     "DYRK.fasta": REPO / "profiles" / "SomeKinases" / "CMGC" / "DYRK.fasta",
     "PKL.aln": REPO / "profiles" / "ROPK" / "PKL.aln",
 }
@@ -56,9 +50,8 @@ def input_ids(name):
 class RecordedTools:
     """Stand-in for ``subprocess.check_output`` that replays recorded calls."""
 
-    def __init__(self, expected, workdir):
+    def __init__(self, expected):
         self.expected = expected
-        self.workdir = workdir
         self.calls = 0
         self.temporary_inputs = []
 
@@ -88,12 +81,12 @@ def run_case(name, tmp_path, monkeypatch, caplog):
     the names of the files it wrote, the log messages at level INFO and above,
     and the stand-in for the tools.
     """
-    if not (REPO / ".git").exists():
+    if not is_checkout():
         pytest.skip("requires a Git checkout for profiles/, which an sdist lacks")
     record = RECORDED[name]
     shutil.copy(INPUTS[name], tmp_path)
     monkeypatch.chdir(tmp_path)
-    tools = RecordedTools(record["tool_calls"], tmp_path)
+    tools = RecordedTools(record["tool_calls"])
     monkeypatch.setattr(cluster.subprocess, "check_output", tools)
     before = set(os.listdir(tmp_path))
     error = None
@@ -116,6 +109,15 @@ def replay(request, tmp_path, monkeypatch, caplog):
     """The recorded case name with the outcome of replaying it."""
     name = request.param
     return name, tmp_path, run_case(name, tmp_path, monkeypatch, caplog)
+
+
+@pytest.fixture
+def successful_replay(replay):
+    """The replay of a case whose recorded run succeeded."""
+    name = replay[0]
+    if "error" in RECORDED[name]["result"]:
+        pytest.skip("the recorded run fails; see test_outcome_matches_the_recording")
+    return replay
 
 
 def test_outcome_matches_the_recording(replay):
@@ -182,11 +184,9 @@ def test_log_matches_the_recording(replay):
     assert messages == wanted
 
 
-@pytest.mark.parametrize("name", ["DYRK.fasta", "PKL.aln"])
-def test_clusters_and_unique_partition_the_input(name, tmp_path, monkeypatch, caplog):
+def test_clusters_and_unique_partition_the_input(successful_replay):
     """Every input identifier is written to exactly one cluster or Unique file."""
-    error, written, _, _ = run_case(name, tmp_path, monkeypatch, caplog)
-    assert error is None
+    name, tmp_path, (_, written, _, _) = successful_replay
     members = []
     for fname in written:
         if not fname.endswith(".xml"):
@@ -197,11 +197,9 @@ def test_clusters_and_unique_partition_the_input(name, tmp_path, monkeypatch, ca
     assert (tmp_path / (name + ".Unique")).is_file()
 
 
-@pytest.mark.parametrize("name", ["DYRK.fasta", "PKL.aln"])
-def test_cluster_numbers_follow_decreasing_size(name, tmp_path, monkeypatch, caplog):
+def test_cluster_numbers_follow_decreasing_size(successful_replay):
     """Cluster file 0 is the largest, and sizes never increase with the number."""
-    error, written, _, _ = run_case(name, tmp_path, monkeypatch, caplog)
-    assert error is None
+    name, tmp_path, (_, written, _, _) = successful_replay
     numbered = {
         int(fname.rsplit(".", 1)[1]): len(read_headers(tmp_path / fname))
         for fname in written

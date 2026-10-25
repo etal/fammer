@@ -12,30 +12,31 @@ its own copy of it.
 """
 
 import hashlib
-import json
 import os
 import re
 import shutil
 import subprocess
 from collections import Counter
-from pathlib import Path
 
 import pytest
 from Bio import Phylo, SeqIO
+from reference_cases import (
+    DATA,
+    REPO,
+    copy_tracked,
+    is_checkout,
+    load,
+    log_messages,
+)
 
 from fammer import _share, add
-
-HERE = Path(__file__).resolve().parent
-REPO = HERE.parent
-DATA = HERE / "data"
 
 pytestmark = pytest.mark.integration
 
 
-def recorded(name, kind="e2e"):
-    """One recorded result from the Python 2 code base, e2e or library."""
-    with open(DATA / "py27" / kind / name, encoding="utf-8") as handle:
-        return json.load(handle)
+def recorded(name):
+    """One command-line run recorded from the Python 2 code base."""
+    return load("e2e/" + name)
 
 
 def skip_unless_required(reason):
@@ -84,26 +85,13 @@ def copy_tracked_profiles(dest):
 
     The build writes its results beside its inputs and skips a target newer
     than its inputs, so a result left by an earlier build would change the run.
+    copy_tracked raises RuntimeError, not AssertionError, if git lists no
+    files, so that the structures test cannot report it as its expected
+    failure.
     """
-    if not (REPO / ".git").exists():
+    if not is_checkout():
         skip_unless_required("not a Git checkout, as in an sdist")
-    # Only stdout is piped, so git's own error message reaches pytest's output.
-    listing = subprocess.run(
-        ["git", "ls-files", "-z", "--", "profiles/SomeKinases"],
-        cwd=REPO,
-        stdout=subprocess.PIPE,
-        text=True,
-        check=True,
-    )
-    names = [name for name in listing.stdout.split("\0") if name]
-    # pytest.fail, not assert: the structures test would report an
-    # AssertionError raised here as its expected failure.
-    if not names:
-        pytest.fail("git lists no files under profiles/SomeKinases")
-    for name in names:
-        target = dest / Path(name).relative_to("profiles")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(REPO / name, target)
+    copy_tracked("profiles/SomeKinases", dest)
 
 
 @pytest.fixture
@@ -119,7 +107,7 @@ def built_tree(tmp_path_factory):
 
     Tests take a copy through ``built_workspace``.
     """
-    require("fammer", "mafft", "hmmbuild", "hmmpress", "hmmsearch")
+    require("fammer", "mafft", "hmmbuild", "hmmpress")
     root = tmp_path_factory.mktemp("built-tree")
     copy_tracked_profiles(root)
     proc = run_fammer(root, recorded("build.json")["argv"])
@@ -225,11 +213,6 @@ def fasta_records(text):
     return Counter(tuple(record) for record in records)
 
 
-def log_messages(stderr):
-    """The log lines of fammer's standard error, without their line numbers."""
-    return sorted(re.sub(r" \[@\d+\]", "", line) for line in stderr.splitlines())
-
-
 def read_records(path, fmt):
     """The (identifier, sequence) pairs of a sequence file."""
     with open(path, encoding="utf-8") as handle:
@@ -322,7 +305,7 @@ def ungapped_alignment(path):
     ]
 
 
-def snapshot(root):
+def tree_state(root):
     """The modification time and contents of every file under root."""
     return {
         path.relative_to(root).as_posix(): (path.stat().st_mtime_ns, path.read_bytes())
@@ -342,10 +325,10 @@ def test_update_fasta_leaves_a_fresh_build_unchanged(built_workspace):
     assert {fasta for _aln, fasta in pairs} == set(built_workspace.rglob("*.fasta"))
     for aln, fasta in pairs:
         assert set(ungapped_alignment(aln)) == set(read_records(fasta, "fasta")), fasta
-    before = snapshot(built_workspace)
+    before = tree_state(built_workspace)
     proc = run_fammer(built_workspace, ["update-fasta", "SomeKinases"])
     assert proc.returncode == 0, proc.stderr
-    assert snapshot(built_workspace) == before
+    assert tree_state(built_workspace) == before
 
 
 def test_update_fasta_rewrites_stale_files_once(built_workspace):
@@ -398,10 +381,10 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
             if "X" not in seq:
                 assert any(seq in other for other in kept_seqs), fasta
 
-    written = snapshot(built_workspace)
+    written = tree_state(built_workspace)
     proc = run_fammer(built_workspace, ["update-fasta", "SomeKinases"])
     assert proc.returncode == 0, proc.stderr
-    assert snapshot(built_workspace) == written
+    assert tree_state(built_workspace) == written
 
 
 def test_cluster_partitions_the_input_sequences(tmp_path):
@@ -448,7 +431,7 @@ def test_cluster_partitions_the_input_sequences(tmp_path):
 # relative to it. The E-values are the two-digit values that hmmsearch prints,
 # so an exact comparison holds across builds of one HMMER version.
 
-HMMER_CALLS = recorded("hmmer.json", "library")
+HMMER_CALLS = load("library/hmmer.json")
 
 
 @pytest.mark.parametrize("hmm_name", sorted(HMMER_CALLS["get_hmm_evalues"]))

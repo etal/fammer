@@ -12,6 +12,7 @@ from functools import cache
 import pytest
 from reference_cases import (
     DATA,
+    LIBRARY,
     LIBRARY_FIXTURES,
     UPDATE_FASTA_RUNS,
     all_cases,
@@ -66,6 +67,12 @@ def test_library(file, section):
         if not matches(actual, expected):
             found.append((case.case, actual))
     assert not found, f"{len(found)} of {len(cases)} cases differ, first: {found[:3]}"
+
+
+def test_every_library_fixture_is_compared():
+    """Each library fixture has its cases enumerated, except hmmer.json."""
+    recorded = {"library/" + path.name for path in LIBRARY.glob("*.json")}
+    assert recorded == {*LIBRARY_FIXTURES, "library/hmmer.json"}
 
 
 def test_every_recorded_section_is_compared():

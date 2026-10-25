@@ -1,25 +1,16 @@
 """Tests of update_fasta.ungap_and_unique, the redundancy filter of update-fasta."""
 
 import logging
-import os
 
 import pytest
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from reference_cases import FIXTURES
 
 from fammer.update_fasta import ungap_and_unique
 
-CDK_ALN = os.path.join(
-    os.path.dirname(__file__),
-    "data",
-    "py27",
-    "e2e",
-    "build",
-    "SomeKinases",
-    "CMGC",
-    "CDK.aln",
-)
+CDK_ALN = FIXTURES / "e2e" / "build" / "SomeKinases" / "CMGC" / "CDK.aln"
 
 
 def make_records(pairs):

@@ -24,6 +24,7 @@ update_fasta_run_differences.
 import builtins
 import contextlib
 import hashlib
+import importlib.util
 import io
 import json
 import logging
@@ -96,11 +97,8 @@ def missing_requirements(case):
     for name in case.requires:
         if name == CHECKOUT and not is_checkout():
             missing.append(name)
-        elif name == BIOCMA:
-            try:
-                import biocma  # noqa: F401
-            except ImportError:
-                missing.append(name)
+        elif name == BIOCMA and importlib.util.find_spec("biocma") is None:
+            missing.append(name)
     return missing
 
 
@@ -689,7 +687,10 @@ def share_cases():
     file = "library/share-scan-add.json"
     data = load(file)
     for name, recorded in data["parse_scanned_hits"].items():
-        call = lambda name=name: hits_table(scanned_hits(name))  # noqa: E731
+
+        def call(name=name):
+            return hits_table(scanned_hits(name))
+
         yield Case(file, "parse_scanned_hits", name, call, recorded)
     sources = {"synthetic": "synthetic", "real": SHARE_TABLE}
     for section, func in (
@@ -697,7 +698,10 @@ def share_cases():
         ("scan.write_table", scan.write_table),
     ):
         for name, recorded in data[section].items():
-            call = lambda func=func, name=name: func(scanned_hits(sources[name]))  # noqa: E731
+
+            def call(func=func, name=name):
+                return func(scanned_hits(sources[name]))
+
             yield Case(file, section, name, call, recorded)
     for profile, recorded in data["add.filter_profile"].items():
 
@@ -935,31 +939,24 @@ def sections(file):
     return [key for key in load(file) if key not in NOT_SECTIONS.get(file, set())]
 
 
-# library/hmmer.json needs HMMER and built profiles; tests/test_integration.py
-# compares it.
-LIBRARY_FIXTURES = [
-    "library/tasks.json",
-    *BUILD_FIXTURES,
-    "library/mapgaps.json",
-    "library/share-scan-add.json",
-    "library/update_fasta.json",
-    "library/tmalign.json",
-    "library/cluster.json",
-]
+# The recorded cases of each library fixture, by fixture, in the order they
+# are compared.  library/hmmer.json needs HMMER and built profiles;
+# tests/test_integration.py compares it.
+CASE_SOURCES = {
+    "library/tasks.json": tasks_cases,
+    **{file: partial(build_cases, file) for file in BUILD_FIXTURES},
+    "library/mapgaps.json": mapgaps_cases,
+    "library/share-scan-add.json": share_cases,
+    "library/update_fasta.json": update_fasta_cases,
+    "library/tmalign.json": tmalign_cases,
+    "library/cluster.json": cluster_cases,
+}
+LIBRARY_FIXTURES = list(CASE_SOURCES)
 
 
 def library_cases(file):
     """The recorded cases of one library fixture, in file order."""
-    if file in BUILD_FIXTURES:
-        return build_cases(file)
-    return {
-        "library/tasks.json": tasks_cases,
-        "library/mapgaps.json": mapgaps_cases,
-        "library/share-scan-add.json": share_cases,
-        "library/update_fasta.json": update_fasta_cases,
-        "library/tmalign.json": tmalign_cases,
-        "library/cluster.json": cluster_cases,
-    }[file]()
+    return CASE_SOURCES[file]()
 
 
 def all_cases():
@@ -1002,13 +999,15 @@ def summarize_fasta(recorded, current):
     }
 
 
-def without_line_number(line):
-    """A line of fammer's standard error without its source line number.
+def log_messages(stderr):
+    """The lines of fammer's standard error, sorted, without line numbers.
 
     fammer logs in the format ``module [@line]: message``, and the line
     numbers of the Python 2 sources differ from those of the current ones.
+    The lines are sorted because several commands visit files in the
+    enumeration order of the file system.
     """
-    return re.sub(r" \[@\d+\]:", ":", line)
+    return sorted(re.sub(r" \[@\d+\]:", ":", line) for line in stderr.splitlines())
 
 
 def make_update_fasta_workspace(root):
@@ -1083,9 +1082,7 @@ def update_fasta_run_differences():
                         if run["returncode"] == 0
                         else {"error": f"exit status {run['returncode']}"}
                     ),
-                    "log": sorted(
-                        without_line_number(line) for line in run["stderr"].splitlines()
-                    ),
+                    "log": log_messages(run["stderr"]),
                     "created": run["created"],
                     "modified": run["modified"],
                     "deleted": run["deleted"],

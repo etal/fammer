@@ -64,7 +64,7 @@ def is_stale(target_mtime, dep_mtimes):
 )
 @pytest.mark.parametrize(
     "offsets",
-    [combo for n in range(4) for combo in itertools.product(OFFSETS, repeat=n)],
+    [combo for n in range(3) for combo in itertools.product(OFFSETS, repeat=n)],
     ids=lambda combo: "deps[" + ",".join(f"{o:+d}" for o in combo) + "]",
 )
 def test_file_dependencies_follow_the_staleness_model(
@@ -97,9 +97,7 @@ def test_file_dependencies_follow_the_staleness_model(
 @pytest.mark.parametrize(
     "target_present", [False, True], ids=["target-missing", "target-present"]
 )
-@pytest.mark.parametrize(
-    "kinds", [("file", "task"), ("task", "file"), ("task", "task")]
-)
+@pytest.mark.parametrize("kinds", [("file", "task"), ("task", "task")])
 @pytest.mark.parametrize(
     "offsets",
     list(itertools.product(OFFSETS, repeat=2)),

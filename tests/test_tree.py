@@ -9,39 +9,22 @@ every directory is a group.
 
 import io
 import os
-import shutil
-import subprocess
-from pathlib import Path
 
 import pytest
 from Bio import Phylo
+from reference_cases import copy_tracked, is_checkout
 
 from fammer.build import taskify_subdirs, treeify_subdirs
 from fammer.tasks import Task
-
-REPO = Path(__file__).resolve().parent.parent
 
 TIP, GROUP = 0, 1
 
 
 def copy_tracked_profiles(name, dest):
     """Copy the Git-tracked files of profiles/<name> under dest; return its path."""
-    if not (REPO / ".git").exists():
+    if not is_checkout():
         pytest.skip("not a Git checkout, as in an sdist")
-    listing = subprocess.run(
-        ["git", "ls-files", "-z", "--", "profiles/" + name],
-        cwd=REPO,
-        stdout=subprocess.PIPE,
-        text=True,
-        check=True,
-    )
-    names = [item for item in listing.stdout.split("\0") if item]
-    if not names:
-        pytest.fail("git lists no files under profiles/" + name)
-    for item in names:
-        target = dest / Path(item).relative_to("profiles")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(REPO / item, target)
+    copy_tracked("profiles/" + name, dest)
     return str(dest / name)
 
 
