@@ -480,10 +480,37 @@ def in_tree_copy(relpath, added_files, func, *args):
             return func(*args)
 
 
+def sorted_pdb_files(graph):
+    """A task graph with the PDB files of each align_pdbs task in sorted order.
+
+    taskify_subdirs lists those files in the order of an unsorted glob, which
+    is the enumeration order of the file system, so the recorded order is
+    that of the capture's file system.  The files precede the task
+    dependencies in the list, and only their order is normalized.
+    """
+    graph_tasks = {}
+    for target, entry in graph["tasks"].items():
+        if entry["action"] == "align_pdbs":
+            files = sorted(
+                (dep for dep in entry["depends"] if "file" in dep),
+                key=lambda dep: dep["file"],
+            )
+            others = [dep for dep in entry["depends"] if "file" not in dep]
+            entry = {**entry, "depends": files + others}
+        graph_tasks[target] = entry
+    return {**graph, "tasks": graph_tasks}
+
+
 def taskify_graph(tree, kwargs):
-    return task_graph(
-        build.taskify_subdirs(
-            tree, kwargs["hmmer"], kwargs["mapgaps"], kwargs["use_pdb"], kwargs["level"]
+    return sorted_pdb_files(
+        task_graph(
+            build.taskify_subdirs(
+                tree,
+                kwargs["hmmer"],
+                kwargs["mapgaps"],
+                kwargs["use_pdb"],
+                kwargs["level"],
+            )
         )
     )
 
@@ -508,7 +535,10 @@ def build_cases(file):
         call = partial(
             in_tree_copy, relpath, added, taskify_graph, tree, graph["kwargs"]
         )
-        yield Case(file, "taskify_subdirs", index, call, graph["graph"], (CHECKOUT,))
+        recorded = graph["graph"]
+        if "value" in recorded:
+            recorded = {**recorded, "value": sorted_pdb_files(recorded["value"])}
+        yield Case(file, "taskify_subdirs", index, call, recorded, (CHECKOUT,))
 
 
 # ---------------------------------------------------------------------------
@@ -972,6 +1002,15 @@ def summarize_fasta(recorded, current):
     }
 
 
+def without_line_number(line):
+    """A line of fammer's standard error without its source line number.
+
+    fammer logs in the format ``module [@line]: message``, and the line
+    numbers of the Python 2 sources differ from those of the current ones.
+    """
+    return re.sub(r" \[@\d+\]:", ":", line)
+
+
 def make_update_fasta_workspace(root):
     """Fill root with a copy of profiles/SomeKinases and the recorded
     alignments of the end-to-end build.
@@ -998,7 +1037,9 @@ def update_fasta_run_differences():
     previous one left.  A run is compared by its outcome, its log lines
     without source line numbers, and the lists of files created, modified and
     deleted; for each file whose contents differ, the entry summarizes the
-    records of both versions.
+    records of both versions.  The log lines are compared in sorted order,
+    because update-fasta visits the files in the enumeration order of the
+    file system.
     """
     import argparse
 
@@ -1026,10 +1067,10 @@ def update_fasta_run_differences():
                 after = snapshot(root)
                 current = {
                     "outcome": {key: result[key] for key in result if key != "log"},
-                    "log": [
+                    "log": sorted(
                         f"{module}: {message}"
                         for _level, module, message in result["log"]
-                    ],
+                    ),
                     "created": sorted(set(after) - set(before)),
                     "modified": sorted(
                         n for n in after if n in before and after[n] != before[n]
@@ -1042,10 +1083,9 @@ def update_fasta_run_differences():
                         if run["returncode"] == 0
                         else {"error": f"exit status {run['returncode']}"}
                     ),
-                    "log": [
-                        re.sub(r" \[@\d+\]:", ":", line)
-                        for line in run["stderr"].splitlines()
-                    ],
+                    "log": sorted(
+                        without_line_number(line) for line in run["stderr"].splitlines()
+                    ),
                     "created": run["created"],
                     "modified": run["modified"],
                     "deleted": run["deleted"],

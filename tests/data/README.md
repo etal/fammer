@@ -169,7 +169,7 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
 - **File-system enumeration order.**
   Several code paths visit files in the order the file system lists them: `taskify_subdirs` lists PDB files with an unsorted `glob`, `build.all_hmm` concatenates profiles in the order `find` returns them, and `add`, `update-fasta` and `refine` walk the tree with `os.walk` or `glob`.
   These fixtures follow the order of the case-insensitive APFS volume that ran the capture.
-  On another file system, the order of the `.pdb` dependencies in `build-*.json`, the SHA-256 of `SomeKinases_all.hmm`, the row order of the hmmsearch table and its checksum in `scan.json`, and the order of the log lines of `add`, `refine` and the structure build all differ while their content does not.
+  On another file system, the order of the `.pdb` dependencies in `build-*.json`, the SHA-256 of `SomeKinases_all.hmm`, the row order of the hmmsearch table and its checksum in `scan.json`, and the order of the log lines of `add`, `refine`, `update-fasta` and the structure build all differ while their content does not.
   Compare those lists as sets, the table rows and log lines as multisets, and treat the two checksums as specific to this file system.
 - **Python 2 dictionary order.**
   `scan -o` and `scan -O` write sequences in the iteration order of a dictionary, which is neither the order of the hmmsearch table nor sorted; compare those files as sets of records.
@@ -189,7 +189,7 @@ The cases, and the way an outcome is compared with a recorded one, are defined i
 A library entry gives the fixture file relative to `py27/`, the section, the case name or position, and the recorded and current outcomes.
 Values are compared exactly, and an exception by its type only; a recorded built-in exception type also accepts its subclasses, so the `FileNotFoundError` of Python 3 matches a recorded `OSError`.
 The cases of `library/mapgaps.json` form three sections: `consensus` compares the recorded consensus sequence with the one biofrills now computes, `mg_aln2cma` runs the function, and `biocma.write` runs biocma on the alignment with the recorded consensus prepended; the last two compare the SHA-256 of the written profile with that of the file kept under `library/mapgaps/`.
-An end-to-end case is replayed in-process on a copy of `profiles/SomeKinases` with the alignments under `e2e/build/`, so it needs no external program; its entry gives the fields that differ among the log lines (without line numbers) and the lists of created, modified and deleted files, and, for each file whose contents differ, the record counts and checksums of both versions with the identifiers found in only one of them.
+An end-to-end case is replayed in-process on a copy of `profiles/SomeKinases` with the alignments under `e2e/build/`, so it needs no external program; its entry gives the fields that differ among the log lines (without line numbers, in sorted order) and the lists of created, modified and deleted files, and, for each file whose contents differ, the record counts and checksums of both versions with the identifiers found in only one of them.
 Every entry is deliberate and is explained below; a test of the current code expects the fixture value except where `differences.json` records another, and `tests/test_reference.py` fails on an entry whose case no longer differs.
 After a change that moves a recorded output, regenerate the file from the repository root and explain the new entries here:
 
