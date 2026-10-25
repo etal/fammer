@@ -8,8 +8,8 @@ from os.path import abspath, basename, isdir, isfile, join
 
 from Bio import SeqIO
 
-from .tasks import ext, sh
 from ._share import get_hmm_evalues
+from .tasks import ext, sh
 
 
 def cmd_refine(args):
@@ -23,7 +23,7 @@ def cmd_refine(args):
         unclass_fa = join(args.basedir, topname + "-Unique.fasta")
     if not isfile(unclass_fa):
         raise ValueError(
-            "Can't find the unclassified sequence set (%s does not exist)" % unclass_fa
+            f"Can't find the unclassified sequence set ({unclass_fa} does not exist)"
         )
 
     all_fa = glob(join(args.basedir, "*.fasta"))
@@ -40,7 +40,7 @@ def cmd_refine(args):
     # Prerequisites: HMM profiles for each sequence set must be built
     for fa in all_fa:
         if not isfile(ext(fa, "hmm")):
-            raise ValueError("Unbuilt HMM for sequence set: %s" % fa)
+            raise ValueError(f"Unbuilt HMM for sequence set: {fa}")
 
     for this_fa in all_fa:
         this_hmm = ext(this_fa, "hmm")
@@ -53,7 +53,7 @@ def cmd_refine(args):
         # Starting with the lowest-scoring seed, do leave-one-out.
         # Leave at least 2 sequences in the profile, otherwise MAFFT will fail
         # (and a set of only 2 seqs should be merged into Unclassified anyway)
-        for seq_id, evalue in sorted(
+        for seq_id, _evalue in sorted(
             list(seq_evals.items())[:-2], key=lambda kv: kv[1]
         ):
             # Copy all seqs in this_fa, except seq_id, to a temp file
@@ -68,8 +68,8 @@ def cmd_refine(args):
                 # Align the "lean" profile w/ MAFFT (as usual)
                 sh(
                     "mafft --quiet --amino --reorder --maxiterate 1000 "
-                    "--genafpair --ep 0.123 %s > %s.seq"
-                    % (tempseqfile.name, tempseqfile.name)
+                    f"--genafpair --ep 0.123 {tempseqfile.name} "
+                    f"> {tempseqfile.name}.seq"
                 )
                 # Build the "lean" HMM w/ hmmbuild
                 SeqIO.convert(
@@ -79,8 +79,8 @@ def cmd_refine(args):
                     "stockholm",
                 )
                 sh(
-                    "hmmbuild %s %s > /dev/null"
-                    % (tempseqfile.name + ".hmm", tempseqfile.name + ".stk")
+                    f"hmmbuild {tempseqfile.name}.hmm {tempseqfile.name}.stk "
+                    "> /dev/null"
                 )
                 os.remove(tempseqfile.name + ".seq")
                 os.remove(tempseqfile.name + ".stk")

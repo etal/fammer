@@ -7,8 +7,8 @@ from os.path import basename, isdir, isfile
 
 from Bio import SeqIO
 
-from .tasks import sh
 from ._share import parse_scanned_hits
+from .tasks import sh
 
 
 def cmd_scan(args):
@@ -27,8 +27,8 @@ def cmd_scan(args):
     # ENH?: remove table ([target].tbl) with option --clean
     tblfname = basename(args.target) + ".tbl"
     sh(
-        ("hmmsearch -E %s --domE %s --noali --tblout %s %s %s > /dev/null")
-        % (args.evalue, args.evalue, tblfname, hmmdb, args.target)
+        f"hmmsearch -E {args.evalue} --domE {args.evalue} --noali "
+        f"--tblout {tblfname} {hmmdb} {args.target} > /dev/null"
     )
     # Get the best hit for each sequence
     with open(tblfname) as tblfile:
@@ -68,7 +68,7 @@ def write_summary(scanhits):
     Rows of:
     [profile name] : [#hits]
     """
-    profcounts = collections.Counter([prof for prof, score in scanhits.values()])
+    profcounts = collections.Counter([prof for prof, _score in scanhits.values()])
     max_width = max(map(len, profcounts.keys()))
     for profname, count in sorted(
         profcounts.items(),
@@ -87,8 +87,8 @@ def write_table(scanhits):
     # ENH: include e-value cutoff, sequence description
     # [sequence id] \t [profile name] \t [e-value] \t [description...]
     for seqname, data in sorted(scanhits.items()):
-        profname, score = data
-        print("%s\t%s" % (seqname, profname))
+        profname, _score = data
+        print(f"{seqname}\t{profname}")
 
 
 def write_seqout(scanhits, sourcefname, outfname):
@@ -111,7 +111,7 @@ def write_seqsets(scanhits, sourcefname, align=False):
         profiles[prof_score[0]].append(seqname)
     # For each entry there, fetch all seq ids from the file & write
     for profname, seqnames in sorted(profiles.items()):
-        outfname = "%s.%s.fasta" % (basename(sourcefname), profname)
+        outfname = f"{basename(sourcefname)}.{profname}.fasta"
         with open(outfname, "wb+") as outfile:
             for rec in seqnames:
                 block = seq_idx.get_raw(rec)

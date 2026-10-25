@@ -1,17 +1,17 @@
 """Command-line entry points: the fammer and fammer-tmalign programs."""
 
-import logging
 import argparse
+import logging
 import sys
 
 from Bio import SeqIO
 
 from . import tmalign
-from .build import cmd_build
-from .scan import cmd_scan
 from .add import cmd_add
-from .refine import cmd_refine
+from .build import cmd_build
 from .cluster import cmd_cluster
+from .refine import cmd_refine
+from .scan import cmd_scan
 from .update_fasta import cmd_update_fasta
 
 

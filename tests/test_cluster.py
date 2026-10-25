@@ -68,7 +68,7 @@ class RecordedTools:
         self.calls += 1
         assert kwargs.get("text") is True
         assert len(argv) == len(recorded_argv)
-        for actual, wanted in zip(argv, recorded_argv):
+        for actual, wanted in zip(argv, recorded_argv, strict=True):
             if wanted == TEMPORARY_FILE:
                 # FastTree reads this file, so it must be complete when called.
                 assert os.path.isabs(actual)

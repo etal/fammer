@@ -41,8 +41,8 @@ from Bio import AlignIO, SeqIO
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-
 from biofrills import consensus
+
 from fammer import _share, add, build, cluster, scan, tasks, tmalign, update_fasta
 
 TESTS = Path(__file__).resolve().parent

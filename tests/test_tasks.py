@@ -65,7 +65,7 @@ def is_stale(target_mtime, dep_mtimes):
 @pytest.mark.parametrize(
     "offsets",
     [combo for n in range(4) for combo in itertools.product(OFFSETS, repeat=n)],
-    ids=lambda combo: "deps[" + ",".join("%+d" % o for o in combo) + "]",
+    ids=lambda combo: "deps[" + ",".join(f"{o:+d}" for o in combo) + "]",
 )
 def test_file_dependencies_follow_the_staleness_model(
     tmp_path, target_present, offsets
@@ -73,7 +73,7 @@ def test_file_dependencies_follow_the_staleness_model(
     """Build runs the action exactly for a missing or strictly older target."""
     target_mtime = BASE + 100
     deps = [
-        make_file(tmp_path / ("dep%d" % i), target_mtime + off)
+        make_file(tmp_path / f"dep{i}", target_mtime + off)
         for i, off in enumerate(offsets)
     ]
     target = tmp_path / "target"
@@ -103,7 +103,7 @@ def test_file_dependencies_follow_the_staleness_model(
 @pytest.mark.parametrize(
     "offsets",
     list(itertools.product(OFFSETS, repeat=2)),
-    ids=lambda combo: "deps[%+d,%+d]" % combo,
+    ids=lambda combo: "deps[{:+d},{:+d}]".format(*combo),
 )
 def test_task_dependencies_count_like_file_dependencies(
     tmp_path, target_present, kinds, offsets
@@ -112,8 +112,8 @@ def test_task_dependencies_count_like_file_dependencies(
     target_mtime = BASE + 100
     recorder = Recorder()
     deps = []
-    for i, (kind, off) in enumerate(zip(kinds, offsets)):
-        path = make_file(tmp_path / ("dep%d" % i), target_mtime + off)
+    for i, (kind, off) in enumerate(zip(kinds, offsets, strict=True)):
+        path = make_file(tmp_path / f"dep{i}", target_mtime + off)
         deps.append(recorder.task(path) if kind == "task" else path)
     target = tmp_path / "target"
     if target_present:
@@ -157,7 +157,7 @@ def test_chain_rebuilds_from_the_stale_level_upward(
 ):
     """Only the first stale level and the levels above it are rebuilt."""
     source = make_file(tmp_path / "source", BASE)
-    names = ["level%d" % i for i in range(depth)]
+    names = [f"level{i}" for i in range(depth)]
     fresh = [BASE + 10 * (i + 1) for i in range(depth)]
     recorder = Recorder()
     tasks = []
@@ -186,7 +186,7 @@ def test_fresh_chain_runs_no_action(tmp_path, depth):
     recorder = Recorder()
     task = None
     for i in range(depth):
-        path = make_file(tmp_path / ("level%d" % i), BASE + 10 * (i + 1))
+        path = make_file(tmp_path / f"level{i}", BASE + 10 * (i + 1))
         task = recorder.task(path, depends=upstream)
         upstream = task
 

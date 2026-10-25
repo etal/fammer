@@ -21,11 +21,9 @@ import tempfile
 from io import StringIO
 
 import networkx
-
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-
 from biofrills import alnutils
 
 
@@ -53,8 +51,8 @@ def align_structs(pdb_fnames, seed_fnames=None):
                 raise
             except subprocess.CalledProcessError as exc:
                 raise RuntimeError(
-                    "TMalign failed (returned %s):\n%s" % (exc.returncode, exc.output)
-                )
+                    f"TMalign failed (returned {exc.returncode}):\n{exc.output}"
+                ) from exc
             tm_seqpair = read_tmalign_as_seqrec_pair(tm_output, ref_pdbfn, eqv_pdbfn)
             allpairs.append(tm_seqpair)
 
@@ -126,8 +124,8 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
     assert not lastlines[-1].strip()
     refseq, eqvseq = lastlines[1].strip(), lastlines[3].strip()
     return (
-        SeqRecord(Seq(refseq), id=ref_id, description="TMalign TM-score=%f" % tmscore),
-        SeqRecord(Seq(eqvseq), id=eqv_id, description="TMalign TM-score=%f" % tmscore),
+        SeqRecord(Seq(refseq), id=ref_id, description=f"TMalign TM-score={tmscore:f}"),
+        SeqRecord(Seq(eqvseq), id=eqv_id, description=f"TMalign TM-score={tmscore:f}"),
         tmscore,
     )
 

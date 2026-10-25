@@ -31,10 +31,10 @@ def sh(cmd):
         logging.warning("*** Failed command: %s", str(cmd))
         raise
     except subprocess.CalledProcessError as exc:
+        output = exc.output.decode("utf-8", "replace")
         raise RuntimeError(
-            "Failed command (returned %s):\n%s\n\n%s"
-            % (exc.returncode, str(cmd), exc.output.decode("utf-8", "replace"))
-        )
+            f"Failed command (returned {exc.returncode}):\n{cmd}\n\n{output}"
+        ) from exc
 
 
 def which(exenames):
@@ -62,7 +62,7 @@ def is_empty(path):
     return os.stat(path).st_size < 2
 
 
-class Task(object):
+class Task:
     """Solve the cache-invalidation problem.
 
     :Parameters:

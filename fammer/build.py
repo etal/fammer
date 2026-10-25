@@ -7,20 +7,18 @@ import subprocess
 from glob import glob
 from os.path import basename, isdir, isfile, join
 
-from Bio import SeqIO
-from Bio import AlignIO
+from Bio import AlignIO, SeqIO
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from biofrills import alnutils, consensus
 
-from biofrills import consensus, alnutils
-
-from ._share import write_fasta
-from .tasks import Task, ext, noext, sh, which, is_empty
 from . import tmalign
+from ._share import write_fasta
+from .tasks import Task, ext, is_empty, noext, sh, which
 
 
-class Result(object):
+class Result:
     """Output of taskify_subdirs. Collection of tasks.
 
     Contains references to the tasks for the main alignment, the PDB seed
@@ -217,7 +215,7 @@ def align_fasta_mafft(task):
     seq = ext(task.depends[0], "seq")
     sh(
         "mafft --quiet --amino --reorder --maxiterate 1000 "
-        "--genafpair --ep 0.123 %s > %s" % (task.depends[0], seq)
+        f"--genafpair --ep 0.123 {task.depends[0]} > {seq}"
     )
     # Convert FASTA to "pressed" (single-row) Clustal
     records = list(SeqIO.parse(seq, "fasta"))
@@ -229,7 +227,7 @@ def align_fasta_mafft(task):
     with open(task.target, "w+") as outfile:
         outfile.write("CLUSTAL X (-like) multiple sequence alignment\n\n")
         outfile.writelines(
-            ["%s %s\n" % (rec.id.ljust(max_id_len), rec.seq) for rec in records]
+            [f"{rec.id.ljust(max_id_len)} {rec.seq}\n" for rec in records]
         )
 
 
@@ -239,7 +237,7 @@ def align_fasta_prank(task):
     Cleans: [input].fasta.{1,2}.fas
     """
     seq = task.depends[0] + ".2.fas"
-    sh("prank -d=%s -o=%s -twice -quiet" % (task.depends[0], task.depends[0]))
+    sh(f"prank -d={task.depends[0]} -o={task.depends[0]} -twice -quiet")
     # Convert FASTA to "pressed" (single-row) Clustal
     records = list(SeqIO.parse(seq, "fasta"))
     # Check for 'X' characters in the sequences -- these cause problems
@@ -250,7 +248,7 @@ def align_fasta_prank(task):
     with open(task.target, "w+") as outfile:
         outfile.write("CLUSTAL X (-like) multiple sequence alignment\n\n")
         outfile.writelines(
-            ["%s %s\n" % (rec.id.ljust(max_id_len), rec.seq) for rec in records]
+            [f"{rec.id.ljust(max_id_len)} {rec.seq}\n" for rec in records]
         )
 
 
@@ -300,7 +298,7 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
                         logging.warning("PDB seq parsing issue: %s", rec.description)
                     break
         if best_pdb is None:
-            logging.warning("Empty PDB alignment: " + sub_pdb_fname)
+            logging.warning("Empty PDB alignment: %s", sub_pdb_fname)
         else:
             logging.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
             pdbs.append(best_pdb)
@@ -351,14 +349,14 @@ def align_profiles(task, use_pdb=None):
         aln = AlignIO.read(str(subaln), "clustal")
         # with open(task.target, 'w+') as outfile:
         with open(ext(subaln, "cons.seq"), "w+") as outfile:
-            outfile.write(">%s consensus\n" % basename(noext(subaln)))
+            outfile.write(f">{basename(noext(subaln))} consensus\n")
             cons_seq = consensus.consensus(aln, trim_ends=False, gap_threshold=0.6)
             if isdir(noext(subaln)):
                 # Group profiles: include the subfamily consenses, too
                 outfile.write(cons_seq + "\n")
                 for record in aln:
-                    outfile.write(">%s\n" % record.id)
-                    outfile.write("%s\n" % record.seq)
+                    outfile.write(f">{record.id}\n")
+                    outfile.write(f"{record.seq}\n")
             else:
                 # Ungapped family consensus sequences
                 outfile.write(cons_seq.replace("-", "") + "\n")
@@ -373,14 +371,15 @@ def align_profiles(task, use_pdb=None):
     # First, align/merge the single family consensus sequences
     famfa = ext(task.target, "families.fa")
     allseq = ext(task.target, "seq")
-    assert singles or seeds, "No .fasta files found to build %s" % task.target
+    assert singles or seeds, f"No .fasta files found to build {task.target}"
     if singles:
-        sh("cat %s > %s" % (" ".join(singles), famfa))
+        sh(f"cat {' '.join(singles)} > {famfa}")
     if seeds:
         # Align the families with the groups
+        seed_args = " ".join(["--seed " + s for s in seeds])
         sh(
-            "mafft --quiet --amino --globalgenafpair --maxiterate 1000 %s %s > %s"
-            % (" ".join(["--seed " + s for s in seeds]), famfa, allseq)
+            "mafft --quiet --amino --globalgenafpair --maxiterate 1000 "
+            f"{seed_args} {famfa} > {allseq}"
         )
         # XXX fast version
         # sh("mafft --quiet --amino --auto %s %s > %s"
@@ -388,8 +387,8 @@ def align_profiles(task, use_pdb=None):
     else:
         # No group profiles -- just align the families
         sh(
-            "mafft --quiet --amino --globalgenafpair --maxiterate 1000 %s > %s"
-            % (famfa, allseq)
+            "mafft --quiet --amino --globalgenafpair --maxiterate 1000 "
+            f"{famfa} > {allseq}"
         )
     # Convert FASTA to "pressed" (single-row) Clustal
     records = [
@@ -409,17 +408,17 @@ def align_profiles(task, use_pdb=None):
                 rec.id = rec.id[6:]
     try:
         max_id_len = max(len(r.id) for r in records)
-    except ValueError:
+    except ValueError as exc:
         # Common effup
+        inputs = " ".join(map(str, task.depends))
         raise ValueError(
-            "Profile alignment failed for %s.\nInputs: %s"
-            % (task.target, " ".join(map(str, task.depends)))
-        )
+            f"Profile alignment failed for {task.target}.\nInputs: {inputs}"
+        ) from exc
 
     with open(task.target, "w+") as outfile:
         outfile.write("CLUSTAL X (-like) multiple sequence alignment\n\n")
         outfile.writelines(
-            ["%s %s\n" % (rec.id.ljust(max_id_len), rec.seq) for rec in records]
+            [f"{rec.id.ljust(max_id_len)} {rec.seq}\n" for rec in records]
         )
 
 
@@ -430,7 +429,7 @@ def aln2hmm(task):
     """
     stk = ext(task.depends[0], "stk")
     SeqIO.convert(str(task.depends[0]), "clustal", stk, "stockholm")
-    sh("hmmbuild %s %s" % (task.target, stk))
+    sh(f"hmmbuild {task.target} {stk}")
 
 
 def cat_sub_consenses(task):
@@ -438,7 +437,7 @@ def cat_sub_consenses(task):
     with open(task.target, "w+") as outfile:
         for subaln in ext(task.depends, "aln"):
             aln = AlignIO.read(str(subaln), "clustal")
-            outfile.write(">%s consensus\n" % noext(subaln))
+            outfile.write(f">{noext(subaln)} consensus\n")
             outfile.write(
                 consensus.consensus(aln, trim_ends=False, gap_threshold=0.6) + "\n"
             )
@@ -453,10 +452,10 @@ def all_hmm(task):
     base = noext(task.depends[-1])
     # TODO - filter out *_all.hmm from `find` hits
     sh(
-        "cat %s.hmm `find %s/ -name '*.hmm' | grep -v '_all.hmm'` > %s"
-        % (base, base, task.target)
+        f"cat {base}.hmm `find {base}/ -name '*.hmm' | grep -v '_all.hmm'` "
+        f"> {task.target}"
     )
-    sh("hmmpress -f %s" % task.target)
+    sh(f"hmmpress -f {task.target}")
 
 
 # MAPGAPS actions
@@ -473,8 +472,8 @@ def mg_aln2cma(task, level=None):
     except ImportError as exc:
         raise ImportError(
             "build --mapgaps requires the Python package "
-            "biocma (pip install biocma): %s" % exc
-        )
+            f"biocma (pip install biocma): {exc}"
+        ) from exc
     base = noext(task.target)
     name = basename(base)
     # Add consensus back to the subfamily-consensus seq set (.aln)
@@ -511,12 +510,12 @@ def mg_cat_cma(task):
     Depends: .cma of each subfamily, .tpl of this & sub-groups.
     """
     assert task.depends, "No CMA files were given"
-    sh("cat %s > %s" % (" ".join(map(str, task.depends)), task.target))
+    sh(f"cat {' '.join(map(str, task.depends))} > {task.target}")
 
 
 def mg_run_map(task):
     """Build/compile the complete set of MAPGAPS profiles."""
-    sh("run_map %s" % noext(task.target))
+    sh(f"run_map {noext(task.target)}")
 
 
 # Tree
@@ -542,4 +541,4 @@ def treeify_subdirs(topdir):
         if noext(fafname) not in subdirs
     ]
     tip_names.sort(key=str)
-    return "(%s)%s" % (",".join(subtree_strs + tip_names), basename(topdir.rstrip("/")))
+    return f"({','.join(subtree_strs + tip_names)}){basename(topdir.rstrip('/'))}"

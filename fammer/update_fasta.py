@@ -21,7 +21,7 @@ def cmd_update_fasta(args):
         if task is not None:
             task.build()
     else:
-        raise RuntimeError("Target must be a directory or .aln file: %s" % args.basedir)
+        raise RuntimeError(f"Target must be a directory or .aln file: {args.basedir}")
 
 
 def find_update_tasks(topdir):
@@ -45,7 +45,7 @@ def one_update_task(aln_fname):
     fasta_fname = aln_fname[:-4] + ".fasta"
     if not isfile(fasta_fname):
         raise RuntimeError(
-            "No corresponding .fasta file for %s: need %s" % (aln_fname, fasta_fname)
+            f"No corresponding .fasta file for {aln_fname}: need {fasta_fname}"
         )
     if is_same_aln_fasta(aln_fname, fasta_fname):
         logging.info("%s already matches %s.", fasta_fname, aln_fname)
@@ -99,9 +99,9 @@ def ungap_and_unique(records, target_name):
         yield rec
 
     # I/O
-    msg = "Updated %s" % target_name
+    msg = f"Updated {target_name}"
     if counter:
-        msg += " (purged %d sequence%s)" % (counter, "" if counter == 1 else "s")
+        msg += f" (purged {counter} sequence{'' if counter == 1 else 's'})"
     logging.info(msg)
 
 

@@ -29,9 +29,8 @@ FOOTER = [
 def tblout_line(seq, prof, dom_eval, seq_eval="1e-20", description="-"):
     """One data line with the 18 fixed columns and a free-text description."""
     return (
-        "%-24s -          %-12s -          %9s  100.0   0.1 %9s  99.0   0.1"
-        "   1.0   1   0   0   1   1   1   1 %s\n"
-        % (seq, prof, seq_eval, dom_eval, description)
+        f"{seq:<24} -          {prof:<12} -          {seq_eval:>9}  100.0   0.1 "
+        f"{dom_eval:>9}  99.0   0.1   1.0   1   0   0   1   1   1   1 {description}\n"
     )
 
 
@@ -72,8 +71,8 @@ def test_every_row_order_gives_the_minimum_with_first_row_winning_ties():
                 seq,
                 prof,
                 dom,
-                seq_eval="%de-30" % (i + 1),
-                description='symbol:X species:1 "A b"  tail %d' % i,
+                seq_eval=f"{i + 1}e-30",
+                description=f'symbol:X species:1 "A b"  tail {i}',
             )
             for i, (seq, prof, dom) in enumerate(rows)
         ]

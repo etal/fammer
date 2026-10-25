@@ -20,10 +20,9 @@ import subprocess
 import tempfile
 from io import StringIO
 
-from Bio import AlignIO, SeqIO, Phylo
-from Bio.Phylo.BaseTree import BranchColor
+from Bio import AlignIO, Phylo, SeqIO
 from Bio.Graphics.ColorSpiral import ColorSpiral
-
+from Bio.Phylo.BaseTree import BranchColor
 from biofrills import alnutils
 
 
@@ -178,9 +177,11 @@ def write_clusters(seqfname, tree, clusters, unclustered):
 def write_fasta(record, handle, do_ungap=False):
     """Ungap and write a SeqRecord to a handle in single-line FASTA format."""
     if record.description:
-        topline = ">%s %s" % (record.id, record.description)
+        topline = f">{record.id} {record.description}"
     else:
-        topline = ">" + record.id + "\n"
+        # This newline and the one written below leave a blank line between
+        # the header and the sequence, as the recorded reference output does.
+        topline = f">{record.id}\n"
     seq = str(record.seq).strip()
     if do_ungap:
         seq = seq.replace("-", "").replace(".", "").upper()

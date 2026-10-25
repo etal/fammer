@@ -8,13 +8,13 @@ from os.path import basename, isdir, isfile, join
 from Bio import SeqIO
 from Bio.Seq import Seq
 
-from .tasks import ext, noext, sh
 from ._share import get_hmm_evalues, parse_scanned_hits
+from .tasks import ext, noext, sh
 
 
 def cmd_add(args):
     # Validation
-    assert isdir(args.basedir), "Not a directory: %s" % args.basedir
+    assert isdir(args.basedir), f"Not a directory: {args.basedir}"
     hmmdb = args.basedir.rstrip("/") + "_all.hmm"
     assert isfile(hmmdb), "Didn't find " + hmmdb
     assert isfile(args.sequence_db)
@@ -95,7 +95,7 @@ def walk_profiles(topdir):
         for fasta in fasta_fnames:
             hmm_fname = ext(fasta, "hmm")
             if not isfile(hmm_fname):
-                raise ValueError("Unbuild .hmm for %s" % fasta)
+                raise ValueError(f"Unbuild .hmm for {fasta}")
             yield fasta, hmm_fname
 
 
@@ -107,8 +107,8 @@ def get_hmm_data(hmmfname, seqfname, evalue):
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".tbl") as tbl:
         sh(
             "hmmsearch --noali --notextw "
-            "-E %s --domE %s --tblout %s %s %s > /dev/null"
-            % (evalue, evalue, tbl.name, hmmfname, seqfname)
+            f"-E {evalue} --domE {evalue} --tblout {tbl.name} "
+            f"{hmmfname} {seqfname} > /dev/null"
         )
         tbl.seek(0)
         # Parse the table; get the domain score for each sequence
@@ -124,10 +124,7 @@ def get_hmm_alignment(hmmfname, hits, index):
         SeqIO.write(fullseqs, handle, "fasta")
         handle.flush()
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".stk") as alnfile:
-        sh(
-            ("hmmsearch --noali -A %s %s %s > /dev/null")
-            % (alnfile.name, hmmfname, tmp_seqfname)
-        )
+        sh(f"hmmsearch --noali -A {alnfile.name} {hmmfname} {tmp_seqfname} > /dev/null")
         alnfile.seek(0)
         alignment = list(SeqIO.parse(alnfile, "stockholm"))
     os.remove(tmp_seqfname)
