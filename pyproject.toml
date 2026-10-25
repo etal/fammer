@@ -69,6 +69,19 @@ markers = [
     "integration: runs the external programs that fammer drives",
 ]
 
+[tool.ruff]
+# tests/data/capture_py27.py is the frozen Python 2.7 script that captured
+# the reference outputs; the pyupgrade rules would rewrite it into code that
+# Python 2 cannot run. .pixi holds the pixi environments and is otherwise
+# excluded only through .gitignore.
+extend-exclude = [".pixi", "tests/data/capture_py27.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "LOG", "G"]
+# The calls on the root logger become calls on module loggers in a separate
+# change.
+ignore = ["LOG015"]
+
 # biofrills and biocma come from their repositories at pinned commits, which
 # the lock files then record; moving to a newer commit is a deliberate change
 # of the pin. pixi reads this table too, so it serves both workflows, and both
@@ -116,3 +129,5 @@ py312 = {features = ["dev", "py312"]}
 [tool.pixi.tasks]
 test = "pytest -m 'not integration'"
 test-integration = {cmd = "pytest -m integration", env = {FAMMER_REQUIRE_TOOLS = "1"}}
+lint = "ruff check"
+fmt = "ruff format"
