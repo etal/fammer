@@ -145,7 +145,8 @@ def geom_mean(arr):
 def write_clusters(seqfname, tree, clusters, unclustered):
     """Write output files: clusters & unique as FASTA, tree as phyloXML."""
     is_aln = seqfname.endswith(".aln")
-    seq_idx = SeqIO.to_dict(SeqIO.parse(seqfname, "clustal" if is_aln else "fasta"))
+    with SeqIO.parse(seqfname, "clustal" if is_aln else "fasta") as parsed:
+        seq_idx = SeqIO.to_dict(parsed)
 
     def write_cluster(cluster, fname):
         """Write the sequences of cluster tips to a FASTA file."""

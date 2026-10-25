@@ -58,12 +58,13 @@ def cmd_refine(args):
         ):
             # Copy all seqs in this_fa, except seq_id, to a temp file
             with tempfile.NamedTemporaryFile(mode="w+", suffix=".fa") as tempseqfile:
-                for rec in SeqIO.parse(this_fa, "fasta"):
-                    if rec.id == seq_id:
-                        # Put this seq in a separate file
-                        SeqIO.write(rec, tempseqfile.name + ".seed", "fasta")
-                    else:
-                        SeqIO.write(rec, tempseqfile, "fasta")
+                with SeqIO.parse(this_fa, "fasta") as parsed:
+                    for rec in parsed:
+                        if rec.id == seq_id:
+                            # Put this seq in a separate file
+                            SeqIO.write(rec, tempseqfile.name + ".seed", "fasta")
+                        else:
+                            SeqIO.write(rec, tempseqfile, "fasta")
                 tempseqfile.flush()
                 # Align the "lean" profile w/ MAFFT (as usual)
                 sh(
@@ -72,12 +73,10 @@ def cmd_refine(args):
                     f"> {tempseqfile.name}.seq"
                 )
                 # Build the "lean" HMM w/ hmmbuild
-                SeqIO.convert(
-                    tempseqfile.name + ".seq",
-                    "fasta",
-                    tempseqfile.name + ".stk",
-                    "stockholm",
-                )
+                with open(tempseqfile.name + ".seq") as aligned:
+                    SeqIO.convert(
+                        aligned, "fasta", tempseqfile.name + ".stk", "stockholm"
+                    )
                 sh(
                     f"hmmbuild {tempseqfile.name}.hmm {tempseqfile.name}.stk "
                     "> /dev/null"

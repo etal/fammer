@@ -3,6 +3,7 @@
 
 import collections
 import logging
+from contextlib import closing
 from os.path import basename, isdir, isfile
 
 from Bio import SeqIO
@@ -93,8 +94,10 @@ def write_table(scanhits):
 
 def write_seqout(scanhits, sourcefname, outfname):
     """Write a single FASTA file containing all hits to any profiles."""
-    seq_idx = SeqIO.index(sourcefname, "fasta")
-    with open(outfname, "wb+") as outfile:
+    with (
+        closing(SeqIO.index(sourcefname, "fasta")) as seq_idx,
+        open(outfname, "wb+") as outfile,
+    ):
         for acc in scanhits:
             block = seq_idx.get_raw(acc)
             outfile.write(block)
@@ -103,20 +106,20 @@ def write_seqout(scanhits, sourcefname, outfname):
 
 def write_seqsets(scanhits, sourcefname, align=False):
     """Write FASTA files of the seqs matching each profile."""
-    seq_idx = SeqIO.index(sourcefname, "fasta")
     # NB: scanhits looks like {seq_id: (profile_name, score)}
     # Flip to: {profile_name: [sequence ids...]}
     profiles = collections.defaultdict(list)
     for seqname, prof_score in scanhits.items():
         profiles[prof_score[0]].append(seqname)
     # For each entry there, fetch all seq ids from the file & write
-    for profname, seqnames in sorted(profiles.items()):
-        outfname = f"{basename(sourcefname)}.{profname}.fasta"
-        with open(outfname, "wb+") as outfile:
-            for rec in seqnames:
-                block = seq_idx.get_raw(rec)
-                outfile.write(block)
-        logging.info("Wrote %s", outfname)
+    with closing(SeqIO.index(sourcefname, "fasta")) as seq_idx:
+        for profname, seqnames in sorted(profiles.items()):
+            outfname = f"{basename(sourcefname)}.{profname}.fasta"
+            with open(outfname, "wb+") as outfile:
+                for rec in seqnames:
+                    block = seq_idx.get_raw(rec)
+                    outfile.write(block)
+            logging.info("Wrote %s", outfname)
 
     # 3. hmmalign the written sequence sets (if requested)
     # if align: ...

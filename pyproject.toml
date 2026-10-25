@@ -64,7 +64,8 @@ version = {attr = "fammer.__version__"}
 [tool.pytest.ini_options]
 minversion = "9.0.2"
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", "tests"]
+filterwarnings = ["error"]
 markers = [
     "integration: runs the external programs that fammer drives",
 ]

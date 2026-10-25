@@ -55,10 +55,10 @@ def one_update_task(aln_fname):
 
 def update_fasta(task):
     """Overwrite the .fasta with ungapped unique .aln sequences."""
-    records = ungap_and_unique(
-        SeqIO.parse(str(task.depends[0]), "clustal"), task.target
-    )
-    write_fasta(records, task.target)
+    # ungap_and_unique reads the alignment while write_fasta writes, so the
+    # alignment stays open until the FASTA file is written.
+    with SeqIO.parse(str(task.depends[0]), "clustal") as parsed:
+        write_fasta(ungap_and_unique(parsed, task.target), task.target)
     # SeqIO.write(records, task.target, 'fasta')
 
 
@@ -115,6 +115,8 @@ def is_same_aln_fasta(aln_fn, fasta_fn):
             strseq = str(rec.seq).upper()
         return (rec.id, strseq)
 
-    aln_hash = set([rec2tuple(rec, True) for rec in SeqIO.parse(aln_fn, "clustal")])
-    fa_hash = set([rec2tuple(rec, False) for rec in SeqIO.parse(fasta_fn, "fasta")])
+    with SeqIO.parse(aln_fn, "clustal") as parsed:
+        aln_hash = {rec2tuple(rec, True) for rec in parsed}
+    with SeqIO.parse(fasta_fn, "fasta") as parsed:
+        fa_hash = {rec2tuple(rec, False) for rec in parsed}
     return aln_hash == fa_hash

@@ -100,7 +100,8 @@ def test_alignment_after_an_edit_keeps_every_novel_record(caplog):
     """The built CDK alignment with its last record removed, as a curator
     might leave it: of 144 records, only the two X-containing structure
     sequences of kinases already in the set are redundant."""
-    records = list(SeqIO.parse(CDK_ALN, "clustal"))[:-1]
+    with SeqIO.parse(CDK_ALN, "clustal") as parsed:
+        records = list(parsed)[:-1]
     assert len(records) == 144
     with caplog.at_level(logging.INFO):
         kept = list(ungap_and_unique(records, "CDK.fasta"))
@@ -134,7 +135,8 @@ def test_filtering_twice_changes_nothing(pairs):
 
 
 def test_filtering_a_real_alignment_twice_changes_nothing():
-    once = list(ungap_and_unique(SeqIO.parse(CDK_ALN, "clustal"), "t.fasta"))
+    with SeqIO.parse(CDK_ALN, "clustal") as parsed:
+        once = list(ungap_and_unique(parsed, "t.fasta"))
     twice = list(
         ungap_and_unique(
             [SeqRecord(Seq(str(rec.seq)), id=rec.id) for rec in once], "t.fasta"

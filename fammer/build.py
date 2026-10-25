@@ -218,7 +218,8 @@ def align_fasta_mafft(task):
         f"--genafpair --ep 0.123 {task.depends[0]} > {seq}"
     )
     # Convert FASTA to "pressed" (single-row) Clustal
-    records = list(SeqIO.parse(seq, "fasta"))
+    with SeqIO.parse(seq, "fasta") as parsed:
+        records = list(parsed)
     # Check for 'X' characters in the sequences -- these cause problems
     for rec in records:
         if "X" in str(rec.seq):
@@ -239,7 +240,8 @@ def align_fasta_prank(task):
     seq = task.depends[0] + ".2.fas"
     sh(f"prank -d={task.depends[0]} -o={task.depends[0]} -twice -quiet")
     # Convert FASTA to "pressed" (single-row) Clustal
-    records = list(SeqIO.parse(seq, "fasta"))
+    with SeqIO.parse(seq, "fasta") as parsed:
+        records = list(parsed)
     # Check for 'X' characters in the sequences -- these cause problems
     for rec in records:
         if "X" in str(rec.seq):
@@ -285,18 +287,21 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
             continue
         best_tmscore = -1
         best_pdb = None
-        for rec in SeqIO.parse(sub_pdb_fname, "fasta"):
-            # Extract TM-score
-            for token in rec.description.split():
-                if token.startswith("TM-score"):
-                    try:
-                        this_tmscore = float(token.split("=", 1)[1])
-                        if this_tmscore > best_tmscore:
-                            best_tmscore = this_tmscore
-                            best_pdb = rec.id
-                    except Exception:
-                        logging.warning("PDB seq parsing issue: %s", rec.description)
-                    break
+        with SeqIO.parse(sub_pdb_fname, "fasta") as parsed:
+            for rec in parsed:
+                # Extract TM-score
+                for token in rec.description.split():
+                    if token.startswith("TM-score"):
+                        try:
+                            this_tmscore = float(token.split("=", 1)[1])
+                            if this_tmscore > best_tmscore:
+                                best_tmscore = this_tmscore
+                                best_pdb = rec.id
+                        except Exception:
+                            logging.warning(
+                                "PDB seq parsing issue: %s", rec.description
+                            )
+                        break
         if best_pdb is None:
             logging.warning("Empty PDB alignment: %s", sub_pdb_fname)
         else:
@@ -391,15 +396,15 @@ def align_profiles(task, use_pdb=None):
             f"{famfa} > {allseq}"
         )
     # Convert FASTA to "pressed" (single-row) Clustal
-    records = [
-        rec
-        for rec in SeqIO.parse(allseq, "fasta")
-        # Drop PDB-derived sequences
-        # if ':' not in rec.id
-        if "TMalign" not in rec.description
-        and "TM-score" not in rec.description
-        and not rec.id.endswith(".pdb")
-    ]
+    with SeqIO.parse(allseq, "fasta") as parsed:
+        records = [
+            rec
+            for rec in parsed
+            # Drop PDB-derived sequences
+            if "TMalign" not in rec.description
+            and "TM-score" not in rec.description
+            and not rec.id.endswith(".pdb")
+        ]
     records = list(alnutils.remove_empty_cols(records))
     if seeds:
         # MAFFT prefixes seed alignments with '_seed_' -- get rid of that
@@ -409,7 +414,7 @@ def align_profiles(task, use_pdb=None):
     try:
         max_id_len = max(len(r.id) for r in records)
     except ValueError as exc:
-        # Common effup
+        # No records remain: MAFFT wrote none, or all were PDB-derived.
         inputs = " ".join(map(str, task.depends))
         raise ValueError(
             f"Profile alignment failed for {task.target}.\nInputs: {inputs}"
@@ -428,7 +433,8 @@ def aln2hmm(task):
     Cleans: .stk
     """
     stk = ext(task.depends[0], "stk")
-    SeqIO.convert(str(task.depends[0]), "clustal", stk, "stockholm")
+    with open(str(task.depends[0])) as aln:
+        SeqIO.convert(aln, "clustal", stk, "stockholm")
     sh(f"hmmbuild {task.target} {stk}")
 
 

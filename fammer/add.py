@@ -3,6 +3,7 @@
 import logging
 import os
 import tempfile
+from contextlib import closing
 from os.path import basename, isdir, isfile, join
 
 from Bio import SeqIO
@@ -29,63 +30,62 @@ def cmd_add(args):
     # Scan & classify the target database, just like in cmd_scan
     dbhits = get_hmm_data(hmmdb, args.sequence_db, args.evalue)
     assert dbhits
-    index = SeqIO.index(args.sequence_db, "fasta")
-    assert index
+    with closing(SeqIO.index(args.sequence_db, "fasta")) as index:
+        assert index
+        for fasta, hmm in fastas_and_hmms:
+            add_hits(fasta, hmm, dbhits, index, args.min_length)
 
-    for fasta, hmm in fastas_and_hmms:
-        logging.info("Processing %s ...", noext(fasta))
-        # HMMscan the corresponding FASTA file; record the max (worst) e-value
-        seq_evals = get_hmm_evalues(hmm, fasta)
-        max_eval = max(seq_evals.values())
 
-        # Select the hits matching the current profile
-        hits = list(filter_profile(dbhits, basename(noext(fasta))))
-        # if not hits:
-        # logging.info("No hits for profile %s", hmm)
-        # continue
-        # Filter hits by this profile's maximum (worst) e-value
-        hits = list(filter_evalue(hits, max_eval))
-        if not hits:
-            # logging.info("No hits for profile %s with e-value <= %s",
-            #              hmm, max_eval)
+def add_hits(fasta, hmm, dbhits, index, min_length):
+    """Append the database hits that a profile accepts to its FASTA file."""
+    logging.info("Processing %s ...", noext(fasta))
+    # HMMscan the corresponding FASTA file; record the max (worst) e-value
+    seq_evals = get_hmm_evalues(hmm, fasta)
+    max_eval = max(seq_evals.values())
+
+    # Select the hits matching the current profile
+    hits = list(filter_profile(dbhits, basename(noext(fasta))))
+    # Filter hits by this profile's maximum (worst) e-value
+    hits = list(filter_evalue(hits, max_eval))
+    if not hits:
+        return
+
+    # Align the hit sequences (retrieved from the target DB)
+    aln = get_hmm_alignment(hmm, hits, index)
+
+    # Calculate minimum sequence length based on HMM profile length
+    hmm_len = get_hmm_len(hmm)
+    min_len_aa = int(hmm_len * min_length)
+
+    # Fetch the aligned sequence regions as SeqRecords
+    hit_seqs = []
+    for record in aln:
+        # Read the domain hit start/end position from Stockholm record ID
+        acc, _offset = record.id.split("/")
+        start, end = map(int, _offset.split("-"))
+        # Filter hits by minimum length
+        hit_len = end - start + 1  # HMMer uses 1-based numbering
+        if hit_len < min_len_aa:
             continue
+        # Remove the "/123-456" suffix from aligned record keys
+        record.id = acc
+        # Remove gaps from the hit sequence. The per-residue posterior
+        # probabilities from hmmsearch -A do not fit the ungapped
+        # sequence, so drop them first.
+        record.letter_annotations = {}
+        record.seq = Seq(str(record.seq).replace("-", "").replace(".", "").upper())
+        hit_seqs.append(record)
 
-        # Align the hit sequences (retrieved from the target DB)
-        aln = get_hmm_alignment(hmm, hits, index)
+    # ENH: extend hits that are close to the edge of the profile (e.g. 5aa) to
+    # fill sequence to the edges (no gaps)
+    #   e.g. if hmmstart = 4, add another 3aa sliced from the full sequence
+    #   to the aligned bit -- if only 2aa available, then take that much
+    # - can I tell from the alignment? (# terminal gaps)
 
-        # Calculate minimum sequence length based on HMM profile length
-        hmm_len = get_hmm_len(hmm)
-        min_len_aa = int(hmm_len * args.min_length)
-
-        # Fetch the aligned sequence regions as SeqRecords
-        hit_seqs = []
-        for record in aln:
-            # Read the domain hit start/end position from Stockholm record ID
-            acc, _offset = record.id.split("/")
-            start, end = map(int, _offset.split("-"))
-            # Filter hits by minimum length
-            hit_len = end - start + 1  # HMMer uses 1-based numbering
-            if hit_len < min_len_aa:
-                continue
-            # Remove the "/123-456" suffix from aligned record keys
-            record.id = acc
-            # Remove gaps from the hit sequence. The per-residue posterior
-            # probabilities from hmmsearch -A do not fit the ungapped
-            # sequence, so drop them first.
-            record.letter_annotations = {}
-            record.seq = Seq(str(record.seq).replace("-", "").replace(".", "").upper())
-            hit_seqs.append(record)
-
-        # ENH: extend hits that are close to the edge of the profile (e.g. 5aa) to
-        # fill sequence to the edges (no gaps)
-        #   e.g. if hmmstart = 4, add another 3aa sliced from the full sequence
-        #   to the aligned bit -- if only 2aa available, then take that much
-        # - can I tell from the alignment? (# terminal gaps)
-
-        # Add the accepted hits to the FASTA profile
-        logging.info("Adding %d hits to profile %s", len(hit_seqs), fasta)
-        with open(fasta, "a") as fafile:
-            SeqIO.write(hit_seqs, fafile, "fasta")
+    # Add the accepted hits to the FASTA profile
+    logging.info("Adding %d hits to profile %s", len(hit_seqs), fasta)
+    with open(fasta, "a") as fafile:
+        SeqIO.write(hit_seqs, fafile, "fasta")
 
 
 def walk_profiles(topdir):
