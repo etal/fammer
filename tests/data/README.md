@@ -183,17 +183,21 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
 
 ## Deliberate differences
 
-`replay.py` runs the recorded update-fasta cases, those of `library/update_fasta.json` and `e2e/update-fasta.json`, again with the current sources of this repository, and writes each case whose outcome differs from the recorded one to `differences.json`.
-A library entry gives the fixture file relative to `py27/`, the section, the case name, and the recorded and current outcomes, an exception compared by its type only.
+`replay.py` runs the recorded cases again with the current sources of this repository and writes each case whose outcome differs from the recorded one to `differences.json`.
+It replays every case under `library/` except those of `hmmer.json`, which need HMMER and built profiles, and the runs of `e2e/update-fasta.json`.
+The cases, and the way an outcome is compared with a recorded one, are defined in `tests/reference_cases.py`, which `tests/test_reference.py` uses as well.
+A library entry gives the fixture file relative to `py27/`, the section, the case name or position, and the recorded and current outcomes.
+Values are compared exactly, and an exception by its type only; a recorded built-in exception type also accepts its subclasses, so the `FileNotFoundError` of Python 3 matches a recorded `OSError`.
+The cases of `library/mapgaps.json` form three sections: `consensus` compares the recorded consensus sequence with the one biofrills now computes, `mg_aln2cma` runs the function, and `biocma.write` runs biocma on the alignment with the recorded consensus prepended; the last two compare the SHA-256 of the written profile with that of the file kept under `library/mapgaps/`.
 An end-to-end case is replayed in-process on a copy of `profiles/SomeKinases` with the alignments under `e2e/build/`, so it needs no external program; its entry gives the fields that differ among the log lines (without line numbers) and the lists of created, modified and deleted files, and, for each file whose contents differ, the record counts and checksums of both versions with the identifiers found in only one of them.
-Every entry is deliberate and is explained below; a test of the current code expects the fixture value except where `differences.json` records another.
+Every entry is deliberate and is explained below; a test of the current code expects the fixture value except where `differences.json` records another, and `tests/test_reference.py` fails on an entry whose case no longer differs.
 After a change that moves a recorded output, regenerate the file from the repository root and explain the new entries here:
 
 ```sh
-python tests/data/replay.py
+pixi run python tests/data/replay.py
 ```
 
-The script needs Python 3 and Biopython.
+The script needs a Git checkout, for the copies of `profiles/`, and the optional dependency biocma, which the default pixi environment installs.
 The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
 
 - **Redundant sequences in `update-fasta`** (3 cases).
