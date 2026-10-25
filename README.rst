@@ -463,3 +463,45 @@ as necessary. If a particular PDB is very poorly aligned to the others, it may
 be best to just remove it altogether -- it may have a different conformation
 from the others.
 
+Development
+-----------
+
+Two development workflows are supported from the same ``pyproject.toml``, and
+both lock files are committed. Both install Fammer in editable mode with its
+``mapgaps`` extra and the tools in the ``dev`` dependency group, pytest and
+ruff; ruff has no project configuration yet. Both also need a ``git``
+executable, because biofrills and biocma are installed from their repositories
+until they are released on PyPI.
+
+uv_ takes the other Python packages from PyPI, at the versions recorded in
+``uv.lock``::
+
+    uv sync --all-extras
+    uv run pytest
+
+pixi_ takes Python and the other Python packages from conda-forge, and also
+installs the programs that Fammer runs: MAFFT from conda-forge, and HMMer,
+TMalign, MUSTANG and FastTree from bioconda, at the versions recorded in
+``pixi.lock``. The ``default`` environment uses the latest Python that
+conda-forge provides, and ``py312`` the oldest supported one::
+
+    pixi run test
+    pixi run -e py312 test
+    pixi run test-integration
+
+The tests marked ``integration`` run ``fammer build`` on a copy of
+``profiles/SomeKinases`` and compare the result with the reference outputs in
+``tests/data``. ``pixi run test`` leaves them out, and elsewhere they are
+skipped unless the programs are on ``PATH`` and the tests run from a Git
+checkout, so ``uv run pytest`` runs the unit tests alone unless those programs
+are already installed; ``pixi run test-integration`` fails instead of skipping.
+Two known defects shape these tests. ``fammer build`` passes MAFFT the option
+``--globalgenafpair``, which no MAFFT released since 2014 accepts, so the tests
+put the wrapper in ``tests/data/tool-shims`` first on ``PATH``, as
+``tests/data/README.md`` describes. The build with structure alignments fails,
+so its test is expected to fail. MAPGAPS is not packaged for either workflow,
+so ``--mapgaps`` cannot be run end to end.
+
+.. _uv: https://docs.astral.sh/uv/
+.. _pixi: https://pixi.sh/
+

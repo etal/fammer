@@ -47,6 +47,12 @@ fammer-tmalign = "fammer.cli:tmalign_main"
 [project.urls]
 homepage = "https://github.com/etal/fammer"
 
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.17.2",
+]
+
 # Named explicitly: automatic discovery in this flat layout also finds the
 # example data under profiles/ and refuses to build.
 [tool.setuptools]
@@ -56,5 +62,57 @@ packages = ["fammer"]
 version = {attr = "fammer.__version__"}
 
 [tool.pytest.ini_options]
+minversion = "9.0.2"
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "integration: runs the external programs that fammer drives",
+]
+
+# biofrills and biocma come from their repositories at pinned commits, which
+# the lock files then record; moving to a newer commit is a deliberate change
+# of the pin. pixi reads this table too, so it serves both workflows, and both
+# need a git executable to install. Delete it when the releases named in the
+# comment on [project] dependencies exist.
+[tool.uv.sources]
+biofrills = {git = "https://github.com/etal/biofrills.git", rev = "522d735fd2ff18d0b470515cca3b90cb800e35a0"}
+biocma = {git = "https://github.com/etal/biocma.git", rev = "307d607b1739f647610918113176bc7dcd71dbbc"}
+
+[tool.pixi.workspace]
+channels = ["conda-forge", "bioconda"]
+platforms = ["osx-arm64", "linux-64"]
+
+# Version constraints live in [project] and [dependency-groups]; pixi derives
+# its dev feature from the dependency group, and a conda package below one of
+# those constraints fails the lock. The Python packages are named here only so
+# that conda-forge supplies them rather than PyPI. The programs are what fammer
+# runs and the reason for this workspace: mafft from conda-forge, the only
+# channel with an osx-arm64 build, and the others from bioconda.
+[tool.pixi.dependencies]
+biopython = "*"
+networkx = "*"
+reportlab = "*"
+mafft = "*"
+hmmer = "*"
+tmalign = "*"
+mustang = "*"
+fasttree = "*"
+
+[tool.pixi.pypi-dependencies]
+fammer = {path = ".", editable = true, extras = ["mapgaps"]}
+
+[tool.pixi.feature.dev.dependencies]
+pytest = "*"
+ruff = "*"
+
+# The oldest supported Python; keep in step with requires-python.
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+
+[tool.pixi.environments]
+default = {features = ["dev"]}
+py312 = {features = ["dev", "py312"]}
+
+[tool.pixi.tasks]
+test = "pytest -m 'not integration'"
+test-integration = {cmd = "pytest -m integration", env = {FAMMER_REQUIRE_TOOLS = "1"}}
