@@ -149,6 +149,7 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
   TM-align 20240303 ends its output with a CPU-time line, so `read_tmalign_as_seqrec_pair` fails its assertion on all three recorded pairs; with that line removed it parses them.
   `mst_pairs` raises `TypeError` because Biopython 1.67 and later cannot hash a `SeqRecord`.
   Its `identity_hash_emulation` case is not this environment's behavior: it gives `SeqRecord` the identity hash of Biopython before 1.67 and shows that the function then returns all six pairs of four structures, not a three-edge spanning tree.
+  The current code reads the output as written and returns a spanning tree; see "Structure alignment" under "Deliberate differences".
 - **`cluster` fails on identifiers containing `:`.**
   Newick reserves `:`, so tip names such as `TAIR|locus:2011201` are read back truncated, and the `CDK.aln` run raises `KeyError` after writing its first clusters.
 - **`cluster.geom_mean` underflows.**
@@ -167,9 +168,9 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
   `cluster` numbers clusters of equal size in the dictionary order of `Bio.Phylo` clade objects, which Python 2 hashes by identity, so the numbering and the colors in its phyloXML output varied between runs.
   `e2e/cluster.json` therefore records the clusters as membership lists ordered by size and content, not by output file name, and does not record the phyloXML file.
 - **File-system enumeration order.**
-  Several code paths visit files in the order the file system lists them: `taskify_subdirs` lists PDB files with an unsorted `glob`, `build.all_hmm` concatenates profiles in the order `find` returns them, and `add`, `update-fasta` and `refine` walk the tree with `os.walk` or `glob`.
+  Several code paths visit files in the order the file system lists them: the recorded `taskify_subdirs` lists PDB files with an unsorted `glob`, which the current code sorts, `build.all_hmm` concatenates profiles in the order `find` returns them, and `add`, `update-fasta` and `refine` walk the tree with `os.walk` or `glob`.
   These fixtures follow the order of the case-insensitive APFS volume that ran the capture.
-  On another file system, the order of the `.pdb` dependencies in `build-*.json`, the SHA-256 of `SomeKinases_all.hmm`, the row order of the hmmsearch table and its checksum in `scan.json`, and the order of the log lines of `add`, `refine`, `update-fasta` and the structure build all differ while their content does not.
+  On another file system, the recorded order of the `.pdb` dependencies in `build-*.json`, the SHA-256 of `SomeKinases_all.hmm`, the row order of the hmmsearch table and its checksum in `scan.json`, and the order of the log lines of `add`, `refine`, `update-fasta` and the structure build all differ while their content does not.
   Compare those lists as sets, the table rows and log lines as multisets, and treat the two checksums as specific to this file system.
 - **Python 2 dictionary order.**
   `scan -o` and `scan -O` write sequences in the iteration order of a dictionary, which is neither the order of the hmmsearch table nor sorted; compare those files as sets of records.
@@ -177,7 +178,7 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
 - **Standard error.**
   Remove the `[@line]` part of each log line and reduce a traceback to its final exception line before comparing.
 - **Not captured.**
-  A successful structure alignment, which no current toolchain can produce from the unmodified code.
+  A successful structure alignment, which no current toolchain can produce from the recorded Python 2 sources; `test_build_hmmer_with_structures` and the "Structure alignment" cases under "Deliberate differences" cover the current code instead.
   `--mapgaps` end to end, because the MAPGAPS programs are not packaged; its task graph is in `build-*.json`, and `mapgaps/` holds three of the profile files it writes before running `run_map`.
   `scan -A` and `build --align-script`, which have no effect.
 
@@ -208,3 +209,10 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   `x_segments_in_different_records` keeps `split`, whose segments `CCC` and `DDD` occur only in two different records, and `tail`, which the recorded code lost; nothing is purged.
   `single_aln_after_edit` writes 142 of the 144 sequences instead of 24, and purges the two structure sequences `gi|193506638|pdb|3BLH|A` and `gi|58176911|pdb|1UA2|A`, which match the full-length sequences `CDK9_Hsap` and `CDK7_Hsap` with their single X in place of a threonine.
   On every alignment under `e2e/build/` and on `profiles/ROPK/PKL.aln`, the new rule and the recorded rule with only the stopping defect corrected keep the same records.
+- **Structure alignment** (5 cases).
+  `read_tmalign_as_seqrec_pair` finds the alignment by the line that explains the `:` and `.` markers, instead of taking the last five lines, so it reads the output of TM-align 20240303 as written.
+  On each of the three recorded pairs it returns what the recorded code returned once the final CPU-time line was removed.
+  `mst_pairs` keys the graph by record identifier, the PDB file name, instead of by `SeqRecord`, and returns the record pairs on the edges of the maximum spanning tree over TM-score: N-1 pairs for N structures.
+  The recorded code asked for a minimum spanning tree over the reciprocal TM-score, which selects the same edges but divides by zero on a score of zero.
+  Under Biopython before 1.67 each pair of records formed its own component, so every one of the N(N-1)/2 pairs became a MAFFT seed, and under later versions it raises `TypeError`.
+  Both `mst_pairs` cases now return the three edges from `A.pdb`, which carry the three highest scores, whether or not the records can be hashed.

@@ -4,10 +4,10 @@ Procedure:
 
 1. Run all-vs-all pairwise alignments with TMalign; keep the alignments and
    also the TM-score (a metric of structural similarity/alignability).
-2. Build a graph of structure similarities based on TM-scores. Determine the
-   minimum spanning tree (MST) for the graph.
-3. Take the pairwise alignments corresponding to the edges (connected nodes) of
-   the MST, and use them as seeds in MAFFT (--localpair).
+2. Build a graph with one node per structure and one edge per pair, weighted
+   by TM-score, and determine its maximum spanning tree.
+3. Take the pairwise alignments corresponding to the edges of the tree, N-1 of
+   them for N structures, and use them as seeds in MAFFT (--localpair).
 4. Remove duplicated sequences and all-gap columns from the resulting alignment.
 
 """
@@ -100,7 +100,7 @@ def align_structs(pdb_fnames, seed_fnames=None):
 
 
 def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
-    """Create a pair of SeqRecords from TMalign output."""
+    """Parse TMalign output into a pair of SeqRecords and their mean TM-score."""
     lines = tm_output.splitlines()
     # Extract the TM-score (measure of structure similarity)
     # Take the mean of the (two) given TM-scores -- not sure which is reference
@@ -118,11 +118,14 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
                     tmscores.append(float(_val.rstrip(",")))
                     break
     tmscore = math.fsum(tmscores) / len(tmscores)
-    # Extract the sequence alignment
-    lastlines = lines[-5:]
-    assert lastlines[0].startswith('(":"')  # (":" denotes the residues pairs
-    assert not lastlines[-1].strip()
-    refseq, eqvseq = lastlines[1].strip(), lastlines[3].strip()
+    # Extract the sequence alignment, which follows the line explaining the
+    # ":" and "." markers; newer versions print more lines after it.
+    header = next(
+        (idx for idx, line in enumerate(lines) if line.startswith('(":"')), None
+    )
+    if header is None:
+        raise ValueError(f"No alignment in TM-align output for {ref_id}, {eqv_id}")
+    refseq, eqvseq = lines[header + 1].strip(), lines[header + 3].strip()
     return (
         SeqRecord(Seq(refseq), id=ref_id, description=f"TMalign TM-score={tmscore:f}"),
         SeqRecord(Seq(eqvseq), id=eqv_id, description=f"TMalign TM-score={tmscore:f}"),
@@ -131,20 +134,32 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
 
 
 def mst_pairs(pairs):
-    """Given all pairwise distances, determine the minimal spanning subset.
+    """Select the pairwise alignments that connect all structures best.
 
-    Convert pairwise distances to an undirected graph, determine the
-    minumum spanning tree, and emit the minimal list of edges to connect all
-    nodes.
+    Build an undirected graph with one node per structure, keyed by record ID,
+    and one edge per pair, weighted by TM-score. Return the record pairs of the
+    edges of its maximum spanning tree: N-1 pairs for N structures.
 
-    Input: iterable of (SeqRecord, SeqRecord, distance)
-    Output: iterable of (SeqRecord, SeqRecord)
+    Pairs are added in order of decreasing score and then of ID, each with its
+    two IDs in sorted order, so the graph, and with it the selected tree, does
+    not depend on the order of the pairs or of the two records in a pair.
+
+    Input: iterable of (SeqRecord, SeqRecord, TM-score)
+    Output: list of (SeqRecord, SeqRecord)
     """
+    edges = [
+        (score, *sorted((left.id, right.id)), (left, right))
+        for left, right, score in pairs
+    ]
     G = networkx.Graph()
-    for left, right, score in pairs:
-        G.add_edge(left, right, weight=1.0 / score)
-    mst = networkx.minimum_spanning_edges(G, data=False)
-    return list(mst)
+    for score, node1, node2, records in sorted(
+        edges, key=lambda edge: (-edge[0], edge[1], edge[2])
+    ):
+        G.add_edge(node1, node2, weight=score, records=records)
+    return [
+        data["records"]
+        for _left, _right, data in networkx.maximum_spanning_edges(G, data=True)
+    ]
 
 
 def tmscore_from_description(text):

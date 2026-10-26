@@ -479,12 +479,13 @@ def in_tree_copy(relpath, added_files, func, *args):
 
 
 def sorted_pdb_files(graph):
-    """A task graph with the PDB files of each align_pdbs task in sorted order.
+    """A recorded task graph with the PDB files of each align_pdbs task sorted.
 
-    taskify_subdirs lists those files in the order of an unsorted glob, which
-    is the enumeration order of the file system, so the recorded order is
-    that of the capture's file system.  The files precede the task
-    dependencies in the list, and only their order is normalized.
+    The Python 2 code listed those files in the order of an unsorted glob,
+    which is the enumeration order of the file system, so the recorded order
+    is that of the capture's file system; taskify_subdirs now sorts them.  The
+    files precede the task dependencies in the list, and only their order is
+    normalized.
     """
     graph_tasks = {}
     for target, entry in graph["tasks"].items():
@@ -500,15 +501,13 @@ def sorted_pdb_files(graph):
 
 
 def taskify_graph(tree, kwargs):
-    return sorted_pdb_files(
-        task_graph(
-            build.taskify_subdirs(
-                tree,
-                kwargs["hmmer"],
-                kwargs["mapgaps"],
-                kwargs["use_pdb"],
-                kwargs["level"],
-            )
+    return task_graph(
+        build.taskify_subdirs(
+            tree,
+            kwargs["hmmer"],
+            kwargs["mapgaps"],
+            kwargs["use_pdb"],
+            kwargs["level"],
         )
     )
 

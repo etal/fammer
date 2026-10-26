@@ -152,7 +152,7 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
     subtask_family_results.sort(key=str)  # Needed? We sort FASTAs above
 
     # Structural alignment of PDBs in this dir; reuse subfamily PDB alignments
-    these_pdbs = glob(join(topdir, "*.pdb"))
+    these_pdbs = sorted(glob(join(topdir, "*.pdb")))
     sub_pdb_seqs = [sgr.pdbseq for sgr in subtask_group_results]
     task_pdbseq = Task(
         this + ".pdb.seq",
@@ -278,7 +278,7 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
         if is_empty(sub_pdb_fname):
             # Dummy seed alignment -- look in that dir for a .pdb
             #   ENH - recursively
-            sub_pdbs = glob(join(sub_pdb_fname[:-4], "*.pdb"))
+            sub_pdbs = sorted(glob(join(sub_pdb_fname[:-4], "*.pdb")))
             if sub_pdbs:
                 logging.info(
                     "Picked up %d neglected PDBs: %s", len(sub_pdbs), " ".join(sub_pdbs)

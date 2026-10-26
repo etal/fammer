@@ -85,9 +85,6 @@ def copy_tracked_profiles(dest):
 
     The build writes its results beside its inputs and skips a target newer
     than its inputs, so a result left by an earlier build would change the run.
-    copy_tracked raises RuntimeError, not AssertionError, if git lists no
-    files, so that the structures test cannot report it as its expected
-    failure.
     """
     if not is_checkout():
         skip_unless_required("not a Git checkout, as in an sdist")
@@ -167,21 +164,28 @@ def test_build_hmmer_without_structures(workspace):
     assert differing == []
 
 
-# Only the assertion on the build's exit status is expected to fail; a missing
-# program or checkout under FAMMER_REQUIRE_TOOLS is reported as a failure or a
-# setup error.
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="fammer.tmalign cannot read the output of TM-align "
-    "20240303 and puts unhashable SeqRecords in its graph",
-)
 def test_build_hmmer_with_structures(workspace):
-    """The same build with the structure alignments enabled."""
+    """The same build with the structure alignments enabled.
+
+    Each structure alignment that the build writes has a row for every PDB
+    file in its directory. TM-align rows are named by path. Where MUSTANG is
+    installed, its alignment is a further MAFFT seed, whose rows are named by
+    file name, and ``purge_seqs`` keeps only the first of two rows with the
+    same gapped sequence, so a structure may be present under either name.
+    """
     require("fammer", "mafft", "hmmbuild", "hmmpress", "TMalign")
     argv = [arg for arg in recorded("build.json")["argv"] if arg != "--no-pdb"]
     proc = run_fammer(workspace, argv)
     assert proc.returncode == 0, proc.stderr
+    aligned = set()
+    for pdbseq in sorted(workspace.rglob("*.pdb.seq")):
+        rows = {os.path.basename(name) for name, _seq in read_records(pdbseq, "fasta")}
+        if rows:
+            topdir = pdbseq.with_name(pdbseq.name.removesuffix(".pdb.seq"))
+            pdbs = {path.name for path in topdir.glob("*.pdb")}
+            assert pdbs <= rows, pdbseq
+            aligned.add(pdbseq.relative_to(workspace).as_posix())
+    assert {"SomeKinases.pdb.seq", "SomeKinases/CMGC.pdb.seq"} <= aligned
 
 
 # Commands that work on the built tree.

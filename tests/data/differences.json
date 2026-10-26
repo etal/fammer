@@ -105,6 +105,162 @@
    }
   },
   {
+   "file": "library/tmalign.json",
+   "section": "read_tmalign_as_seqrec_pair",
+   "case": "tmalign/1ATP__1CSN.txt:as_written",
+   "recorded": {
+    "error": {
+     "type": "AssertionError"
+    }
+   },
+   "current": {
+    "value": {
+     "records": [
+      [
+       "profiles/ROPK/1ATP.pdb",
+       "TMalign TM-score=0.832680",
+       "FDRIKTLGTGSFGRVMLVKHKESGNHYAMKILDKQKVVKLKQIEHTLNEKRILQAV-NFPFLVKLEFSFKDNSNLYMVMEYVAGGEMFSHLRRI-GRFSEPHARFYAAQIVLTFEYLHSLDLIYRDLKPENLLIDQ-----QGYIQVTDFGFAKRVK-------GR-T--W-LCGTPEYLAPEIILSKGYNKAVDWWALGVLIYEMAAGYPPFFAD--Q----PI-QIYEKIVSGKV-RFPSHFSSDLKDLLRNLLQVDLTKRFGNLKNGVNDIKNHKWF"
+      ],
+      [
+       "profiles/ROPK/1CSN.pdb",
+       "TMalign TM-score=0.832680",
+       "YKVGRRIGEGSFGVIFEGTNLLNNQQVAIKFEPRR--SDA-PQ--LRDEYRTYKLLAGCTGIPNVYYFGQEGLHNVLVIDLL-GPSLEDLLDLCGRKFSVKTVAMAAKQMLARVQSIHEKSLVYRDIKPDNFLIGRPNSKNANMIYVVDFGMVKFYRDPVTKQHIPYREKKNLSGTARYMSINTHLGREQSRRDDLEALGHVFMYFLRGSLPWQGLKAATNKQKYERIGEKKQSTPLRELCAGFPEEFYKYMHYA-R-NLA-F--DATPDYDYLQGLFSK"
+      ]
+     ],
+     "tmscore": 0.83268
+    }
+   }
+  },
+  {
+   "file": "library/tmalign.json",
+   "section": "read_tmalign_as_seqrec_pair",
+   "case": "tmalign/2W1Z__3Q60.txt:as_written",
+   "recorded": {
+    "error": {
+     "type": "AssertionError"
+    }
+   },
+   "current": {
+    "value": {
+     "records": [
+      [
+       "profiles/ROPK/2W1Z.pdb",
+       "TMalign TM-score=0.817155",
+       "LVRGPVLRDDGSYICLEATDQETGEPLEVHVPYFTERPPSNAIKQLS-EQVLRLRLLRGIKNQRQAKAYLRFIFPIDLVKDPKKRK-MIRVRLDERDMWVLSRFFLYPRMQSNLHILGDVLLSHSSTHKSLVHHARLQLTLQLIRLAASLQHYGLVHADFQVRNILLDQRGGVFLTGFEHLVRDGASAVS-PIGRGFAPPETTAERHHPTLMTFPFDTWTLGLAIYWIWCADLPN-T-------------EDAELGGIEWIYRRCKNIPQPVRALLEGFLRYSKEDRLLPLQAMETSEY"
+      ],
+      [
+       "profiles/ROPK/3Q60.pdb",
+       "TMalign TM-score=0.817155",
+       "LKLVEPLRVGDRSVVFLVRDVERLEDFALKVFTMGAENSRSELERLHEATFAAARL---L-G--------RLLLPSDAVAVQSQPPFAQLSP----GYAVANYLLLMPAASVDLELLFSTLDFVYVFRGDEGILALHILTAQLIRLAANLQSKGLVHGHFTPDNLFIMPDGRLMLGDVSALWKVGTRGPASSVPVTYAPREFL-NA-STATFTHALNAWQLGLSIYRVWCLFLPFGLVTPGIKGSWKRPSLRVPGT-DSLAFGSCTPLPDFVKTLIGRFLNFDRRRRLLPLEAMETPEF"
+      ]
+     ],
+     "tmscore": 0.817155
+    }
+   }
+  },
+  {
+   "file": "library/tmalign.json",
+   "section": "read_tmalign_as_seqrec_pair",
+   "case": "tmalign/1JST__2ERK.txt:as_written",
+   "recorded": {
+    "error": {
+     "type": "AssertionError"
+    }
+   },
+   "current": {
+    "value": {
+     "records": [
+      [
+       "profiles/SomeKinases/CMGC/1JST.pdb",
+       "TMalign TM-score=0.826490",
+       "--------------MENFQKVEKIGEGTYGVVYKARNKLTGEVVALKKIRLDTETEG-VPSTAIREISLLKELNHPNIVKLLDVIHT----EN-KLYLVFEFLHQDLKKFMDASALTGIPLPLIKSYLFQLLQGLAFCHSHRVLHRDLKPQNLLINTEGAIKLADFGLARAFGV-PVR-TYHEVVTLWYRAPEILLGCKYYSTAVDIWSLGCIFAEMVTRRALFPGDSEIDQLFRIFRTLGTPDEVVWPGVTSMPDY-K-PSFPKWARQDFSKVVPPLDEDGRSLLSQMLHYDPNKRISAKAALAHPFFQDVTKPVPHLRL-------------------------------------------"
+      ],
+      [
+       "profiles/SomeKinases/CMGC/2ERK.pdb",
+       "TMalign TM-score=0.826490",
+       "AAGPEMVRGQVFDVGPRYTNLSYIGEGAYGMVCSAYDNLNKVRVAIKKISPF--EHQTYCQRTLREIKILLRFRHENIIGINDIIRAPTIEQMKDVYIVQDLMETDLYKLLKTQ---HLSNDHICYFLYQILRGLKYIHSANVLHRDLKPSNLLLNTTCDLKICDFGLARVADPDHDHTGFLEVATRWYRAPEIMLNSKGYTKSIDIWSVGCILAEMLSNRPIFPGKHYLDQLNHILGILGSPSQEDLNCIINLKARNYLLSLPHKNKVPWNRLFPNADSKALDLLDKMLTFNPHKRIEVEQALAHPYLEQYY--------DPSDEPIAEAPFKFDMELDDLPKEKLKELIFEETARFQPGYRS"
+      ]
+     ],
+     "tmscore": 0.82649
+    }
+   }
+  },
+  {
+   "file": "library/tmalign.json",
+   "section": "mst_pairs",
+   "case": "seqrecord",
+   "recorded": {
+    "error": {
+     "type": "TypeError"
+    }
+   },
+   "current": {
+    "value": [
+     [
+      "A.pdb",
+      "B.pdb"
+     ],
+     [
+      "A.pdb",
+      "C.pdb"
+     ],
+     [
+      "A.pdb",
+      "D.pdb"
+     ]
+    ]
+   }
+  },
+  {
+   "file": "library/tmalign.json",
+   "section": "mst_pairs",
+   "case": "identity_hash_emulation",
+   "recorded": {
+    "value": [
+     [
+      "A.pdb",
+      "B.pdb"
+     ],
+     [
+      "A.pdb",
+      "C.pdb"
+     ],
+     [
+      "A.pdb",
+      "D.pdb"
+     ],
+     [
+      "B.pdb",
+      "C.pdb"
+     ],
+     [
+      "B.pdb",
+      "D.pdb"
+     ],
+     [
+      "C.pdb",
+      "D.pdb"
+     ]
+    ]
+   },
+   "current": {
+    "value": [
+     [
+      "A.pdb",
+      "B.pdb"
+     ],
+     [
+      "A.pdb",
+      "C.pdb"
+     ],
+     [
+      "A.pdb",
+      "D.pdb"
+     ]
+    ]
+   }
+  },
+  {
    "file": "e2e/update-fasta.json",
    "case": "single_aln_after_edit",
    "recorded": {

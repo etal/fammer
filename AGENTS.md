@@ -42,7 +42,6 @@ pixi run fmt                 # ruff format
 - bioconda installs FastTree as `FastTree`, while fammer calls `fasttree`; on Linux, add a symbolic link `fasttree` in the environment's `bin`, or the `cluster` integration test fails.
 - biofrills and biocma are pinned to git commits in `[tool.uv.sources]`; after changing a pin or a dependency, update both `uv.lock` and `pixi.lock`.
 - The flat layout needs `packages = ["fammer"]` in `pyproject.toml`; setuptools discovery would otherwise find the example data under `profiles/` and refuse to build.
-- `test_build_hmmer_with_structures` is a strict `xfail`, because `fammer/tmalign.py` fails on current TM-align output and puts unhashable `SeqRecord` objects in its graph; the fix to that path must remove the marker and this note.
 
 ## Conventions
 
