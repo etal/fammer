@@ -313,10 +313,10 @@ up after the process successfully completes. See `this blog post about it
 tmalign
 ```````
 
-Align multiple structures using TMalign_ for pairwise alignments and a minimum
-spanning tree constructed from the pairwise TM-scores to assemble the pairwise
-alignments into a multiple sequence alignment. The ``fammer-tmalign`` command
-runs it from the shell.
+Every pair of structures is aligned with TMalign_.
+The pairwise alignments that form the spanning tree of maximum total TM-score are passed to MAFFT as seed alignments, which MAFFT combines into a multiple sequence alignment.
+A spanning tree over N structures has N-1 edges, so this passes N-1 seeds rather than one for every pair of structures.
+The ``fammer-tmalign`` command runs it from the shell.
 
 How to curate profiles
 ----------------------
