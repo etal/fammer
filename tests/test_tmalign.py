@@ -1,13 +1,44 @@
-"""Properties of fammer.tmalign that need no external program."""
+"""Properties of fammer.tmalign that need no external program.
 
+The file-name checks of align_structs, the errors of the TM-align output
+parser, and the choice of seed pairs by mst_pairs. External programs are
+replaced where align_structs would start one, so that the checks are shown to
+run before any alignment.
+"""
+
+import io
 import itertools
 
 import networkx
 import pytest
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from reference_cases import TOOL_OUTPUTS
 
 from fammer import tmalign
+
+# The whole standard output of TM-align 20240303 for an input file it cannot
+# parse (missing, empty, or without atoms); it still exits with status 0.
+UNPARSEABLE_OUTPUT = "#Total CPU time is  0.00 seconds\n"
+
+# File names on both sides of the whitespace rule, including characters that
+# a test for the space character alone would miss. The first test checks this
+# classification against a FASTA round trip.
+SURVIVING_NAMES = [
+    "profiles/ROPK/1ATP.pdb",
+    "_tmp_mustang.afasta",
+    "zero\u200bwidth.pdb",
+]
+REJECTED_NAMES = [
+    "a b.pdb",
+    "dir x/s.pdb",
+    "tab\there.pdb",
+    "line\nbreak.pdb",
+    "nbsp\xa0here.pdb",
+    "ideographic\u3000space.pdb",
+    "trailing.pdb ",
+]
 
 # Four structures with tied scores, so that several spanning trees share the
 # maximum total and only the tie-breaking decides between them.
@@ -19,6 +50,74 @@ SCORES = {
     ("B", "D"): 0.5,
     ("A", "D"): 0.2,
 }
+NODES = {node for edge in SCORES for node in edge}
+
+
+@pytest.fixture
+def no_subprocess(monkeypatch):
+    """Fail the test if align_structs starts any external program."""
+
+    def refuse(*args, **kwargs):
+        raise AssertionError(f"external program started: {args}")
+
+    monkeypatch.setattr(tmalign.subprocess, "check_output", refuse)
+
+
+def survives_fasta(name):
+    """Whether a record with this identifier reads back with it from FASTA."""
+    handle = io.StringIO()
+    SeqIO.write(SeqRecord(Seq("ACDE"), id=name, description=""), handle, "fasta")
+    handle.seek(0)
+    return SeqIO.read(handle, "fasta").id == name
+
+
+@pytest.mark.parametrize("name", SURVIVING_NAMES + REJECTED_NAMES)
+def test_file_names_are_accepted_exactly_when_they_survive_fasta(name):
+    try:
+        tmalign._check_file_names(["other.pdb", name], [])
+    except ValueError:
+        accepted = False
+    else:
+        accepted = True
+    assert accepted == survives_fasta(name)
+    assert accepted == (name in SURVIVING_NAMES)
+
+
+@pytest.mark.parametrize("name", REJECTED_NAMES)
+def test_align_structs_rejects_whitespace_before_aligning(no_subprocess, name):
+    """Every position is checked, the last included, before TM-align runs."""
+    for names in ([name, "b.pdb", "c.pdb"], ["b.pdb", "c.pdb", name]):
+        with pytest.raises(ValueError, match="whitespace") as excinfo:
+            tmalign.align_structs(names)
+        assert repr(name) in str(excinfo.value)
+
+
+def test_align_structs_rejects_whitespace_in_seed_file_names(no_subprocess):
+    with pytest.raises(ValueError, match="'my seed.fa'"):
+        tmalign.align_structs(["a.pdb", "b.pdb"], ["ok.fa", "my seed.fa"])
+
+
+def test_align_structs_rejects_a_repeated_structure(no_subprocess):
+    with pytest.raises(ValueError, match="once: 'a.pdb'$"):
+        tmalign.align_structs(["a.pdb", "b.pdb", "a.pdb"])
+
+
+def test_output_without_a_score_raises_value_error():
+    with pytest.raises(ValueError, match="No TM-score .* a.pdb, b.pdb"):
+        tmalign.read_tmalign_as_seqrec_pair(UNPARSEABLE_OUTPUT, "a.pdb", "b.pdb")
+
+
+@pytest.mark.parametrize("kept_after_header", [None, 0, 1, 2])
+def test_output_without_a_whole_alignment_raises_value_error(kept_after_header):
+    """The block is the header line, two sequences and the marker line between."""
+    lines = (TOOL_OUTPUTS / "tmalign/1ATP__1CSN.txt").read_text().splitlines(True)
+    header = next(i for i, line in enumerate(lines) if line.startswith('(":"'))
+    if kept_after_header is None:
+        lines = lines[:header]
+    else:
+        lines = lines[: header + 1 + kept_after_header]
+    with pytest.raises(ValueError, match="No alignment"):
+        tmalign.read_tmalign_as_seqrec_pair("".join(lines), "a.pdb", "b.pdb")
 
 
 def scored_pairs(order, flipped):
@@ -40,12 +139,11 @@ def edge_set(record_pairs):
 
 def max_total_score():
     """The largest total score of any spanning tree, by enumeration."""
-    best = 0.0
-    for edges in itertools.combinations(SCORES, 3):
-        graph = networkx.Graph(list(edges))
-        if graph.number_of_nodes() == 4 and networkx.is_tree(graph):
-            best = max(best, sum(SCORES[edge] for edge in edges))
-    return best
+    return max(
+        sum(SCORES[edge] for edge in edges)
+        for edges in itertools.combinations(SCORES, len(NODES) - 1)
+        if networkx.is_tree(networkx.Graph(edges))
+    )
 
 
 def test_mst_pairs_is_a_maximum_spanning_tree_independent_of_input_order():
@@ -60,7 +158,7 @@ def test_mst_pairs_is_a_maximum_spanning_tree_independent_of_input_order():
             results.add(edge_set(selected))
     assert len(results) == 1
     (edges,) = results
-    assert len(edges) == 3
+    assert len(edges) == len(NODES) - 1
     assert networkx.is_tree(networkx.Graph([tuple(edge) for edge in edges]))
     total = sum(SCORES[tuple(sorted(edge))] for edge in edges)
     assert total == pytest.approx(max_total_score())

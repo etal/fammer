@@ -316,6 +316,9 @@ tmalign
 Every pair of structures is aligned with TMalign_.
 The pairwise alignments that form the spanning tree of maximum total TM-score are passed to MAFFT as seed alignments, which MAFFT combines into a multiple sequence alignment.
 A spanning tree over N structures has N-1 edges, so this passes N-1 seeds rather than one for every pair of structures.
+Each structure's file name becomes the identifier of its sequence in the alignment, and a FASTA identifier ends at the first whitespace, so structure file names must not contain whitespace.
+Seed file names must not contain whitespace either, because MAFFT splits seed file paths at whitespace.
+Each structure must be listed only once, because a structure listed twice would be aligned to itself.
 The ``fammer-tmalign`` command runs it from the shell.
 
 How to curate profiles

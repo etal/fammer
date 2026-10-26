@@ -10,8 +10,15 @@ Procedure:
    them for N structures, and use them as seeds in MAFFT (--localpair).
 4. Remove duplicated sequences and all-gap columns from the resulting alignment.
 
+Each structure must be listed only once, because a structure listed twice would
+be aligned to itself. No PDB file name may contain whitespace, because the name
+becomes a sequence identifier in FASTA files, and a FASTA identifier ends at
+the first whitespace. No seed file name may contain whitespace, because MAFFT
+splits seed file paths at whitespace.
+
 """
 
+import collections
 import itertools
 import logging
 import math
@@ -27,17 +34,39 @@ from Bio.SeqRecord import SeqRecord
 from biofrills import alnutils
 
 
+def _check_file_names(pdb_fnames, seed_fnames):
+    """Reject file names that the alignment procedure cannot carry.
+
+    Each PDB file name becomes the identifier of a sequence in the alignment,
+    and build reads it back from the .pdb.seq file as a path. A FASTA
+    identifier ends at the first whitespace, so a name containing whitespace
+    would be truncated; MAFFT likewise splits a seed file path at whitespace.
+    A structure listed twice would be aligned to itself.
+    """
+    split = [fname for fname in [*pdb_fnames, *seed_fnames] if fname.split() != [fname]]
+    if split:
+        raise ValueError(
+            "File names must not contain whitespace: " + ", ".join(map(repr, split))
+        )
+    counts = collections.Counter(pdb_fnames)
+    repeated = sorted(fname for fname, count in counts.items() if count > 1)
+    if repeated:
+        raise ValueError(
+            "Each structure must be given once: " + ", ".join(map(repr, repeated))
+        )
+
+
 def align_structs(pdb_fnames, seed_fnames=None):
     """Align multiple PDB structures using TM-align.
 
     Returns a list of aligned SeqRecords.
     """
+    seed_fnames = list(seed_fnames or [])
+    _check_file_names(pdb_fnames, seed_fnames)
     # 1. Align all-v-all structure pairs with TM-align
     allpairs = []
     for idx, ref_pdbfn in enumerate(pdb_fnames):
-        assert " " not in ref_pdbfn
         for eqv_pdbfn in pdb_fnames[idx + 1 :]:
-            assert eqv_pdbfn != ref_pdbfn
             logging.info("Aligning %s to %s", eqv_pdbfn, ref_pdbfn)
             try:
                 tm_output = subprocess.check_output(
@@ -79,9 +108,7 @@ def align_structs(pdb_fnames, seed_fnames=None):
     mafft_output = subprocess.check_output(
         ["mafft", "--quiet", "--amino", "--localpair", "--maxiterate", "1000"]
         + list(
-            itertools.chain(
-                *[("--seed", sfn) for sfn in (seed_fnames or []) + tmp_seed_fnames]
-            )
+            itertools.chain(*[("--seed", sfn) for sfn in seed_fnames + tmp_seed_fnames])
         )
         + [seq_fname],
         text=True,
@@ -117,13 +144,15 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
                     _key, _val = token.split("=")
                     tmscores.append(float(_val.rstrip(",")))
                     break
+    if not tmscores:
+        raise ValueError(f"No TM-score in TM-align output for {ref_id}, {eqv_id}")
     tmscore = math.fsum(tmscores) / len(tmscores)
     # Extract the sequence alignment, which follows the line explaining the
     # ":" and "." markers; newer versions print more lines after it.
     header = next(
         (idx for idx, line in enumerate(lines) if line.startswith('(":"')), None
     )
-    if header is None:
+    if header is None or header + 3 >= len(lines):
         raise ValueError(f"No alignment in TM-align output for {ref_id}, {eqv_id}")
     refseq, eqvseq = lines[header + 1].strip(), lines[header + 3].strip()
     return (
