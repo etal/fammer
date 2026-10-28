@@ -36,7 +36,7 @@ pixi run fmt                 # ruff format
 
 - pytest turns warnings into errors.
   Biopython 1.85 and later leave a file opened by name open until the iterator is closed, so use `with SeqIO.parse(path, ...) as records:` or pass an open handle.
-- `fammer build` passes MAFFT `--globalgenafpair`, which no installable MAFFT accepts; the tests put `tests/data/tool-shims/mafft` first on `PATH`.
+- `tests/data/tool-shims/mafft` exists only for `capture_py27.py`, whose Python 2 sources pass `--globalgenafpair`; the current code passes `--globalpair` (see "The MAFFT wrapper" in `tests/data/README.md`).
 - Several code paths visit files in file-system order (an unsorted `glob`, `os.walk`); sort where output depends on the order, and in tests compare such outputs as sets, or as multisets where duplicates matter (see "File-system enumeration order" in `tests/data/README.md`).
 - Do not name a console script `tmalign`: on case-insensitive APFS it collides with the `TMalign` binary in the same environment.
 - bioconda installs FastTree as `FastTree`, while fammer calls `fasttree`; on Linux, add a symbolic link `fasttree` in the environment's `bin`, or the `cluster` integration test fails.

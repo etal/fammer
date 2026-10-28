@@ -64,7 +64,7 @@ fammer calls the FastTree program `fasttree`, whereas bioconda installs it as `F
 
 ### The MAFFT wrapper
 
-`build.align_profiles` aligns the family consensus sequences of every directory with `mafft --globalgenafpair`.
+The captured sources of commit `5bcf8eb` align the family consensus sequences of every directory in `build.align_profiles` with `mafft --globalgenafpair`.
 MAFFT stopped implementing that option in 2012 and stopped accepting it at the turn of 2014, as its source releases show:
 
 | MAFFT | `--globalgenafpair` |
@@ -74,10 +74,11 @@ MAFFT stopped implementing that option in 2012 and stopped accepting it at the t
 | 7.130 (December 2013) | prints `No longer supported!` and exits without an alignment |
 | 7.141 (February 2014) and later, including every packaged build | exits with status 1 and `--globalgenaf is no longer supported!` |
 
-The unmodified code therefore cannot build any profile tree with a MAFFT that can be installed today.
+Those sources therefore cannot build any profile tree with a MAFFT that can be installed today.
 The capture puts `tool-shims/` first on `PATH`; its `mafft` script replaces `--globalgenafpair` with `--globalpair` and runs the real MAFFT, and every other MAFFT call passes through unchanged.
 For the MAFFT releases contemporary with fammer's development in 2012 and 2013, this replacement computes what the original option computed.
-The current code still passes the option, so `fammer build` needs the wrapper on any installable MAFFT; a change that replaces the option with something other than `--globalpair` must regenerate the references with a matching wrapper.
+The current code passes `--globalpair` itself, so it needs no wrapper, and with MAFFT 7.526, the version recorded in `py27/versions.json`, it writes files identical to those recorded in `e2e/build.json`.
+The wrapper remains for the capture, which runs the unmodified sources.
 
 ## Conventions
 

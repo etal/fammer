@@ -21,7 +21,6 @@ from collections import Counter
 import pytest
 from Bio import Phylo, SeqIO
 from reference_cases import (
-    DATA,
     REPO,
     copy_tracked,
     is_checkout,
@@ -54,19 +53,10 @@ def require(*programs):
 
 
 def run_fammer(workspace, argv):
-    """Run the fammer command in workspace and return the completed process.
-
-    ``build.align_profiles`` passes MAFFT the option ``--globalgenafpair``,
-    which no MAFFT released since 2014 accepts, so the wrapper in
-    ``tests/data/tool-shims`` goes first on ``PATH``, as in the reference
-    capture. Remove it here once ``build`` stops passing that option.
-    """
-    env = dict(os.environ)
-    env["PATH"] = str(DATA / "tool-shims") + os.pathsep + env["PATH"]
+    """Run the fammer command in workspace and return the completed process."""
     return subprocess.run(
         ["fammer", *argv],
         cwd=workspace,
-        env=env,
         capture_output=True,
         text=True,
         check=False,

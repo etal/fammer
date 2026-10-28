@@ -2,13 +2,14 @@
 # Run the next mafft on PATH, replacing the option --globalgenafpair with
 # --globalpair.
 #
-# fammer's build.align_profiles calls `mafft --globalgenafpair`.  MAFFT 7.130
-# (December 2013) prints "No longer supported!" for that option and exits
-# without an alignment, and every release from 7.141 (February 2014) onward
-# exits with status 1.  From 6.903 (May 2012) to 7.123 the option ran the same
-# pairwise algorithm as --globalpair, so this replacement reproduces what the
-# code computed with the MAFFT of its time.  capture_py27.py puts this
-# directory first on PATH; README.md beside the parent directory has details.
+# The Python 2 sources that capture_py27.py runs call `mafft --globalgenafpair`
+# in build.align_profiles.  MAFFT 7.130 (December 2013) prints "No longer
+# supported!" for that option and exits without an alignment, and every
+# release from 7.141 (February 2014) onward exits with status 1.  From 6.903
+# (May 2012) to 7.123 the option ran the same pairwise algorithm as
+# --globalpair, so this replacement reproduces what the code computed with the
+# MAFFT of its time.  capture_py27.py puts this directory first on PATH;
+# README.md beside the parent directory has details.
 here=$(cd "$(dirname "$0")" && pwd)
 PATH=$(printf '%s\n' "$PATH" | tr ':' '\n' | grep -vx "$here" | paste -sd: -)
 export PATH

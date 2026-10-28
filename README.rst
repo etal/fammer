@@ -495,7 +495,6 @@ conda-forge provides, and ``py312`` the oldest supported one::
 The unit tests compare the library with reference outputs recorded under Python 2.7 in ``tests/data``, replay the recorded ``cluster`` runs with the recorded output of MAFFT and FastTree, and check properties that need no reference.
 The tests marked ``integration`` run ``fammer build`` on a copy of ``profiles/SomeKinases`` and compare the result with the reference outputs, then run ``scan``, ``update-fasta`` and ``cluster`` with the external programs.
 ``pixi run test`` leaves them out, and elsewhere they are skipped unless the programs are on ``PATH`` and the tests run from a Git checkout, so ``uv run pytest`` runs the unit tests alone unless those programs are already installed; ``pixi run test-integration`` fails instead of skipping.
-``fammer build`` passes MAFFT the option ``--globalgenafpair``, which no MAFFT released since 2014 accepts, so the tests put the wrapper in ``tests/data/tool-shims`` first on ``PATH``, as ``tests/data/README.md`` describes.
 MAPGAPS is not packaged for either workflow, so ``--mapgaps`` cannot be run end to end.
 
 Code is formatted with ``ruff format``, and the formatting-only commits are listed in ``.git-blame-ignore-revs``.
