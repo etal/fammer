@@ -122,10 +122,13 @@ Each run records its arguments, exit status, standard output, standard error, an
   The `.aln`, `.cons.seq`, `.families.fa` and `.nwk` files are kept in full under `e2e/build/`.
 - `build-clean.json`: `fammer build ... --clean` on the built tree, which rebuilds nothing and deletes the intermediate files listed in the task graph.
 - `scan.json`: `fammer scan` on `test/twenty.fasta` and `test/TgME49.pep`, with the summary and table outputs, the `-n`, `-x`, `-o` and `-O` options, and a stricter E-value.
+  Each run also left the hmmsearch table `<target>.tbl` in the working directory; the current code writes the table to a temporary file and removes it, so `test_scan_reproduces_recorded_run` expects every recorded file except that one.
 - `update-fasta.json`: `fammer update-fasta` on the built tree and on one alignment, each before and after the last record of an alignment (`CDK.aln`, then `DYRK.aln`) was deleted.
 - `add.json`: `fammer add SomeKinases TgME49.pep` on the built tree, with the text appended to each FASTA file.
 - `refine.json`: `fammer refine SomeKinases -n -u SomeKinases/Testfam-Unclassified.fasta`.
 - `pdb.json`: `fammer build` with structures enabled, and `tmalign.py` on two and on three structures.
+  Both `tmalign.py` runs fail; the first lists `tm.out.fasta` as created because the recorded sources opened the `-o` file before aligning, and the second lists it as neither created nor modified because the first had left it empty.
+  The current `fammer-tmalign` writes the file only after a successful alignment, so neither run would leave it.
 - `cluster.json`: `cluster.cmd_cluster` on the built `CDK.aln`, on the unaligned `DYRK.fasta`, and on `profiles/ROPK/PKL.aln` (631 sequences), run in-process so that the MAFFT and FastTree output it read could be kept under `tool-outputs/cluster/`.
 
 ### `tool-outputs/`
@@ -181,7 +184,7 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
 - **Not captured.**
   A successful structure alignment, which no current toolchain can produce from the recorded Python 2 sources; `test_build_hmmer_with_structures` and the "Structure alignment" cases under "Deliberate differences" cover the current code instead.
   `--mapgaps` end to end, because the MAPGAPS programs are not packaged; its task graph is in `build-*.json`, and `mapgaps/` holds three of the profile files it writes before running `run_map`.
-  `scan -A` and `build --align-script`, which have no effect.
+  `scan -A` and `build --align-script`, which had no effect in the recorded sources and which the current code no longer accepts.
 
 ## Deliberate differences
 

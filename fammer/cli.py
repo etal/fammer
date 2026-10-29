@@ -7,6 +7,7 @@ import sys
 from Bio import SeqIO
 
 from . import tmalign
+from ._share import UsageError
 from .add import cmd_add
 from .build import cmd_build
 from .cluster import cmd_cluster
@@ -25,14 +26,27 @@ def _configure_logging(quiet=False):
         )
 
 
-def main():
-    """Run the fammer program."""
+def _evalue(text):
+    """An E-value cutoff from the command line: a positive number."""
+    try:
+        value = float(text)
+    except ValueError:
+        value = float("nan")
+    # Rejects zero, negative numbers, NaN, and literals that underflow to zero.
+    if not value > 0:
+        raise argparse.ArgumentTypeError(f"not a positive number: {text!r}")
+    return value
+
+
+def main(argv=None):
+    """Run the fammer program and return its exit status."""
     AP = argparse.ArgumentParser(
+        prog="fammer",
         description="""A toolkit for protein superfamily sequence profile
             alignment and curation. Manages a hierarchical directory tree
             containing sequence sets (FASTA files) corresponding to each
             subfamily of a protein superfamily.""",
-        epilog="Contact Eric <etal@uga.edu> for help.",
+        epilog="Report problems at https://github.com/etal/fammer/issues",
     )
 
     # Global options
@@ -52,12 +66,6 @@ def main():
     )
     P_build.add_argument(
         "basedir", help="Top of the directory tree where the sequences sets are."
-    )
-    P_build.add_argument(
-        "--align-script",
-        dest="align_script",
-        metavar="FILE",
-        help="Script to align a FASTA file, writing Clustal format.",
     )
     P_build.add_argument(
         "--clean", action="store_true", help="Clean auxilliary files after building."
@@ -92,6 +100,7 @@ def main():
         "-E",
         "--evalue",
         default="0.0001",
+        type=_evalue,
         help="E-value cutoff for significant search hits.",
     )
     P_scan.add_argument(
@@ -109,12 +118,6 @@ def main():
         "--seqsets",
         action="store_true",
         help="Write FASTA files of the sequences matching each profile.",
-    )
-    P_scan.add_argument(
-        "-A",
-        "--align",
-        action="store_true",
-        help="Make a FASTA alignment of sequences matching each profile.",
     )
     P_scan.add_argument(
         "-n",
@@ -147,6 +150,7 @@ def main():
         "-E",
         "--evalue",
         default="1e-20",
+        type=_evalue,
         help="E-value cutoff for significant search hits.",
     )
     P_add.add_argument(
@@ -205,16 +209,22 @@ def main():
     )
     P_cluster.set_defaults(func=cmd_cluster)
 
-    args = AP.parse_args()
+    args = AP.parse_args(argv)
     # Handle global options here
     _configure_logging(args.quiet)
     # Pass the rest along to the sub-command implementation
-    args.func(args)
+    try:
+        args.func(args)
+    except UsageError as exc:
+        print(f"{AP.prog}: error: {exc}", file=sys.stderr)
+        return 1
+    return 0
 
 
-def tmalign_main():
-    """Run the fammer-tmalign program."""
+def tmalign_main(argv=None):
+    """Run the fammer-tmalign program and return its exit status."""
     AP = argparse.ArgumentParser(
+        prog="fammer-tmalign",
         description=tmalign.__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -231,15 +241,24 @@ def tmalign_main():
     AP.add_argument(
         "-o",
         "--output",
-        default=sys.stdout,
-        type=argparse.FileType("w+"),
-        help="Filename for the output FASTA alignment.",
+        metavar="FILE",
+        help="Write the FASTA alignment to this file; '-' or no option writes it "
+        "to standard output.",
     )
-    args = AP.parse_args()
+    args = AP.parse_args(argv)
     _configure_logging()
 
     if args.seed:
         print("tmalign: Using seed alignments", " ".join(args.seed), file=sys.stderr)
-    out_seqrecs = tmalign.align_structs(args.pdbfnames, seed_fnames=args.seed)
-    SeqIO.write(out_seqrecs, args.output, "fasta")
-    print("tmalign: Wrote", args.output.name, file=sys.stderr)
+    try:
+        out_seqrecs = tmalign.align_structs(args.pdbfnames, seed_fnames=args.seed)
+    except UsageError as exc:
+        print(f"{AP.prog}: error: {exc}", file=sys.stderr)
+        return 1
+    if args.output and args.output != "-":
+        with open(args.output, "w") as handle:
+            SeqIO.write(out_seqrecs, handle, "fasta")
+        print("tmalign: Wrote", args.output, file=sys.stderr)
+    else:
+        SeqIO.write(out_seqrecs, sys.stdout, "fasta")
+    return 0

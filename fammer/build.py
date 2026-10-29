@@ -1,6 +1,5 @@
 "Build alignments and profiles in a directory tree of sequence sets."
 
-import itertools
 import logging
 import os
 import shutil
@@ -15,8 +14,10 @@ from Bio.SeqRecord import SeqRecord
 from biofrills import alnutils, consensus
 
 from . import tmalign
-from ._share import write_fasta
+from ._share import UsageError, write_fasta
 from .tasks import Task, ext, is_empty, noext, sh, which
+
+logger = logging.getLogger(__name__)
 
 
 class Result:
@@ -37,13 +38,10 @@ class Result:
     def __str__(self):
         return str(self.aln)
 
-    # ENH: __cmp__ or __eq__ and __le__ and full_ordering
-    # ENH: build() and clean() methods?
-
 
 def cmd_build(args):
-    # Verify: 'base' directory exists
-    assert isdir(args.basedir)
+    if not isdir(args.basedir):
+        raise UsageError(f"Not a directory: {args.basedir}")
     base = args.basedir.rstrip("/")
 
     # Write the directory layout as a Newick tree
@@ -51,7 +49,7 @@ def cmd_build(args):
         tree_str = treeify_subdirs(base) + ";\n"
         with open(base + ".nwk", "w+") as outfile:
             outfile.write(tree_str)
-        logging.info("Wrote %s.nwk", base)
+        logger.info("Wrote %s.nwk", base)
 
     # Build all alignments, plus HMM .hmm or MAPGAPS .cma/.tpl
     base_result = taskify_subdirs(base, args.hmmer, args.mapgaps, args.pdb, 0)
@@ -119,8 +117,7 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
     ]
     # Families / tips of the profile tree -- build from scratch
     subtask_family_results = []
-    subfamily_fastas = glob(join(topdir, "*.fasta"))
-    for subfa in sorted(subfamily_fastas):
+    for subfa in sorted(glob(join(topdir, "*.fasta"))):
         # Skip the group sequence sets, they're already covered
         if noext(subfa) in subdirs:
             continue
@@ -131,8 +128,7 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
                 depends=subfa,
                 cleans=ext(subfa, "seq"),
             )
-        )  # mafft
-        # cleans=[subfa + '.1.fas', subfa + '.2.fas']))  # prank
+        )
         if hmmer:
             subresult.hmm = Task(
                 ext(subfa, "hmm"),
@@ -199,9 +195,9 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
         result.cma = Task(
             this + ".cma",
             action=mg_cat_cma,
-            depends=list(
-                itertools.chain(*[(sgr.tpl, sgr.cma) for sgr in subtask_group_results])
-            )
+            depends=[
+                task for sgr in subtask_group_results for task in (sgr.tpl, sgr.cma)
+            ]
             + [sfr.cma for sfr in subtask_family_results],
         )
 
@@ -224,7 +220,7 @@ def align_fasta_mafft(task):
     # Check for 'X' characters in the sequences -- these cause problems
     for rec in records:
         if "X" in str(rec.seq):
-            logging.warning("Sequence %r contains unknown residue X", rec.id)
+            logger.warning("Sequence %r contains unknown residue X", rec.id)
     max_id_len = max(len(r.id) for r in records)
     with open(task.target, "w+") as outfile:
         outfile.write("CLUSTAL X (-like) multiple sequence alignment\n\n")
@@ -233,29 +229,7 @@ def align_fasta_mafft(task):
         )
 
 
-def align_fasta_prank(task):
-    """Align a FASTA file with PRANK. Clustal output.
-
-    Cleans: [input].fasta.{1,2}.fas
-    """
-    seq = task.depends[0] + ".2.fas"
-    sh(f"prank -d={task.depends[0]} -o={task.depends[0]} -twice -quiet")
-    # Convert FASTA to "pressed" (single-row) Clustal
-    with SeqIO.parse(seq, "fasta") as parsed:
-        records = list(parsed)
-    # Check for 'X' characters in the sequences -- these cause problems
-    for rec in records:
-        if "X" in str(rec.seq):
-            logging.warning("Sequence %r contains unknown residue X", rec.id)
-    max_id_len = max(len(r.id) for r in records)
-    with open(task.target, "w+") as outfile:
-        outfile.write("CLUSTAL X (-like) multiple sequence alignment\n\n")
-        outfile.writelines(
-            [f"{rec.id.ljust(max_id_len)} {rec.seq}\n" for rec in records]
-        )
-
-
-def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
+def align_pdbs(task, use_pdb=None):
     """Create a structure-based sequence alignment from PDB files.
 
     Inputs are PDB files and FASTA alignments (of previously aligned PDBs).
@@ -273,9 +247,10 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
         else:
             sub_pdb_seqs.append(str(elem))
 
-    # Scan existing PDB alignments to choose a reference PDB from each
-    # sub_pdb_seqs = filter(isfile, sub_pdb_seqs)
-    for sub_pdb_fname in map(str, sub_pdb_seqs):
+    # Scan existing PDB alignments to choose a reference PDB from each, and
+    # pass each non-empty one on to MAFFT as a seed.
+    pdbseedfnames = []
+    for sub_pdb_fname in sub_pdb_seqs:
         if is_empty(sub_pdb_fname):
             # Empty: that directory has fewer than two structures to align, so
             # take its structures here
@@ -283,37 +258,26 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
             sub_dir = sub_pdb_fname.removesuffix(".pdb.seq")
             sub_pdbs = sorted(glob(join(sub_dir, "*.pdb")))
             if sub_pdbs:
-                logging.info(
+                logger.info(
                     "Picked up %d neglected PDBs: %s", len(sub_pdbs), " ".join(sub_pdbs)
                 )
                 pdbs.extend(sub_pdbs)
             continue
+        pdbseedfnames.append(sub_pdb_fname)
         best_tmscore = -1
         best_pdb = None
         with SeqIO.parse(sub_pdb_fname, "fasta") as parsed:
             for rec in parsed:
-                # Extract TM-score
-                for token in rec.description.split():
-                    if token.startswith("TM-score"):
-                        try:
-                            this_tmscore = float(token.split("=", 1)[1])
-                            if this_tmscore > best_tmscore:
-                                best_tmscore = this_tmscore
-                                best_pdb = rec.id
-                        except Exception:
-                            logging.warning(
-                                "PDB seq parsing issue: %s", rec.description
-                            )
-                        break
+                # The rows of a MUSTANG seed alignment carry no TM-score.
+                tmscore = tmalign.tmscore_from_description(rec.description)
+                if tmscore is not None and tmscore > best_tmscore:
+                    best_tmscore = tmscore
+                    best_pdb = rec.id
         if best_pdb is None:
-            logging.warning("Empty PDB alignment: %s", sub_pdb_fname)
+            logger.warning("Empty PDB alignment: %s", sub_pdb_fname)
         else:
-            logging.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
+            logger.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
             pdbs.append(best_pdb)
-
-    pdbseedfnames = [
-        seed for seed in map(str, sub_pdb_seqs) if isfile(seed) and not is_empty(seed)
-    ]
 
     try:
         mustang_tmpfname = "_tmp_mustang.afasta"
@@ -332,10 +296,7 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
         if isfile(mustang_tmpfname):
             os.remove(mustang_tmpfname)
 
-    # SeqIO.write(records, task.target, 'fasta')
     write_fasta(records, task.target)
-    # if not records:
-    #     logging.info("Created empty PDB alignment %s", task.target)
 
 
 def align_profiles(task, use_pdb=None):
@@ -350,12 +311,11 @@ def align_profiles(task, use_pdb=None):
     if use_pdb and not is_empty(pdb_seed):
         seeds.append(pdb_seed)
     else:
-        logging.info("Empty PDB alignment: %s", pdb_seed)
+        logger.info("Empty PDB alignment: %s", pdb_seed)
 
     # Get subfamily and subgroup consensus sequences/profiles
     for subaln in subalignments:
         aln = AlignIO.read(str(subaln), "clustal")
-        # with open(task.target, 'w+') as outfile:
         with open(ext(subaln, "cons.seq"), "w+") as outfile:
             outfile.write(f">{basename(noext(subaln))} consensus\n")
             cons_seq = consensus.consensus(aln, trim_ends=False, gap_threshold=0.6)
@@ -378,7 +338,8 @@ def align_profiles(task, use_pdb=None):
             singles.append(subconsseq)
     famfa = ext(task.target, "families.fa")
     allseq = ext(task.target, "seq")
-    assert singles or seeds, f"No .fasta files found to build {task.target}"
+    if not singles and not seeds:
+        raise UsageError(f"No .fasta files found to build {task.target}")
     # Written even when empty, so that MAFFT never reads a file left by an
     # earlier build; with seeds, MAFFT accepts an empty input.
     with open(famfa, "wb") as outfile:
@@ -396,8 +357,6 @@ def align_profiles(task, use_pdb=None):
         "mafft --quiet --amino --globalpair --maxiterate 1000 "
         f"{seed_args}{famfa} > {allseq}"
     )
-    # XXX fast version
-    # sh(f"mafft --quiet --amino --auto {seed_args}{famfa} > {allseq}")
     # Convert FASTA to "pressed" (single-row) Clustal
     with SeqIO.parse(allseq, "fasta") as parsed:
         records = [
@@ -441,25 +400,9 @@ def aln2hmm(task):
     sh(f"hmmbuild {task.target} {stk}")
 
 
-def cat_sub_consenses(task):
-    """Concatenate the subfamily consensus sequences."""
-    with open(task.target, "w+") as outfile:
-        for subaln in ext(task.depends, "aln"):
-            aln = AlignIO.read(str(subaln), "clustal")
-            outfile.write(f">{noext(subaln)} consensus\n")
-            outfile.write(
-                consensus.consensus(aln, trim_ends=False, gap_threshold=0.6) + "\n"
-            )
-            # Group profiles: include the subfamily consenses, too
-            if isdir(noext(subaln)):
-                with open(ext(subaln, "fasta")) as subfam_file:
-                    outfile.write(subfam_file.read())
-
-
 def all_hmm(task):
     """Concatenate all HMM profiles into a database & press."""
     base = noext(task.depends[-1])
-    # TODO - filter out *_all.hmm from `find` hits
     sh(
         f"cat {base}.hmm `find {base}/ -name '*.hmm' | grep -v '_all.hmm'` "
         f"> {task.target}"
@@ -480,8 +423,9 @@ def mg_aln2cma(task, level=None):
         from biocma import biocma
     except ImportError as exc:
         raise ImportError(
-            "build --mapgaps requires the Python package "
-            f"biocma (pip install biocma): {exc}"
+            "build --mapgaps requires the Python package biocma 0.3, which is "
+            "not yet on PyPI: install it from https://github.com/etal/biocma, "
+            f"then install fammer with its mapgaps extra ({exc})"
         ) from exc
     base = noext(task.target)
     name = basename(base)
@@ -497,20 +441,6 @@ def mg_aln2cma(task, level=None):
     # Tidy up the CMA
     cmaln = biocma.ChainMultiAlignment(aln, level=level)
     biocma.write([cmaln], task.target, do_iron=True)
-
-    # -------------
-    ### OR (HMMer only):
-    ### hmmemit consensus & reuse the .stk (done for .hmm) directly
-    ###   see hmmalign --mapali option to include original .stk
-    ###   .stk is no longer for 'clean'; original must be retained
-    # stk = ext(task.target, 'stk')
-    # cons_fa = ext(task.target, 'cons.fa')
-    # sh('hmmalign --amino %s %s > %s'
-    #         % (task.depends[1], cons_fa, stk))
-    # SeqIO.convert(stk, 'stockholm', cons_fa, 'fasta')
-    # sh("press < %s > %s" % (cons_fa, cons_seq))
-    # sh("fa2cma %s > %s" % (cons_seq, base + '.cons.cma'))
-    # -------------
 
 
 def mg_cat_cma(task):

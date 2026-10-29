@@ -14,12 +14,11 @@ Each structure must be listed only once, because a structure listed twice would
 be aligned to itself. No PDB file name may contain whitespace, because the name
 becomes a sequence identifier in FASTA files, and a FASTA identifier ends at
 the first whitespace. No seed file name may contain whitespace, because MAFFT
-splits seed file paths at whitespace.
+splits seed file paths at whitespace. Every structure and seed file must exist.
 
 """
 
 import collections
-import itertools
 import logging
 import math
 import os
@@ -33,6 +32,10 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from biofrills import alnutils
 
+from ._share import UsageError
+
+logger = logging.getLogger(__name__)
+
 
 def _check_file_names(pdb_fnames, seed_fnames):
     """Reject file names that the alignment procedure cannot carry.
@@ -45,13 +48,13 @@ def _check_file_names(pdb_fnames, seed_fnames):
     """
     split = [fname for fname in [*pdb_fnames, *seed_fnames] if fname.split() != [fname]]
     if split:
-        raise ValueError(
+        raise UsageError(
             "File names must not contain whitespace: " + ", ".join(map(repr, split))
         )
     counts = collections.Counter(pdb_fnames)
     repeated = sorted(fname for fname, count in counts.items() if count > 1)
     if repeated:
-        raise ValueError(
+        raise UsageError(
             "Each structure must be given once: " + ", ".join(map(repr, repeated))
         )
 
@@ -66,20 +69,26 @@ def align_structs(pdb_fnames, seed_fnames=None):
     if len(pdb_fnames) < 2 and not seed_fnames:
         # No pair of structures to align and no seed alignment to combine.
         return []
+    # TM-align exits normally, printing no alignment, for a missing structure.
+    # Checked after the early return, as a lone structure is never read.
+    missing = [
+        fname for fname in [*pdb_fnames, *seed_fnames] if not os.path.isfile(fname)
+    ]
+    if missing:
+        raise UsageError("No such file: " + ", ".join(map(repr, missing)))
     # 1. Align all-v-all structure pairs with TM-align
     allpairs = []
     for idx, ref_pdbfn in enumerate(pdb_fnames):
         for eqv_pdbfn in pdb_fnames[idx + 1 :]:
-            logging.info("Aligning %s to %s", eqv_pdbfn, ref_pdbfn)
+            logger.info("Aligning %s to %s", eqv_pdbfn, ref_pdbfn)
             try:
                 tm_output = subprocess.check_output(
                     ["TMalign", ref_pdbfn, eqv_pdbfn], text=True
                 )
             except OSError:
-                logging.warning("Failed command: TMalign %s %s", ref_pdbfn, eqv_pdbfn)
-                for fname in (ref_pdbfn, eqv_pdbfn):
-                    if not os.path.isfile(fname):
-                        logging.warning("Missing file: %s", fname)
+                # Raised when TMalign itself cannot be run; TM-align exits 0
+                # on a missing structure file.
+                logger.warning("Failed command: TMalign %s %s", ref_pdbfn, eqv_pdbfn)
                 raise
             except subprocess.CalledProcessError as exc:
                 raise RuntimeError(
@@ -96,9 +105,6 @@ def align_structs(pdb_fnames, seed_fnames=None):
     # 2. Resolve MST pairs & write seed tempfiles
     tmp_seed_fnames = []
     for seedpair in mst_pairs(allpairs):
-        # fd, seedfn = tempfile.mkstemp(text=True)
-        # SeqIO.write(seedpair, seedfn, 'fasta')
-        # SeqIO.write(seedpair, os.fdopen(fd), 'fasta')
         with tempfile.NamedTemporaryFile("w+", delete=False) as handle:
             SeqIO.write(seedpair, handle, "fasta")
             tmp_seed_fnames.append(handle.name)
@@ -110,9 +116,7 @@ def align_structs(pdb_fnames, seed_fnames=None):
     os.close(seq_fd)
     mafft_output = subprocess.check_output(
         ["mafft", "--quiet", "--amino", "--localpair", "--maxiterate", "1000"]
-        + list(
-            itertools.chain(*[("--seed", sfn) for sfn in seed_fnames + tmp_seed_fnames])
-        )
+        + [arg for sfn in seed_fnames + tmp_seed_fnames for arg in ("--seed", sfn)]
         + [seq_fname],
         text=True,
     )
@@ -147,8 +151,10 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
                     _key, _val = token.split("=")
                     tmscores.append(float(_val.rstrip(",")))
                     break
+    # TM-align exits normally on an empty or unreadable structure file, so
+    # output without a score or an alignment indicates a bad input file.
     if not tmscores:
-        raise ValueError(f"No TM-score in TM-align output for {ref_id}, {eqv_id}")
+        raise UsageError(f"No TM-score in TM-align output for {ref_id}, {eqv_id}")
     tmscore = math.fsum(tmscores) / len(tmscores)
     # Extract the sequence alignment, which follows the line explaining the
     # ":" and "." markers; newer versions print more lines after it.
@@ -156,7 +162,7 @@ def read_tmalign_as_seqrec_pair(tm_output, ref_id, eqv_id):
         (idx for idx, line in enumerate(lines) if line.startswith('(":"')), None
     )
     if header is None or header + 3 >= len(lines):
-        raise ValueError(f"No alignment in TM-align output for {ref_id}, {eqv_id}")
+        raise UsageError(f"No alignment in TM-align output for {ref_id}, {eqv_id}")
     refseq, eqvseq = lines[header + 1].strip(), lines[header + 3].strip()
     return (
         SeqRecord(Seq(refseq), id=ref_id, description=f"TMalign TM-score={tmscore:f}"),
@@ -195,6 +201,10 @@ def mst_pairs(pairs):
 
 
 def tmscore_from_description(text):
+    """The first TM-score in a sequence description, or None if it has none.
+
+    A malformed score, such as 'TM-score=abc', raises ValueError or IndexError.
+    """
     for token in text.split():
         if token.startswith("TM-score"):
             return float(token.split("=", 1)[1])

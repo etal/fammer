@@ -79,9 +79,6 @@ extend-exclude = [".pixi", "tests/data/capture_py27.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "LOG", "G"]
-# The calls on the root logger become calls on module loggers in a separate
-# change.
-ignore = ["LOG015"]
 
 # biofrills and biocma come from their repositories at pinned commits, which
 # the lock files then record; moving to a newer commit is a deliberate change

@@ -8,8 +8,9 @@ from os.path import basename, isdir, isfile
 
 from Bio import SeqIO
 
-from ._share import parse_scanned_hits
-from .tasks import sh
+from ._share import UsageError, get_hmm_hits
+
+logger = logging.getLogger(__name__)
 
 
 def cmd_scan(args):
@@ -22,20 +23,15 @@ def cmd_scan(args):
         hmmdb = args.profile_db.rstrip("/") + "_all.hmm"
     else:
         hmmdb = args.profile_db
-    assert isfile(hmmdb), "Didn't find " + hmmdb
-    assert isfile(args.target)
+    if not isfile(hmmdb):
+        raise UsageError(f"No HMM profile database at {hmmdb}")
+    if not isfile(args.target):
+        raise UsageError(f"No sequence file at {args.target}")
 
-    # ENH?: remove table ([target].tbl) with option --clean
-    tblfname = basename(args.target) + ".tbl"
-    sh(
-        f"hmmsearch -E {args.evalue} --domE {args.evalue} --noali "
-        f"--tblout {tblfname} {hmmdb} {args.target} > /dev/null"
-    )
     # Get the best hit for each sequence
-    with open(tblfname) as tblfile:
-        scanhits = parse_scanned_hits(tblfile)
+    scanhits = get_hmm_hits(hmmdb, args.target, args.evalue)
     if not scanhits:
-        logging.warning("No hits in %s", args.target)
+        logger.warning("No hits in %s", args.target)
         return
 
     # Filter hits for include/exclude strings
@@ -99,12 +95,11 @@ def write_seqout(scanhits, sourcefname, outfname):
         open(outfname, "wb+") as outfile,
     ):
         for acc in scanhits:
-            block = seq_idx.get_raw(acc)
-            outfile.write(block)
-    logging.info("Wrote %s", outfname)
+            outfile.write(seq_idx.get_raw(acc))
+    logger.info("Wrote %s", outfname)
 
 
-def write_seqsets(scanhits, sourcefname, align=False):
+def write_seqsets(scanhits, sourcefname):
     """Write FASTA files of the seqs matching each profile."""
     # NB: scanhits looks like {seq_id: (profile_name, score)}
     # Flip to: {profile_name: [sequence ids...]}
@@ -117,17 +112,5 @@ def write_seqsets(scanhits, sourcefname, align=False):
             outfname = f"{basename(sourcefname)}.{profname}.fasta"
             with open(outfname, "wb+") as outfile:
                 for rec in seqnames:
-                    block = seq_idx.get_raw(rec)
-                    outfile.write(block)
-            logging.info("Wrote %s", outfname)
-
-    # 3. hmmalign the written sequence sets (if requested)
-    # if align: ...
-    # ENH - use the built HMM/MAPGAP & Newick tree to scan&classify&align seqs
-    # HMMer:
-    # do cmd_scan -O to get each seq's family
-    #   ungap along the way
-    # with NamedTemporaryFile(suffix='.hmm'):
-    #     hmmfetch -o tmp.hmm [hmm_db] [family_name]
-    #     hmmalign tmp.hmm [tgt_fam] > tgt_result.sto
-    # SeqIO.convert('tgt_result.sto', 'stockholm', 'tgt_result.seq', 'fasta)
+                    outfile.write(seq_idx.get_raw(rec))
+            logger.info("Wrote %s", outfname)

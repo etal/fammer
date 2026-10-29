@@ -199,3 +199,34 @@ def test_align_pdbs_takes_the_structure_of_a_directory_without_an_alignment(
     task = Task(str(target), depends=[str(tmp_path / "top" / "grp.pdb.seq")])
     align_pdbs(task, use_pdb=True)
     assert calls == [([str(tmp_path / "top" / "grp" / "single.pdb")], [])]
+
+
+def test_align_pdbs_seeds_with_each_alignment_and_its_best_structure(
+    tmp_path, monkeypatch
+):
+    """Each non-empty ``.pdb.seq`` is a seed and gives its best-scored structure.
+
+    The best structure is the identifier of the row with the highest TM-score;
+    a row without a score, such as one from MUSTANG, is not a candidate, and an
+    empty ``.pdb.seq`` of a directory without structures contributes nothing.
+    """
+    aligned = tmp_path / "top" / "grp.pdb.seq"
+    empty = tmp_path / "top" / "none.pdb.seq"
+    aligned.parent.mkdir()
+    aligned.write_text(
+        ">a.pdb TMalign TM-score=0.500000\nAC-D\n"
+        ">b.pdb TMalign TM-score=0.900000\nACED\n"
+        ">b.pdb TMalign TM-score=0.700000\nAC-E\n"
+        ">c.pdb\nACDE\n"
+    )
+    empty.write_text("")
+    calls = []
+
+    def align_structs(pdb_fnames, seed_fnames):
+        calls.append((list(pdb_fnames), list(seed_fnames)))
+        return []
+
+    monkeypatch.setattr("fammer.tmalign.align_structs", align_structs)
+    task = Task(str(tmp_path / "top.pdb.seq"), depends=[str(empty), str(aligned)])
+    align_pdbs(task, use_pdb=True)
+    assert calls == [(["b.pdb"], [str(aligned)])]

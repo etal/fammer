@@ -9,36 +9,40 @@ from os.path import basename, isdir, isfile, join
 from Bio import SeqIO
 from Bio.Seq import Seq
 
-from ._share import get_hmm_evalues, parse_scanned_hits
+from ._share import UsageError, get_hmm_evalues, get_hmm_hits, ungapped
 from .tasks import ext, noext, sh
+
+logger = logging.getLogger(__name__)
 
 
 def cmd_add(args):
-    # Validation
-    assert isdir(args.basedir), f"Not a directory: {args.basedir}"
+    if not isdir(args.basedir):
+        raise UsageError(f"Not a directory: {args.basedir}")
     hmmdb = args.basedir.rstrip("/") + "_all.hmm"
-    assert isfile(hmmdb), "Didn't find " + hmmdb
-    assert isfile(args.sequence_db)
-    assert args.evalue
-    assert 0 < args.min_length <= 1, (
-        "Minimum hit length (-L, --min-length) must be between 0 and 1."
-    )
+    if not isfile(hmmdb):
+        raise UsageError(f"No HMM profile database at {hmmdb}")
+    if not isfile(args.sequence_db):
+        raise UsageError(f"No sequence file at {args.sequence_db}")
+    if not 0 < args.min_length <= 1:
+        raise UsageError(
+            "Minimum hit length (-L, --min-length) must be between 0 and 1."
+        )
 
     # Traverse the directory tree -- if there's an unbuilt HMM that we'll need,
     # best to identify it now and raise an error
     fastas_and_hmms = list(walk_profiles(args.basedir))
     # Scan & classify the target database, just like in cmd_scan
-    dbhits = get_hmm_data(hmmdb, args.sequence_db, args.evalue)
-    assert dbhits
+    dbhits = get_hmm_hits(hmmdb, args.sequence_db, args.evalue)
+    if not dbhits:
+        raise UsageError(f"No profile hits in {args.sequence_db}")
     with closing(SeqIO.index(args.sequence_db, "fasta")) as index:
-        assert index
         for fasta, hmm in fastas_and_hmms:
             add_hits(fasta, hmm, dbhits, index, args.min_length)
 
 
 def add_hits(fasta, hmm, dbhits, index, min_length):
     """Append the database hits that a profile accepts to its FASTA file."""
-    logging.info("Processing %s ...", noext(fasta))
+    logger.info("Processing %s ...", noext(fasta))
     # HMMscan the corresponding FASTA file; record the max (worst) e-value
     seq_evals = get_hmm_evalues(hmm, fasta)
     max_eval = max(seq_evals.values())
@@ -73,7 +77,7 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
         # probabilities from hmmsearch -A do not fit the ungapped
         # sequence, so drop them first.
         record.letter_annotations = {}
-        record.seq = Seq(str(record.seq).replace("-", "").replace(".", "").upper())
+        record.seq = Seq(ungapped(record.seq))
         hit_seqs.append(record)
 
     # ENH: extend hits that are close to the edge of the profile (e.g. 5aa) to
@@ -83,7 +87,7 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
     # - can I tell from the alignment? (# terminal gaps)
 
     # Add the accepted hits to the FASTA profile
-    logging.info("Adding %d hits to profile %s", len(hit_seqs), fasta)
+    logger.info("Adding %d hits to profile %s", len(hit_seqs), fasta)
     with open(fasta, "a") as fafile:
         SeqIO.write(hit_seqs, fafile, "fasta")
 
@@ -95,25 +99,10 @@ def walk_profiles(topdir):
         for fasta in fasta_fnames:
             hmm_fname = ext(fasta, "hmm")
             if not isfile(hmm_fname):
-                raise ValueError(f"Unbuild .hmm for {fasta}")
+                raise UsageError(
+                    f"No .hmm profile for {fasta}; run fammer build --hmmer first"
+                )
             yield fasta, hmm_fname
-
-
-def get_hmm_data(hmmfname, seqfname, evalue):
-    """Search a sequence database with an HMM profile.
-
-    Return a mapping of hit sequence names to the best profile and e-value.
-    """
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".tbl") as tbl:
-        sh(
-            "hmmsearch --noali --notextw "
-            f"-E {evalue} --domE {evalue} --tblout {tbl.name} "
-            f"{hmmfname} {seqfname} > /dev/null"
-        )
-        tbl.seek(0)
-        # Parse the table; get the domain score for each sequence
-        hits = parse_scanned_hits(tbl)
-    return hits
 
 
 def get_hmm_alignment(hmmfname, hits, index):

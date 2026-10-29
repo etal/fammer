@@ -17,6 +17,7 @@ from Bio.SeqRecord import SeqRecord
 from reference_cases import TOOL_OUTPUTS
 
 from fammer import tmalign
+from fammer._share import UsageError
 
 # The whole standard output of TM-align 20240303 for an input file it cannot
 # parse (missing, empty, or without atoms); it still exits with status 0.
@@ -75,7 +76,7 @@ def survives_fasta(name):
 def test_file_names_are_accepted_exactly_when_they_survive_fasta(name):
     try:
         tmalign._check_file_names(["other.pdb", name], [])
-    except ValueError:
+    except UsageError:
         accepted = False
     else:
         accepted = True
@@ -87,18 +88,18 @@ def test_file_names_are_accepted_exactly_when_they_survive_fasta(name):
 def test_align_structs_rejects_whitespace_before_aligning(no_subprocess, name):
     """Every position is checked, the last included, before TM-align runs."""
     for names in ([name, "b.pdb", "c.pdb"], ["b.pdb", "c.pdb", name]):
-        with pytest.raises(ValueError, match="whitespace") as excinfo:
+        with pytest.raises(UsageError, match="whitespace") as excinfo:
             tmalign.align_structs(names)
         assert repr(name) in str(excinfo.value)
 
 
 def test_align_structs_rejects_whitespace_in_seed_file_names(no_subprocess):
-    with pytest.raises(ValueError, match="'my seed.fa'"):
+    with pytest.raises(UsageError, match="'my seed.fa'"):
         tmalign.align_structs(["a.pdb", "b.pdb"], ["ok.fa", "my seed.fa"])
 
 
 def test_align_structs_rejects_a_repeated_structure(no_subprocess):
-    with pytest.raises(ValueError, match="once: 'a.pdb'$"):
+    with pytest.raises(UsageError, match="once: 'a.pdb'$"):
         tmalign.align_structs(["a.pdb", "b.pdb", "a.pdb"])
 
 
@@ -108,13 +109,24 @@ def test_align_structs_of_fewer_than_two_structures_is_empty(no_subprocess, name
     assert tmalign.align_structs(names) == []
 
 
-def test_output_without_a_score_raises_value_error():
-    with pytest.raises(ValueError, match="No TM-score .* a.pdb, b.pdb"):
+def test_align_structs_rejects_missing_files_before_aligning(no_subprocess, tmp_path):
+    """Only the missing names are listed, a seed file among them."""
+    present, missing, seed = (
+        str(tmp_path / name) for name in ("a.pdb", "b.pdb", "s.fa")
+    )
+    (tmp_path / "a.pdb").write_text("")
+    with pytest.raises(UsageError) as excinfo:
+        tmalign.align_structs([present, missing], [seed])
+    assert str(excinfo.value) == f"No such file: {missing!r}, {seed!r}"
+
+
+def test_output_without_a_score_raises_usage_error():
+    with pytest.raises(UsageError, match="No TM-score .* a.pdb, b.pdb"):
         tmalign.read_tmalign_as_seqrec_pair(UNPARSEABLE_OUTPUT, "a.pdb", "b.pdb")
 
 
 @pytest.mark.parametrize("kept_after_header", [None, 0, 1, 2])
-def test_output_without_a_whole_alignment_raises_value_error(kept_after_header):
+def test_output_without_a_whole_alignment_raises_usage_error(kept_after_header):
     """The block is the header line, two sequences and the marker line between."""
     lines = (TOOL_OUTPUTS / "tmalign/1ATP__1CSN.txt").read_text().splitlines(True)
     header = next(i for i, line in enumerate(lines) if line.startswith('(":"'))
@@ -122,7 +134,7 @@ def test_output_without_a_whole_alignment_raises_value_error(kept_after_header):
         lines = lines[:header]
     else:
         lines = lines[: header + 1 + kept_after_header]
-    with pytest.raises(ValueError, match="No alignment"):
+    with pytest.raises(UsageError, match="No alignment"):
         tmalign.read_tmalign_as_seqrec_pair("".join(lines), "a.pdb", "b.pdb")
 
 

@@ -261,8 +261,9 @@ def test_scan_reproduces_recorded_run(scan_workspace, name):
     are compared as written. The files of ``-o`` and ``-O`` list their
     sequences in the iteration order of a dictionary, which Python 2 and
     Python 3 do not share, so they are compared as sets of records. The
-    hmmsearch table is not compared: its row order follows the order of the
-    profiles in the database, which follows the file system.
+    recorded runs also left the hmmsearch table ``<target>.tbl`` in the
+    working directory; the current code writes it to a temporary file and
+    removes it, so it is the one recorded file not expected here.
     """
     require("fammer", "hmmsearch")
     run = SCAN_RUNS[name]
@@ -271,9 +272,10 @@ def test_scan_reproduces_recorded_run(scan_workspace, name):
     assert proc.returncode == run["returncode"], proc.stderr
     assert proc.stdout == run["stdout"]
     assert log_messages(proc.stderr) == log_messages(run["stderr"])
-    assert files_under(scan_workspace) - before == set(run["created"]) | set(
-        run["modified"]
-    )
+    table = run["argv"][2] + ".tbl"
+    recorded_files = set(run["created"]) | set(run["modified"])
+    assert table in recorded_files
+    assert files_under(scan_workspace) - before == recorded_files - {table}
     for fname, recorded_text in run["written_files"].items():
         written = (scan_workspace / fname).read_text(encoding="utf-8")
         assert fasta_records(written) == fasta_records(recorded_text), fname

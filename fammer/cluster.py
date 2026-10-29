@@ -25,6 +25,14 @@ from Bio.Graphics.ColorSpiral import ColorSpiral
 from Bio.Phylo.BaseTree import BranchColor
 from biofrills import alnutils
 
+from ._share import UsageError, ungapped
+
+logger = logging.getLogger(__name__)
+
+SUFFIX_ERROR = (
+    "Input sequences must be a Clustal alignment (.aln) or unaligned FASTA (.fasta)"
+)
+
 
 def cmd_cluster(args):
     """Cut on longest branches, then group by remaining supported clusters."""
@@ -35,7 +43,10 @@ def cmd_cluster(args):
     #     --confidence: MIN_CONFIDENCE (e.g. 0.7, 0.9) -- needed?
     #     --tree: precomputed tree, incl. supports -- good idea?
     #     --outgroup: needed?
-    assert os.path.isfile(args.sequences)
+    if not os.path.isfile(args.sequences):
+        raise UsageError(f"No sequence file at {args.sequences}")
+    if not args.sequences.endswith((".aln", ".fasta")):
+        raise UsageError(f"{SUFFIX_ERROR}: {args.sequences}")
     tree = load_tree(args.sequences)
 
     # Extract clusters of acceptable size
@@ -90,10 +101,10 @@ def load_tree(seqfname):
         )
         aln = AlignIO.read(StringIO(alndata), "fasta")
     else:
-        raise ValueError(
-            "Input sequences must be a Clustal alignment (.aln) "
-            "or unaligned FASTA (.fasta)"
-        )
+        # A built-in ValueError, not UsageError: tests/data/py27/library/
+        # cluster.json records this type, and the reference comparison looks
+        # exception types up among the built-in names.
+        raise ValueError(SUFFIX_ERROR)
 
     # Use conserved (less-gappy) blocks to build the tree
     aln = alnutils.blocks(aln, 0.4)
@@ -126,13 +137,12 @@ def get_clades_to_cut(tree):
             tip_branch_lengths.append(clade.branch_length)
         else:
             inner_branch_lengths.append(clade.branch_length)
-    # tip_mean = math.fsum(tip_branch_lengths) / len(tip_branch_lengths)
     tip_mean = geom_mean(tip_branch_lengths)
     clades_to_cut = [
         cl for cl in tree.get_nonterminals() if cl.branch_length >= tip_mean
     ]
     clades_to_cut.sort(key=lambda cl: cl.branch_length, reverse=True)
-    logging.info("# to cut (up to): %s", len(clades_to_cut))
+    logger.info("# to cut (up to): %s", len(clades_to_cut))
     return clades_to_cut
 
 
@@ -154,7 +164,7 @@ def write_clusters(seqfname, tree, clusters, unclustered):
         with open(fname, "w+") as handle:
             for rec in records:
                 write_fasta(rec, handle, do_ungap=is_aln)
-        logging.info("Wrote %s (%d sequences)", fname, len(records))
+        logger.info("Wrote %s (%d sequences)", fname, len(records))
 
     colors = [
         BranchColor(*map(lambda x: int(x * 255), rgb))
@@ -172,7 +182,7 @@ def write_clusters(seqfname, tree, clusters, unclustered):
 
     treefname = os.path.basename(seqfname) + ".xml"
     Phylo.write(tree, treefname, "phyloxml")
-    logging.info("Wrote %s", treefname)
+    logger.info("Wrote %s", treefname)
 
 
 def write_fasta(record, handle, do_ungap=False):
@@ -185,5 +195,5 @@ def write_fasta(record, handle, do_ungap=False):
         topline = f">{record.id}\n"
     seq = str(record.seq).strip()
     if do_ungap:
-        seq = seq.replace("-", "").replace(".", "").upper()
+        seq = ungapped(seq)
     handle.write(topline + "\n" + seq + "\n")

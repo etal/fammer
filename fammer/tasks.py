@@ -3,6 +3,8 @@ import os
 import subprocess
 from os.path import exists, isfile
 
+logger = logging.getLogger(__name__)
+
 
 def ext(path, extension):
     """Replace the extension on a path (or iterable of paths)."""
@@ -28,7 +30,7 @@ def sh(cmd):
         subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
     except OSError:
         # NB: Not sure what could trigger this; check_output eats most errors
-        logging.warning("*** Failed command: %s", str(cmd))
+        logger.warning("*** Failed command: %s", str(cmd))
         raise
     except subprocess.CalledProcessError as exc:
         output = exc.output.decode("utf-8", "replace")
@@ -54,10 +56,10 @@ def which(exenames):
 
 
 def is_empty(path):
-    """True if a file contains more than a single byte (has size >1).
+    """True if a file holds no more than a single byte (has size < 2).
 
-    We ignore a single byte because shell and I/O operations sometimes create a
-    file containing a space or EOL character, and that's meaningless.
+    A single byte is ignored because shell and I/O operations sometimes create
+    a file containing only a space or an end-of-line character.
     """
     return os.stat(path).st_size < 2
 
@@ -103,13 +105,13 @@ class Task:
             if isinstance(dep, Task) and not dep.is_up_to_date():
                 dep.build()
         if exists(self.target) and all(self.is_newer_than(dep) for dep in self.depends):
-            logging.info("%s: Up to date.", self.target)
+            logger.info("%s: Up to date.", self.target)
         else:
-            logging.info("%s: Building...", self.target)
+            logger.info("%s: Building...", self.target)
             try:
                 self.action(self, **self.kwargs)
             except:
-                logging.warning("*** Failed action @ %s", self.target)
+                logger.warning("*** Failed action @ %s", self.target)
                 raise
 
     def is_newer_than(self, dep):
@@ -129,7 +131,7 @@ class Task:
         """Recursively delete auxilliary files."""
         for fname in self.cleans:
             if isfile(fname):
-                logging.info("rm %s", fname)
+                logger.info("rm %s", fname)
                 os.remove(fname)
         for dep in self.depends:
             if isinstance(dep, Task):

@@ -8,12 +8,15 @@ from os.path import abspath, basename, isdir, isfile, join
 
 from Bio import SeqIO
 
-from ._share import get_hmm_evalues
+from ._share import UsageError, get_hmm_evalues
 from .tasks import ext, sh
+
+logger = logging.getLogger(__name__)
 
 
 def cmd_refine(args):
-    assert isdir(args.basedir)
+    if not isdir(args.basedir):
+        raise UsageError(f"Not a directory: {args.basedir}")
 
     # Defaults: locate args.unclassified or set it
     if args.unclassified:
@@ -22,7 +25,7 @@ def cmd_refine(args):
         topname = basename(abspath(args.basedir).rstrip("/"))
         unclass_fa = join(args.basedir, topname + "-Unique.fasta")
     if not isfile(unclass_fa):
-        raise ValueError(
+        raise UsageError(
             f"Can't find the unclassified sequence set ({unclass_fa} does not exist)"
         )
 
@@ -34,17 +37,17 @@ def cmd_refine(args):
         elif args.exclude + ".fasta" in all_fa:
             all_fa.remove(args.exclude + ".fasta")
         else:
-            logging.warning(
+            logger.warning(
                 "Didn't find excluded profile %s in %s", args.exclude, args.basedir
             )
     # Prerequisites: HMM profiles for each sequence set must be built
     for fa in all_fa:
         if not isfile(ext(fa, "hmm")):
-            raise ValueError(f"Unbuilt HMM for sequence set: {fa}")
+            raise UsageError(f"Unbuilt HMM for sequence set: {fa}")
 
     for this_fa in all_fa:
         this_hmm = ext(this_fa, "hmm")
-        logging.info("Refining %s...", this_fa)
+        logger.info("Refining %s...", this_fa)
 
         # Scan the seed sequences in `this_fa` w/ `this_hmm`
         # -> {seq_id: top_dom_eval}
@@ -95,12 +98,12 @@ def cmd_refine(args):
                     out_eval = max(db_evals.values())
                 except ValueError:
                     # No HMM hits!
-                    logging.warning("No unclassified hits for %s!", this_fa)
+                    logger.warning("No unclassified hits for %s!", this_fa)
                     break
 
                 if out_eval <= seed_eval:
                     if args.dry_run:
-                        logging.info(
+                        logger.info(
                             "* drop %s (evalue %s vs. %s)", seq_id, seed_eval, out_eval
                         )
                     else:
@@ -108,7 +111,7 @@ def cmd_refine(args):
                         # - append the dropped seq to unclass_fa
                         # - replace this_fa w/ the "lean" profile
                         # - Logging: print the name of the dropped seq
-                        logging.info(
+                        logger.info(
                             "Dropped %s from %s into %s (evalue %s vs. %s)",
                             seq_id,
                             this_fa,
@@ -120,7 +123,7 @@ def cmd_refine(args):
                     # Since the seeds are sorted by evalue, if this sequence is a
                     # keeper, then so are the rest. On to the next profile!
                     if args.dry_run:
-                        logging.info(
+                        logger.info(
                             "* keep %s (evalue %s vs. %s)", seq_id, seed_eval, out_eval
                         )
                     break

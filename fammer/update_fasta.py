@@ -8,8 +8,10 @@ from os.path import isdir, isfile, join
 from Bio import SeqIO
 from Bio.Seq import Seq
 
-from ._share import write_fasta
+from ._share import UsageError, ungapped, write_fasta
 from .tasks import Task
+
+logger = logging.getLogger(__name__)
 
 
 def cmd_update_fasta(args):
@@ -21,7 +23,7 @@ def cmd_update_fasta(args):
         if task is not None:
             task.build()
     else:
-        raise RuntimeError(f"Target must be a directory or .aln file: {args.basedir}")
+        raise UsageError(f"Target must be a directory or .aln file: {args.basedir}")
 
 
 def find_update_tasks(topdir):
@@ -44,11 +46,11 @@ def find_update_tasks(topdir):
 def one_update_task(aln_fname):
     fasta_fname = aln_fname[:-4] + ".fasta"
     if not isfile(fasta_fname):
-        raise RuntimeError(
+        raise UsageError(
             f"No corresponding .fasta file for {aln_fname}: need {fasta_fname}"
         )
     if is_same_aln_fasta(aln_fname, fasta_fname):
-        logging.info("%s already matches %s.", fasta_fname, aln_fname)
+        logger.info("%s already matches %s.", fasta_fname, aln_fname)
     else:
         return Task(fasta_fname, action=update_fasta, depends=aln_fname)
 
@@ -59,7 +61,6 @@ def update_fasta(task):
     # alignment stays open until the FASTA file is written.
     with SeqIO.parse(str(task.depends[0]), "clustal") as parsed:
         write_fasta(ungap_and_unique(parsed, task.target), task.target)
-    # SeqIO.write(records, task.target, 'fasta')
 
 
 def ungap_and_unique(records, target_name):
@@ -82,7 +83,7 @@ def ungap_and_unique(records, target_name):
         reverse=True,
     ):
         # Remove gaps ('-')
-        thisseq = str(rec.seq).replace("-", "").replace(".", "").upper()
+        thisseq = ungapped(rec.seq)
         # Drop if this sequence is completely contained by another
         if "X" in thisseq:
             # Each ambiguous residue matches any single residue
@@ -102,17 +103,14 @@ def ungap_and_unique(records, target_name):
     msg = f"Updated {target_name}"
     if counter:
         msg += f" (purged {counter} sequence{'' if counter == 1 else 's'})"
-    logging.info(msg)
+    logger.info(msg)
 
 
 def is_same_aln_fasta(aln_fn, fasta_fn):
     """Compare ungapped seqs in aln and fasta; are they all the same?"""
 
     def rec2tuple(rec, do_ungap):
-        if do_ungap:
-            strseq = str(rec.seq).replace("-", "").replace(".", "").upper()
-        else:
-            strseq = str(rec.seq).upper()
+        strseq = ungapped(rec.seq) if do_ungap else str(rec.seq).upper()
         return (rec.id, strseq)
 
     with SeqIO.parse(aln_fn, "clustal") as parsed:

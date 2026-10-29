@@ -44,8 +44,6 @@ programs installed:
 .. _TMalign: http://cssb.biology.gatech.edu/skolnick/webservice/TM-align/index.shtml
 .. _FastTree: http://www.microbesonline.org/fasttree/
 
-.. For hackers, also PRANK: http://code.google.com/p/prank-msa/
-
 If you're on a Debian-based Linux system, check your package manager for these
 first to save yourself some time::
 
@@ -161,10 +159,8 @@ library biocma_ installed.
 The ``--clean`` option can be included with any of the above commands to remove
 intermediate files.
 
-If you have included PDB structures in your directory tree and have a structure
-alignment program installed, the ``--pdb`` option will first create a structural
-alignment of the PDBs in the directory, then use that alignment as the seed for
-higher-up alignments::
+If you have included PDB structures in your directory tree and have TMalign_ installed, ``fammer build`` uses them unless given the ``--no-pdb`` option.
+It first creates a structural alignment of the PDBs in each directory, then uses that alignment as the seed for higher-up alignments::
 
     Superfamily/
         Group1/
@@ -271,24 +267,13 @@ refine
 Leave-one-out validation of sequence profiles.
 Unlike the other commands, this is non-recursive.
 
-Given a target subdirectory and the name of the subdirectory's
-``*-Unclassified.fasta`` file (if not specified, it looks for
-*dirname*-Unclassified.fasta), scan each subfamily's sequence set (``.fasta``)
-with the corresponding HMM profile (``.hmm``), and also scan the
-``-Unclassified.fasta`` file with all the HMMs to obtain scores for each
-sequence and each profile. Then, compare the scores of sequences in a subfamily,
-starting with the worst-scoring sequence, to the highest-scoring "unclassified"
-sequence by the same profile. If, for a given profile, a classified sequence
-scores worst than an unclassified one, mark the classified one for removal from
-the sequence profile.
+Given a target subdirectory and its set of unclassified sequences (``-u``; by default *dirname*/*dirname*-Unique.fasta), scan each subfamily's sequence set (``.fasta``) with the corresponding HMM profile (``.hmm``), and also scan the unclassified set with all the HMMs to obtain scores for each sequence and each profile.
+Then, compare the scores of sequences in a subfamily, starting with the worst-scoring sequence, to the highest-scoring "unclassified" sequence by the same profile.
+If, for a given profile, a classified sequence scores worse than an unclassified one, mark the classified one for removal from the sequence profile.
 
-Note that if a member of a known subfamily was mistakenly placed in
-``-Unclassified.fasta`` (i.e. was missed by the initial classification), then
-many of the legitimate members of the subfamily profile could score worse than
-this high-scoring "unclassified" sequence and be erroneously marked for removal
-from the profile. This is easy enough to spot in the logged output. One way to
-avoid it is to first use the ``add`` command with  ``-Unclassified.fasta`` as
-the target, to catch and classify such sequences beforehand.
+Note that if a member of a known subfamily was mistakenly placed in the unclassified set (i.e. was missed by the initial classification), then many of the legitimate members of the subfamily profile could score worse than this high-scoring "unclassified" sequence and be erroneously marked for removal from the profile.
+This is easy to spot in the logged output.
+One way to avoid it is to first use the ``add`` command with the unclassified set as the target, to catch and classify such sequences beforehand.
 
 cluster
 ```````
@@ -322,6 +307,7 @@ A spanning tree over N structures has N-1 edges, so this passes N-1 seeds rather
 Each structure's file name becomes the identifier of its sequence in the alignment, and a FASTA identifier ends at the first whitespace, so structure file names must not contain whitespace.
 Seed file names must not contain whitespace either, because MAFFT splits seed file paths at whitespace.
 Each structure must be listed only once, because a structure listed twice would be aligned to itself.
+TMalign reports no error for a missing, empty or malformed structure file, so ``fammer-tmalign`` and ``fammer build`` check that the structure and seed files exist before aligning any pair, and report TMalign output without a TM-score or alignment as an input error.
 The ``fammer-tmalign`` command runs it from the shell.
 
 How to curate profiles

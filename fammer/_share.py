@@ -1,4 +1,4 @@
-"Functions shared across multiple Fammer sub-commands."
+"Helpers shared across multiple Fammer sub-commands."
 
 import collections
 import tempfile
@@ -7,19 +7,37 @@ from Bio.File import as_handle
 
 from .tasks import sh
 
+
+class UsageError(ValueError):
+    """An error in a command's input, reported without a traceback.
+
+    It is a ValueError, so that a library caller catching ValueError for a bad
+    argument still catches it.
+    """
+
+
 # HMMer utilities
 
 
-def get_hmm_evalues(hmmfname, seqfname):
+def get_hmm_hits(hmmfname, seqfname, evalue):
+    """Search a sequence database with an HMM profile database.
+
+    Return a mapping of hit sequence names to the best profile and e-value.
+    """
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".tbl") as tbl:
         sh(
-            "hmmsearch --noali --notextw -E 0.001 --domE 0.001 "
-            f"--tblout {tbl.name} {hmmfname} {seqfname} > /dev/null"
+            "hmmsearch --noali --notextw "
+            f"-E {evalue} --domE {evalue} --tblout {tbl.name} "
+            f"{hmmfname} {seqfname} > /dev/null"
         )
         tbl.seek(0)
-        # Parse the table; get the domain score for each sequence
-        hits = parse_scanned_hits(tbl)
-    return dict((seqname, prof_eval[1]) for seqname, prof_eval in hits.items())
+        return parse_scanned_hits(tbl)
+
+
+def get_hmm_evalues(hmmfname, seqfname):
+    """Map each sequence that an HMM profile hits to its best e-value."""
+    hits = get_hmm_hits(hmmfname, seqfname, 0.001)
+    return {seqname: evalue for seqname, (_prof, evalue) in hits.items()}
 
 
 def parse_scanned_hits(tblfile):
@@ -66,10 +84,10 @@ def parse_scanned_hits(tblfile):
 
 # Helpers
 
-# def touch(task):
-#     """Just create a file if it's not already present."""
-#     with open(task.target, 'w'):
-#         pass
+
+def ungapped(seq):
+    """The sequence as a string without gap characters, in upper case."""
+    return str(seq).replace("-", "").replace(".", "").upper()
 
 
 def write_fasta(records, fname):
