@@ -3,6 +3,7 @@
 import itertools
 import logging
 import os
+import shutil
 import subprocess
 from glob import glob
 from os.path import basename, isdir, isfile, join
@@ -373,12 +374,15 @@ def align_profiles(task, use_pdb=None):
             seeds.append(subconsseq)
         else:
             singles.append(subconsseq)
-    # First, align/merge the single family consensus sequences
     famfa = ext(task.target, "families.fa")
     allseq = ext(task.target, "seq")
     assert singles or seeds, f"No .fasta files found to build {task.target}"
-    if singles:
-        sh(f"cat {' '.join(singles)} > {famfa}")
+    # Written even when empty, so that MAFFT never reads a file left by an
+    # earlier build; with seeds, MAFFT accepts an empty input.
+    with open(famfa, "wb") as outfile:
+        for single in singles:
+            with open(single, "rb") as infile:
+                shutil.copyfileobj(infile, outfile)
     # Align the families, with the group profiles and the requested PDB
     # alignment, if any, as seeds.
     #

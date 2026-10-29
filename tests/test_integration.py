@@ -178,6 +178,34 @@ def test_build_hmmer_with_structures(workspace):
     assert {"SomeKinases.pdb.seq", "SomeKinases/CMGC.pdb.seq"} <= aligned
 
 
+def test_build_of_groups_without_families(workspace):
+    """A directory holding only group subdirectories is aligned from their seeds.
+
+    The directory has no family FASTA files of its own, so its alignment holds
+    exactly the rows of the two group profiles: each group's consensus and its
+    families' consensus sequences. A families file left by an earlier build
+    must not contribute a row.
+    """
+    require("fammer", "mafft")
+    ste = workspace / "SomeKinases" / "STE"
+    top = workspace / "Groups"
+    groups = {"GrpA": ("STE7", "STE11"), "GrpB": ("YSK_STE20", "STE-Unclassified")}
+    for group, families in groups.items():
+        (top / group).mkdir(parents=True)
+        for family in families:
+            shutil.copy(ste / f"{family}.fasta", top / group)
+    (workspace / "Groups.families.fa").write_text(">Stale\n" + "A" * 50 + "\n")
+    proc = run_fammer(workspace, ["build", "Groups", "--no-pdb"])
+    assert proc.returncode == 0, proc.stderr
+    expected = sorted(
+        row
+        for group in groups
+        for row in ungapped_alignment(top / f"{group}.cons.seq", "fasta")
+    )
+    assert len(expected) == 6
+    assert sorted(ungapped_alignment(workspace / "Groups.aln")) == expected
+
+
 # Commands that work on the built tree.
 
 SCAN_RUNS = recorded("scan.json")
@@ -291,11 +319,11 @@ def alignment_pairs(root):
     )
 
 
-def ungapped_alignment(path):
-    """The (identifier, ungapped upper-case sequence) pairs of a Clustal file."""
+def ungapped_alignment(path, fmt="clustal"):
+    """The (identifier, ungapped upper-case sequence) pairs of an alignment."""
     return [
         (name, seq.replace("-", "").replace(".", "").upper())
-        for name, seq in read_records(path, "clustal")
+        for name, seq in read_records(path, fmt)
     ]
 
 
