@@ -379,22 +379,19 @@ def align_profiles(task, use_pdb=None):
     assert singles or seeds, f"No .fasta files found to build {task.target}"
     if singles:
         sh(f"cat {' '.join(singles)} > {famfa}")
+    # Align the families, with the group profiles and the requested PDB
+    # alignment, if any, as seeds.
+    #
     # G-INS-i (--globalpair) aligns the trimmed consensus rows end to end.
     # The 2012-2013 sources passed --globalgenafpair, which MAFFT 6.903 to
     # 7.123 computed as --globalpair and later releases reject.
-    if seeds:
-        # Align the families with the groups
-        seed_args = " ".join(["--seed " + s for s in seeds])
-        sh(
-            "mafft --quiet --amino --globalpair --maxiterate 1000 "
-            f"{seed_args} {famfa} > {allseq}"
-        )
-        # XXX fast version
-        # sh("mafft --quiet --amino --auto %s %s > %s"
-        #    % (' '.join(['--seed '+s for s in seeds]), famfa, allseq))
-    else:
-        # No group profiles -- just align the families
-        sh(f"mafft --quiet --amino --globalpair --maxiterate 1000 {famfa} > {allseq}")
+    seed_args = "".join(f"--seed {s} " for s in seeds)
+    sh(
+        "mafft --quiet --amino --globalpair --maxiterate 1000 "
+        f"{seed_args}{famfa} > {allseq}"
+    )
+    # XXX fast version
+    # sh(f"mafft --quiet --amino --auto {seed_args}{famfa} > {allseq}")
     # Convert FASTA to "pressed" (single-row) Clustal
     with SeqIO.parse(allseq, "fasta") as parsed:
         records = [
