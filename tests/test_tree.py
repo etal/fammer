@@ -4,7 +4,8 @@
 ``taskify_subdirs`` defines the build tasks for it. Both are checked against
 the layout of the directory tree itself, read here independently: a family is
 a ``*.fasta`` file whose stem is not also the name of a sibling directory, and
-every directory is a group.
+every directory is a group. ``align_pdbs`` finds the structures of a group
+directory that has no structure alignment of its own.
 """
 
 import io
@@ -14,7 +15,7 @@ import pytest
 from Bio import Phylo
 from reference_cases import copy_tracked, is_checkout
 
-from fammer.build import taskify_subdirs, treeify_subdirs
+from fammer.build import align_pdbs, taskify_subdirs, treeify_subdirs
 from fammer.tasks import Task
 
 TIP, GROUP = 0, 1
@@ -175,3 +176,26 @@ def test_family_aln_tasks_depend_on_their_own_fasta(tree):
     for fasta in family_fastas(tree):
         task = by_target[fasta[: -len(".fasta")] + ".aln"]
         assert task.depends == [fasta]
+
+
+def test_align_pdbs_takes_the_structure_of_a_directory_without_an_alignment(
+    tmp_path, monkeypatch
+):
+    """A group directory with one structure leaves its ``.pdb.seq`` empty.
+
+    For the parent directory, align_pdbs finds that structure in the group's
+    directory and passes it to align_structs, without the empty file as a seed.
+    """
+    write_files(tmp_path, ["top/grp/single.pdb"])
+    (tmp_path / "top" / "grp.pdb.seq").write_text("")
+    calls = []
+
+    def align_structs(pdb_fnames, seed_fnames):
+        calls.append((list(pdb_fnames), list(seed_fnames)))
+        return []
+
+    monkeypatch.setattr("fammer.tmalign.align_structs", align_structs)
+    target = tmp_path / "top.pdb.seq"
+    task = Task(str(target), depends=[str(tmp_path / "top" / "grp.pdb.seq")])
+    align_pdbs(task, use_pdb=True)
+    assert calls == [([str(tmp_path / "top" / "grp" / "single.pdb")], [])]

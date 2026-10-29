@@ -63,6 +63,9 @@ def align_structs(pdb_fnames, seed_fnames=None):
     """
     seed_fnames = list(seed_fnames or [])
     _check_file_names(pdb_fnames, seed_fnames)
+    if len(pdb_fnames) < 2 and not seed_fnames:
+        # No pair of structures to align and no seed alignment to combine.
+        return []
     # 1. Align all-v-all structure pairs with TM-align
     allpairs = []
     for idx, ref_pdbfn in enumerate(pdb_fnames):

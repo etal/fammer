@@ -186,6 +186,9 @@ unaligned consensus sequences of each subfamily of Group1 (subfam1, subfam2,
 consensus sequences is completed. This can help correctly align the more
 divergent families and groups to each other.
 
+A directory with fewer than two structures to align leaves its ``.pdb.seq`` file empty, and the parent directory then aligns the structure files found directly in that directory with its own.
+Structures further down are not passed on: if the parent directory has no other structure either, a single structure is not used at any level.
+
 For nested directory trees, the option ``--tree`` generates a Newick file
 representing the structure of the directory tree. A tree based on the above
 examples would look something like this (ignoring whitespace), created as

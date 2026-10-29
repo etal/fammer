@@ -277,9 +277,11 @@ def align_pdbs(task, sub_pdb_seqs=(), use_pdb=None):
     # sub_pdb_seqs = filter(isfile, sub_pdb_seqs)
     for sub_pdb_fname in map(str, sub_pdb_seqs):
         if is_empty(sub_pdb_fname):
-            # Dummy seed alignment -- look in that dir for a .pdb
+            # Empty: that directory has fewer than two structures to align, so
+            # take its structures here
             #   ENH - recursively
-            sub_pdbs = sorted(glob(join(sub_pdb_fname[:-4], "*.pdb")))
+            sub_dir = sub_pdb_fname.removesuffix(".pdb.seq")
+            sub_pdbs = sorted(glob(join(sub_dir, "*.pdb")))
             if sub_pdbs:
                 logging.info(
                     "Picked up %d neglected PDBs: %s", len(sub_pdbs), " ".join(sub_pdbs)

@@ -158,24 +158,36 @@ def test_build_hmmer_with_structures(workspace):
     """The same build with the structure alignments enabled.
 
     Each structure alignment that the build writes has a row for every PDB
-    file in its directory. TM-align rows are named by path. Where MUSTANG is
-    installed, its alignment is a further MAFFT seed, whose rows are named by
-    file name, and ``purge_seqs`` keeps only the first of two rows with the
-    same gapped sequence, so a structure may be present under either name.
+    file in its directory. A directory with a single PDB file has nothing to
+    align, so its structure alignment is empty and the alignment of the parent
+    directory has a row for that structure instead. TM-align rows are named by
+    path. Where MUSTANG is installed, its alignment is a further MAFFT seed,
+    whose rows are named by file name, and ``purge_seqs`` keeps only the first
+    of two rows with the same gapped sequence, so a structure may be present
+    under either name.
     """
     require("fammer", "mafft", "hmmbuild", "hmmpress", "TMalign")
     argv = [arg for arg in recorded("build.json")["argv"] if arg != "--no-pdb"]
     proc = run_fammer(workspace, argv)
     assert proc.returncode == 0, proc.stderr
-    aligned = set()
-    for pdbseq in sorted(workspace.rglob("*.pdb.seq")):
-        rows = {os.path.basename(name) for name, _seq in read_records(pdbseq, "fasta")}
-        if rows:
-            topdir = pdbseq.with_name(pdbseq.name.removesuffix(".pdb.seq"))
-            pdbs = {path.name for path in topdir.glob("*.pdb")}
-            assert pdbs <= rows, pdbseq
-            aligned.add(pdbseq.relative_to(workspace).as_posix())
+    rows = {
+        pdbseq: {os.path.basename(name) for name, _seq in read_records(pdbseq, "fasta")}
+        for pdbseq in workspace.rglob("*.pdb.seq")
+    }
+    aligned, in_parent = set(), set()
+    for pdbseq, names in sorted(rows.items()):
+        topdir = pdbseq.with_name(pdbseq.name.removesuffix(".pdb.seq"))
+        pdbs = {path.name for path in topdir.glob("*.pdb")}
+        label = pdbseq.relative_to(workspace).as_posix()
+        if names:
+            assert pdbs <= names, label
+            aligned.add(label)
+        elif pdbs:
+            parent = topdir.parent.with_name(topdir.parent.name + ".pdb.seq")
+            assert pdbs <= rows[parent], label
+            in_parent.add(label)
     assert {"SomeKinases.pdb.seq", "SomeKinases/CMGC.pdb.seq"} <= aligned
+    assert in_parent == {"SomeKinases/STE.pdb.seq"}
 
 
 def test_build_of_groups_without_families(workspace):

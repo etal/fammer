@@ -102,6 +102,12 @@ def test_align_structs_rejects_a_repeated_structure(no_subprocess):
         tmalign.align_structs(["a.pdb", "b.pdb", "a.pdb"])
 
 
+@pytest.mark.parametrize("names", [[], ["a.pdb"]])
+def test_align_structs_of_fewer_than_two_structures_is_empty(no_subprocess, names):
+    """With no pair and no seed there is nothing to align, and no program runs."""
+    assert tmalign.align_structs(names) == []
+
+
 def test_output_without_a_score_raises_value_error():
     with pytest.raises(ValueError, match="No TM-score .* a.pdb, b.pdb"):
         tmalign.read_tmalign_as_seqrec_pair(UNPARSEABLE_OUTPUT, "a.pdb", "b.pdb")
