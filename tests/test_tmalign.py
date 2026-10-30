@@ -1,9 +1,9 @@
 """Properties of fammer.tmalign that need no external program.
 
 The file-name checks of align_structs, the errors of the TM-align output
-parser, and the choice of seed pairs by mst_pairs. External programs are
-replaced where align_structs would start one, so that the checks are shown to
-run before any alignment.
+parser, the choice of seed pairs by mst_pairs, and the removal of MAFFT's seed
+prefix. External programs are replaced where align_structs would start one, so
+that the checks are shown to run before any alignment.
 """
 
 import io
@@ -17,7 +17,7 @@ from Bio.SeqRecord import SeqRecord
 from reference_cases import TOOL_OUTPUTS
 
 from fammer import tmalign
-from fammer._share import UsageError
+from fammer._share import UsageError, write_fasta
 
 # The whole standard output of TM-align 20240303 for an input file it cannot
 # parse (missing, empty, or without atoms); it still exits with status 0.
@@ -180,3 +180,29 @@ def test_mst_pairs_is_a_maximum_spanning_tree_independent_of_input_order():
     assert networkx.is_tree(networkx.Graph([tuple(edge) for edge in edges]))
     total = sum(SCORES[tuple(sorted(edge))] for edge in edges)
     assert total == pytest.approx(max_total_score())
+
+
+def test_seed_prefix_is_removed_from_the_identifier_and_the_header():
+    """A seed row is written with its structure named once and its TM-score.
+
+    MAFFT prefixes the whole header of a seed row, not only the identifier.
+    """
+    mafft_output = (
+        ">_seed_1JST.pdb TMalign TM-score=0.826490\nAC-DE\n"
+        ">_seed_2ERK.pdb\nAC-DF\n"
+        ">_seed_3BEG.pdb from _seed_3BEG.pdb\nAC-DG\n"
+        ">1O9U.pdb TMalign TM-score=0.824870\nACCDE\n"
+    )
+    records = tmalign.clean_and_dedupe_seqs(
+        SeqIO.parse(io.StringIO(mafft_output), "fasta")
+    )
+    handle = io.StringIO()
+    write_fasta(records, handle)
+    assert handle.getvalue().splitlines()[::2] == [
+        ">1JST.pdb TMalign TM-score=0.826490",
+        ">2ERK.pdb",
+        ">3BEG.pdb from _seed_3BEG.pdb",
+        ">1O9U.pdb TMalign TM-score=0.824870",
+    ]
+    first = next(SeqIO.parse(io.StringIO(handle.getvalue()), "fasta"))
+    assert tmalign.tmscore_from_description(first.description) == 0.82649

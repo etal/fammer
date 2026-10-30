@@ -228,4 +228,5 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   `fasta_parsed`, `clustal_parsed`, `with_description` and `with_description_ungap` lose the repeated identifier, and `empty_description` loses its empty line.
   The `constructed` case of `_share.write_fasta` now raises `IndexError`, because Biopython's writer fails on its `blankdesc` record, whose description is two spaces; no parser produces such a description, since both strip the title, and the recorded code wrote `>blankdesc`.
   On the end-to-end runs, `tree_after_edit` rewrites `DYRK.fasta` with the same 63 records and headers that name each identifier once, and the current checksum of `CDK.fasta` in `single_aln_after_edit` reflects the same change.
-  Structure alignments are unaffected: their descriptions (`TMalign TM-score=…`) do not begin with the identifier, so the identifier is still written before them.
+  A structure alignment is written with headers such as `>1JST.pdb TMalign TM-score=0.826490`: the identifier is written before a description of the form `TMalign TM-score=…`.
+  For three or more structures, `clean_and_dedupe_seqs` also removes the `_seed_` prefix that MAFFT adds to the first word of a seed row's description, so that word is the identifier and the header names the structure once.

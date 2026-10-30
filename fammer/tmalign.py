@@ -217,10 +217,15 @@ def clean_and_dedupe_seqs(records, best_score=False):
     else:
         seen = set()
     for record in records:
-        # Remove the _seed_ prefix from each sequence ID
+        # Remove the _seed_ prefix from each sequence ID, and from the
+        # description, where MAFFT keeps the whole seed header
         if record.id.startswith("_seed_"):
+            seed_id = record.id
             record.id = record.id[len("_seed_") :]
             record.name = record.id
+            words = record.description.split(None, 1)
+            if words and words[0] == seed_id:
+                record.description = " ".join([record.id, *words[1:]])
         # Check for duplicates.
         if best_score:
             # If a previously seen PDB was aligned better (per the TM-score),
