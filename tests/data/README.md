@@ -110,7 +110,7 @@ Pure-Python functions, called in-process.
 - `share-scan-add.json`: `_share.parse_scanned_hits` on the example in its docstring, on a synthetic table with ties, and on `tool-outputs/hmmsearch/twenty.fasta.SomeKinases_all.tbl`; `scan.write_summary` and `scan.write_table` output; `add.filter_profile` and `add.filter_evalue`; `_share.write_fasta`.
 - `update_fasta.json`: `ungap_and_unique` on synthetic record sets and on `profiles/ROPK/PKL.aln`, and `is_same_aln_fasta` against several FASTA variants of one alignment.
 - `tmalign.json`: `read_tmalign_as_seqrec_pair` on each file in `tool-outputs/tmalign/`, as written and with its final CPU-time line removed; `tmscore_from_description`, `clean_and_dedupe_seqs`, `purge_seqs` and `mst_pairs`.
-- `cluster.json`: `geom_mean`, `cluster.write_fasta`, and `load_tree` on input that is neither `.aln` nor `.fasta`.
+- `cluster.json`: `geom_mean`, `cluster.write_fasta` (since removed; see "FASTA headers" under "Deliberate differences"), and `load_tree` on input that is neither `.aln` nor `.fasta`.
 - `hmmer.json`: `_share.get_hmm_evalues`, `add.get_hmm_len` and `add.walk_profiles`, which need HMMER or built profiles and so run in the end-to-end workspace after `fammer build`.
 
 ### `py27/e2e/`
@@ -149,6 +149,7 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
   The current code keeps those sequences.
 - **Duplicated identifiers in FASTA headers.**
   `_share.write_fasta` and `cluster.write_fasta` write the identifier before a description that already begins with it (`>seq1 seq1 some description`), and `cluster.write_fasta` writes an empty line after a header without a description.
+  The current code writes the identifier once; see "FASTA headers" under "Deliberate differences".
 - **The structure-alignment path fails.**
   TM-align 20240303 ends its output with a CPU-time line, so `read_tmalign_as_seqrec_pair` fails its assertion on all three recorded pairs; with that line removed it parses them.
   `mst_pairs` raises `TypeError` because Biopython 1.67 and later cannot hash a `SeqRecord`.
@@ -220,3 +221,11 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   The recorded code asked for a minimum spanning tree over the reciprocal TM-score, which selects the same edges but divides by zero on a score of zero.
   Under Biopython before 1.67 each pair of records formed its own component, so every one of the N(N-1)/2 pairs became a MAFFT seed, and under later versions it raises `TypeError`.
   Both `mst_pairs` cases now return the three edges from `A.pdb`, which carry the three highest scores, whether or not the records can be hashed.
+- **FASTA headers** (7 cases).
+  `update-fasta`, `build` (for `.pdb.seq` files) and `cluster` now write unwrapped FASTA through the one helper `_share.write_fasta`, which uses Biopython's `fasta-2line` format.
+  A header is the record's description when the first word of the description is the identifier, as it is for every record a FASTA or Clustal parser returns, and otherwise the identifier followed by the description; sequences stay on one line.
+  `cluster.write_fasta` is gone: `cluster` now ungaps the records of an alignment and passes them to `_share.write_fasta`, and its three recorded cases are replayed that way.
+  `fasta_parsed`, `clustal_parsed`, `with_description` and `with_description_ungap` lose the repeated identifier, and `empty_description` loses its empty line.
+  The `constructed` case of `_share.write_fasta` now raises `IndexError`, because Biopython's writer fails on its `blankdesc` record, whose description is two spaces; no parser produces such a description, since both strip the title, and the recorded code wrote `>blankdesc`.
+  On the end-to-end runs, `tree_after_edit` rewrites `DYRK.fasta` with the same 63 records and headers that name each identifier once, and the current checksum of `CDK.fasta` in `single_aln_after_edit` reflects the same change.
+  Structure alignments are unaffected: their descriptions (`TMalign TM-score=…`) do not begin with the identifier, so the identifier is still written before them.

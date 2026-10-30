@@ -884,9 +884,17 @@ GEOM_MEAN_INPUTS = {
 
 
 def cluster_write_fasta(rows, do_ungap):
+    """The FASTA text cluster.write_clusters writes for the records of rows.
+
+    The recorded cluster.write_fasta is gone; write_clusters now ungaps the
+    records of an alignment and passes them to _share.write_fasta.
+    """
+    records = make_records(rows)
+    if do_ungap:
+        for rec in records:
+            rec.seq = Seq(_share.ungapped(rec.seq))
     handle = io.StringIO()
-    for rec in make_records(rows):
-        cluster.write_fasta(rec, handle, do_ungap=do_ungap)
+    _share.write_fasta(records, handle)
     return handle.getvalue()
 
 

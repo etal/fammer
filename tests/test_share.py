@@ -1,17 +1,23 @@
-"""Properties of fammer._share.parse_scanned_hits on hmmsearch --tblout text.
+"""Properties of fammer._share.parse_scanned_hits and fammer._share.write_fasta.
 
 For each target sequence the parser keeps the profile with the smallest
 best-1-domain E-value (column 8). When several profiles tie, the profile on the
 first such row is kept. The tests compare the parser with an independent
 oracle over every ordering of a small table.
+
+write_fasta writes each record as one header line and one unwrapped sequence
+line, with the record's identifier once in the header.
 """
 
 import io
 import itertools
 
 import pytest
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
-from fammer._share import parse_scanned_hits
+from fammer._share import parse_scanned_hits, write_fasta
 
 HEADER = [
     "#                                  --- full sequence ---- --- best 1 dom ----\n",
@@ -160,3 +166,42 @@ def test_zero_evalue_beats_every_positive_one_in_any_order():
     for order in itertools.permutations(rows):
         assert parse([tblout_line(*row) for row in order]) == oracle(list(order))
         assert parse([tblout_line(*row) for row in order])["s"] == ("p2", 0.0)
+
+
+def written(records):
+    """The text write_fasta writes for records."""
+    handle = io.StringIO()
+    write_fasta(records, handle)
+    return handle.getvalue()
+
+
+def test_a_fasta_header_is_written_back_unchanged():
+    """A parsed description already starts with the identifier; it is not repeated."""
+    text = ">seq1 some description\nACDEFGHIKLMNPQRSTVWY\n"
+    assert written(SeqIO.parse(io.StringIO(text), "fasta")) == text
+
+
+def test_a_record_without_a_description_has_the_identifier_alone():
+    """No trailing space after the identifier and no blank line after the header."""
+    record = SeqRecord(Seq("AC-DE"), id="s2", description="")
+    assert written([record]) == ">s2\nAC-DE\n"
+
+
+def test_a_clustal_record_has_the_identifier_once():
+    """A Clustal parser sets the description to the identifier."""
+    text = "CLUSTAL W\n\nconsensus  YLVG--RVLG\nother      YLVGK-RVLG\n"
+    assert written(SeqIO.parse(io.StringIO(text), "clustal")) == (
+        ">consensus\nYLVG--RVLG\n>other\nYLVGK-RVLG\n"
+    )
+
+
+def test_a_description_without_the_identifier_follows_it():
+    """Structure alignments keep the TM-score that build.align_pdbs reads back."""
+    record = SeqRecord(Seq("ACDE"), id="1ATP.pdb", description="TMalign TM-score=0.5")
+    assert written([record]) == ">1ATP.pdb TMalign TM-score=0.5\nACDE\n"
+
+
+def test_long_sequences_are_not_wrapped():
+    """A sequence longer than the 60 columns of wrapped FASTA stays on one line."""
+    record = SeqRecord(Seq("ACDEFGHIKL" * 30), id="long", description="")
+    assert written([record]).splitlines() == [">long", "ACDEFGHIKL" * 30]

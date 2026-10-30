@@ -38,13 +38,23 @@ def read_headers(path):
         return [line[1:] for line in handle.read().splitlines() if line[0:1] == ">"]
 
 
-def input_ids(name):
-    """Identifiers of the sequences in an input file, as read by Biopython."""
+def header_ids(headers):
+    """The identifier of each header line, its first word."""
+    return [header.split(None, 1)[0] for header in headers]
+
+
+def input_records(name):
+    """The records of an input file, as read by Biopython."""
     path = INPUTS[name]
     with open(path, encoding="utf-8") as handle:
         if name.endswith(".aln"):
-            return [rec.id for rec in AlignIO.read(handle, "clustal")]
-        return [rec.id for rec in SeqIO.parse(handle, "fasta")]
+            return list(AlignIO.read(handle, "clustal"))
+        return list(SeqIO.parse(handle, "fasta"))
+
+
+def input_ids(name):
+    """Identifiers of the sequences in an input file, as read by Biopython."""
+    return [rec.id for rec in input_records(name)]
 
 
 class RecordedTools:
@@ -155,6 +165,8 @@ def test_clusters_match_the_recording(replay):
     Clusters of equal size are numbered in the order of a dictionary keyed by
     clade objects, which Python 2 hashed by identity, so the recording lists
     the memberships ordered by size and content.
+    Members are compared by identifier, because the recorded headers repeat
+    the identifier before the description.
     """
     name, tmp_path, (_, written, _, _) = replay
     outputs = RECORDED[name]["outputs"]
@@ -163,14 +175,40 @@ def test_clusters_match_the_recording(replay):
     for fname in sorted(written):
         if fname.endswith(".xml"):
             continue
-        headers = read_headers(tmp_path / fname)
+        headers = header_ids(read_headers(tmp_path / fname))
         if fname.endswith(".Unique"):
             unique = headers
         else:
             found.append(headers)
     found.sort(key=lambda headers: (-len(headers), headers))
-    assert found == outputs["clusters"]
-    assert unique == outputs["unique"]
+    recorded = sorted(map(header_ids, outputs["clusters"]), key=lambda h: (-len(h), h))
+    assert found == recorded
+    if outputs["unique"] is None:
+        assert unique is None
+    else:
+        assert unique == header_ids(outputs["unique"])
+
+
+def test_written_records_keep_the_input_header(replay):
+    """Each record is written as its input header and one line of sequence.
+
+    The header names the identifier once, and sequences read from an alignment
+    are written without gaps, in upper case.
+    The check covers the clusters written before a recorded failure.
+    """
+    name, tmp_path, (_, written, _, _) = replay
+    by_id = {rec.id: rec for rec in input_records(name)}
+    for fname in written:
+        if fname.endswith(".xml"):
+            continue
+        lines = (tmp_path / fname).read_text(encoding="utf-8").splitlines()
+        for header, seq in zip(lines[::2], lines[1::2], strict=True):
+            rec = by_id[header[1:].split(None, 1)[0]]
+            assert header == ">" + rec.description
+            if name.endswith(".aln"):
+                assert seq == str(rec.seq).replace("-", "").replace(".", "").upper()
+            else:
+                assert seq == str(rec.seq)
 
 
 def test_log_matches_the_recording(replay):
@@ -190,7 +228,7 @@ def test_clusters_and_unique_partition_the_input(successful_replay):
     members = []
     for fname in written:
         if not fname.endswith(".xml"):
-            members.extend(h.split()[0] for h in read_headers(tmp_path / fname))
+            members.extend(header_ids(read_headers(tmp_path / fname)))
     ids = input_ids(name)
     assert len(set(ids)) == len(ids)
     assert sorted(members) == sorted(ids)

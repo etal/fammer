@@ -23,9 +23,10 @@ from io import StringIO
 from Bio import AlignIO, Phylo, SeqIO
 from Bio.Graphics.ColorSpiral import ColorSpiral
 from Bio.Phylo.BaseTree import BranchColor
+from Bio.Seq import Seq
 from biofrills import alnutils
 
-from ._share import UsageError, ungapped
+from ._share import UsageError, ungapped, write_fasta
 
 logger = logging.getLogger(__name__)
 
@@ -153,17 +154,21 @@ def geom_mean(arr):
 
 
 def write_clusters(seqfname, tree, clusters, unclustered):
-    """Write output files: clusters & unique as FASTA, tree as phyloXML."""
+    """Write output files: clusters & unique as FASTA, tree as phyloXML.
+
+    Sequences read from an alignment are written ungapped.
+    """
     is_aln = seqfname.endswith(".aln")
     with SeqIO.parse(seqfname, "clustal" if is_aln else "fasta") as parsed:
         seq_idx = SeqIO.to_dict(parsed)
+    if is_aln:
+        for rec in seq_idx.values():
+            rec.seq = Seq(ungapped(rec.seq))
 
     def write_cluster(cluster, fname):
         """Write the sequences of cluster tips to a FASTA file."""
         records = [seq_idx[seqid] for seqid in sorted(cluster)]
-        with open(fname, "w+") as handle:
-            for rec in records:
-                write_fasta(rec, handle, do_ungap=is_aln)
+        write_fasta(records, fname)
         logger.info("Wrote %s (%d sequences)", fname, len(records))
 
     colors = [
@@ -183,17 +188,3 @@ def write_clusters(seqfname, tree, clusters, unclustered):
     treefname = os.path.basename(seqfname) + ".xml"
     Phylo.write(tree, treefname, "phyloxml")
     logger.info("Wrote %s", treefname)
-
-
-def write_fasta(record, handle, do_ungap=False):
-    """Ungap and write a SeqRecord to a handle in single-line FASTA format."""
-    if record.description:
-        topline = f">{record.id} {record.description}"
-    else:
-        # This newline and the one written below leave a blank line between
-        # the header and the sequence, as the recorded reference output does.
-        topline = f">{record.id}\n"
-    seq = str(record.seq).strip()
-    if do_ungap:
-        seq = ungapped(seq)
-    handle.write(topline + "\n" + seq + "\n")

@@ -3,7 +3,7 @@
 import collections
 import tempfile
 
-from Bio.File import as_handle
+from Bio import SeqIO
 
 from .tasks import sh
 
@@ -90,12 +90,6 @@ def ungapped(seq):
     return str(seq).replace("-", "").replace(".", "").upper()
 
 
-def write_fasta(records, fname):
-    """Write a FASTA file without wrapping lines."""
-    with as_handle(fname, "w+") as outfile:
-        for rec in records:
-            descr = rec.description.strip()
-            if descr:
-                outfile.write(f">{rec.id} {descr}\n{rec.seq}\n")
-            else:
-                outfile.write(f">{rec.id}\n{rec.seq}\n")
+def write_fasta(records, dest):
+    """Write records to a path or handle as FASTA without wrapping lines."""
+    SeqIO.write(records, dest, "fasta-2line")
