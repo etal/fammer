@@ -79,7 +79,9 @@ markers = [
 extend-exclude = [".pixi", "tests/data/capture_py27.py"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "LOG", "G"]
+# C403 and C405 flag set([...]); the rest of the flake8-comprehensions
+# family is not selected.
+select = ["E", "F", "W", "I", "UP", "B", "LOG", "G", "C403", "C405"]
 
 # biofrills and biocma come from their repositories at pinned commits, which
 # the lock files then record; moving to a newer commit is a deliberate change
