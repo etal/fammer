@@ -286,12 +286,12 @@ def find_clusters(tree, min_size=None):
         min_size = max(4, round(tree.count_terminals() ** 0.4))
     clusters = {}
     unclustered = set()
-    seen_subnodes = set([tree.root])
+    seen_subnodes = {tree.root}
     for clade in get_clades_to_cut(tree):
         subnodes = list(clade.find_clades())
         if not seen_subnodes.isdisjoint(subnodes):
             continue
-        taxa = set([k.name for k in subnodes if k.is_terminal()])
+        taxa = {k.name for k in subnodes if k.is_terminal()}
         if len(taxa) >= min_size:
             clusters[clade] = taxa
             seen_subnodes.update(subnodes)
@@ -307,7 +307,7 @@ def find_clusters(tree, min_size=None):
             if not seen_subnodes.isdisjoint(subnodes):
                 continue
             seen_subnodes.update(subnodes)
-            taxa = set([k.name for k in subnodes if k.is_terminal()])
+            taxa = {k.name for k in subnodes if k.is_terminal()}
             if len(taxa) >= min_size:
                 clusters[clade] = taxa
             else:
