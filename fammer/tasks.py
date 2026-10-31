@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import subprocess
 from os.path import exists, isfile
 
@@ -42,17 +43,18 @@ def sh(cmd):
 def which(exenames):
     """Returns the full path to an executable under any of the given names.
 
+    The names are tried in order, and None is returned if none is found.
+
     Example::
 
         >>> which(['raxml', 'raxmlHPC', 'raxmlHPC-PTHREADS'])
         '/usr/local/bin/raxmlHPC'
     """
     for exe in exenames:
-        try:
-            path = subprocess.check_output(["which", exe], text=True)
-            return path.strip()
-        except subprocess.CalledProcessError:
-            pass
+        path = shutil.which(exe)
+        if path:
+            return path
+    return None
 
 
 def is_empty(path):
