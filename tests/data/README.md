@@ -60,7 +60,8 @@ It refuses to run if the fammer sources or the input directories `profiles/` and
 Two consecutive captures on the same machine produced identical files.
 A capture on a different kind of file system produces the order-only differences described under "Interpreting a mismatch".
 On Linux, create the first environment without `CONDA_SUBDIR`.
-fammer calls the FastTree program `fasttree`, whereas bioconda installs it as `FastTree`; the case-insensitive default macOS file system resolves one name to the other, but on Linux a symbolic link named `fasttree` is needed.
+The recorded sources call the FastTree program `fasttree`, whereas bioconda installs it as `FastTree`; the case-insensitive default macOS file system resolves one name to the other, but on Linux the capture needs a symbolic link named `fasttree`.
+The current code looks for either name.
 
 ### The MAFFT wrapper
 
@@ -157,9 +158,12 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
   The current code reads the output as written and returns a spanning tree; see "Structure alignment" under "Deliberate differences".
 - **`cluster` fails on identifiers containing `:`.**
   Newick reserves `:`, so tip names such as `TAIR|locus:2011201` are read back truncated, and the `CDK.aln` run raises `KeyError` after writing its first clusters.
+  The current code gives FastTree placeholder names; see "Identifiers containing a colon" under "Deliberate differences".
 - **`cluster.geom_mean` underflows.**
   The product of 249 or more branch lengths of 0.05 is zero, as is any product containing a zero-length branch.
-  FastTree gives 9 of the 631 tips of `PKL.aln` a length of zero, and the product of the other 622 also underflows to zero, so the threshold is zero and 418 internal clades become candidates to cut.
+  FastTree gives 9 of the 631 tips of `PKL.aln` a length of zero, but collapsing the weakly supported splits above them adds the length of each split to its tips, so no tip length is zero when the threshold is computed.
+  The product of the 631 tip lengths underflows to zero nonetheless, so the threshold is zero and all 418 internal clades become candidates to cut.
+  The current code computes the mean in log space; see "Branch-length threshold" under "Deliberate differences".
 
 ## Interpreting a mismatch
 
@@ -170,8 +174,9 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
 - **External programs.**
   End-to-end results and `tool-outputs/` depend on the program versions above; a different MAFFT, HMMER or FastTree version is expected to change them.
 - **Cluster numbering.**
-  `cluster` numbers clusters of equal size in the dictionary order of `Bio.Phylo` clade objects, which Python 2 hashes by identity, so the numbering and the colors in its phyloXML output varied between runs.
+  The recorded `cluster` numbers clusters of equal size in the dictionary order of `Bio.Phylo` clade objects, which Python 2 hashes by identity, so the numbering and the colors in its phyloXML output varied between runs.
   `e2e/cluster.json` therefore records the clusters as membership lists ordered by size and content, not by output file name, and does not record the phyloXML file.
+  The current code numbers clusters of equal size by their sorted member identifiers, which gives the order of the recording on all three runs, so the replay compares the clusters in the order of their numbers.
 - **File-system enumeration order.**
   Several code paths visit files in the order the file system lists them: the recorded `taskify_subdirs` lists PDB files with an unsorted `glob`, which the current code sorts, `build.all_hmm` concatenates profiles in the order `find` returns them, and `add`, `update-fasta` and `refine` walk the tree with `os.walk` or `glob`.
   These fixtures follow the order of the case-insensitive APFS volume that ran the capture.
@@ -190,12 +195,13 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
 ## Deliberate differences
 
 `replay.py` runs the recorded cases again with the current sources of this repository and writes each case whose outcome differs from the recorded one to `differences.json`.
-It replays every case under `library/` except those of `hmmer.json`, which need HMMER and built profiles, and the runs of `e2e/update-fasta.json`.
+It replays every case under `library/` except those of `hmmer.json`, which need HMMER and built profiles, the runs of `e2e/update-fasta.json`, and the runs of `e2e/cluster.json`.
 The cases, and the way an outcome is compared with a recorded one, are defined in `tests/reference_cases.py`, which `tests/test_reference.py` uses as well.
 A library entry gives the fixture file relative to `py27/`, the section, the case name or position, and the recorded and current outcomes.
 Values are compared exactly, and an exception by its type only; a recorded built-in exception type also accepts its subclasses, so the `FileNotFoundError` of Python 3 matches a recorded `OSError`.
 The cases of `library/mapgaps.json` form three sections: `consensus` compares the recorded consensus sequence with the one biofrills now computes, `mg_aln2cma` runs the function, and `biocma.write` runs biocma on the alignment with the recorded consensus prepended; the last two compare the SHA-256 of the written profile with that of the file kept under `library/mapgaps/`.
-An end-to-end case is replayed in-process on a copy of `profiles/SomeKinases` with the alignments under `e2e/build/`, so it needs no external program; its entry gives the fields that differ among the log lines (without line numbers, in sorted order) and the lists of created, modified and deleted files, and, for each file whose contents differ, the record counts and checksums of both versions with the identifiers found in only one of them.
+An update-fasta run is replayed in-process on a copy of `profiles/SomeKinases` with the alignments under `e2e/build/`, so it needs no external program; its entry gives the fields that differ among the log lines (without line numbers, in sorted order) and the lists of created, modified and deleted files, and, for each file whose contents differ, the record counts and checksums of both versions with the identifiers found in only one of them.
+A cluster run is replayed in-process with the recorded output of MAFFT and FastTree; its entry gives the fields that differ among the outcome, the log, the files written, the members of each cluster in the order of the cluster numbers, and the members of the Unique file.
 Every entry is deliberate and is explained below; a test of the current code expects the fixture value except where `differences.json` records another, and `tests/test_reference.py` fails on an entry whose case no longer differs.
 After a change that moves a recorded output, regenerate the file from the repository root and explain the new entries here:
 
@@ -230,3 +236,15 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   On the end-to-end runs, `tree_after_edit` rewrites `DYRK.fasta` with the same 63 records and headers that name each identifier once, and the current checksum of `CDK.fasta` in `single_aln_after_edit` reflects the same change.
   A structure alignment is written with headers such as `>1JST.pdb TMalign TM-score=0.826490`: the identifier is written before a description of the form `TMalign TM-score=…`.
   For three or more structures, `clean_and_dedupe_seqs` also removes the `_seed_` prefix that MAFFT adds to the first word of a seed row's description, so that word is the identifier and the header names the structure once.
+- **Branch-length threshold** (6 cases and one run).
+  `geom_mean` computes the mean of the logarithms, so a long input no longer underflows: `n250_of_0.05` and `n500_of_0.05` give `0.05000000000000001` instead of `0.0`, and `three_values` and `n100_of_0.05` differ from the recorded values in the last bit.
+  It accepts positive numbers only, so `with_zero` raises `ValueError`, and `empty` raises `ZeroDivisionError` instead of `TypeError`.
+  `get_clades_to_cut` leaves tips of length zero, which FastTree gives to a sequence identical to another, out of the mean, and never cuts a branch of length zero.
+  `statistics.geometric_mean` is not used, because Python 3.12 raises an error on a zero and Python 3.13 and later return zero.
+  On `PKL.aln` the threshold is 0.0701 instead of zero, and 369 of the 418 internal clades are candidates to cut; the clusters and the Unique file are unchanged, and only the logged count differs.
+  The trees of `CDK.aln` and `DYRK.fasta`, whose products did not underflow, keep 100 and 42 candidates.
+- **Identifiers containing a colon** (one run).
+  `cluster` gives FastTree the names `seq0`, `seq1` and so on, in alignment order, and renames the tips of the tree it returns to the original identifiers.
+  The `CDK.aln` run now succeeds: after the same eight clusters it writes `CDK.aln.Unique` with 45 sequences, including `TAIR|locus:2011761` and `TAIR|Locus:2037410`, and `CDK.aln.xml`, and logs both files.
+  The recorded FastTree output names each tip by the identifier FastTree read, truncated at the first `:` or other character that ends a name, so the replay renames those tips to the names the current code gives FastTree, matching the sequences by position.
+  FastTree 2.2.0 on the `CDK.aln` blocks with the placeholder names returns the recorded topology.

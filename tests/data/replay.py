@@ -2,10 +2,11 @@
 """Replay recorded reference cases against the current fammer code.
 
 Every library case recorded under py27/library, except those of hmmer.json,
-which need HMMER, and the update-fasta runs of e2e/update-fasta.json are run
-again with the current sources in this repository, and each case whose
-outcome differs from the recorded one is written to differences.json beside
-this script.  README.md beside it explains each difference.
+which need HMMER, the update-fasta runs of e2e/update-fasta.json and the
+cluster runs of e2e/cluster.json are run again with the current sources in
+this repository, and each case whose outcome differs from the recorded one is
+written to differences.json beside this script.  README.md beside it explains
+each difference.
 
 The cases and the comparison are those of tests/reference_cases.py, which
 tests/test_reference.py uses as well.  The script needs a Git checkout and
@@ -27,12 +28,12 @@ OUT = os.path.join(HERE, "differences.json")
 sys.path[:0] = [REPO, TESTS]
 
 from reference_cases import (  # noqa: E402
+    RUN_DIFFERENCES,
     all_cases,
     case_outcome,
     comparable,
     matches,
     missing_requirements,
-    update_fasta_run_differences,
 )
 
 from fammer import update_fasta  # noqa: E402
@@ -60,7 +61,8 @@ def main():
                     "current": current,
                 }
             )
-    found.extend(update_fasta_run_differences())
+    for run_differences in RUN_DIFFERENCES.values():
+        found.extend(run_differences())
     text = json.dumps(
         {"differences": found}, indent=1, separators=(",", ": "), ensure_ascii=True
     )

@@ -18,14 +18,18 @@ standard output, the current call is recorded in the same way.
 The update-fasta runs of py27/e2e/update-fasta.json are replayed in-process,
 in order, on a scratch copy of profiles/SomeKinases with the alignments that
 the recorded `fammer build` wrote, and are compared as described in
-update_fasta_run_differences.
+update_fasta_run_differences.  The cluster runs of py27/e2e/cluster.json are
+replayed in-process with the recorded output of MAFFT and FastTree, as
+described in replay_cluster_run.
 """
 
+import argparse
 import builtins
 import contextlib
 import hashlib
 import importlib.util
 import io
+import itertools
 import json
 import logging
 import os
@@ -37,6 +41,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache, partial
 from pathlib import Path
+from unittest import mock
 
 from Bio import AlignIO, SeqIO
 from Bio.Align import MultipleSeqAlignment
@@ -989,10 +994,14 @@ def snapshot(topdir):
     return result
 
 
+def header_ids(headers):
+    """The identifier of each header line, its first word."""
+    return [header.split(None, 1)[0] for header in headers]
+
+
 def fasta_ids(text):
-    return [
-        line[1:].split(None, 1)[0] for line in text.splitlines() if line.startswith(">")
-    ]
+    """The identifiers of the records in FASTA text."""
+    return header_ids(line[1:] for line in text.splitlines() if line.startswith(">"))
 
 
 def summarize_fasta(recorded, current):
@@ -1047,8 +1056,6 @@ def update_fasta_run_differences():
     because update-fasta visits the files in the enumeration order of the
     file system.
     """
-    import argparse
-
     data = load(UPDATE_FASTA_RUNS)
     found = []
     with tempfile.TemporaryDirectory(prefix="fammer-replay-e2e-") as root:
@@ -1117,3 +1124,184 @@ def update_fasta_run_differences():
                         }
                     )
     return found
+
+
+# ---------------------------------------------------------------------------
+# e2e/cluster.json
+
+CLUSTER_RUNS = "e2e/cluster.json"
+
+# Where the capture script took the input of each cluster run from.
+CLUSTER_INPUTS = {
+    "CDK.aln": FIXTURES / "e2e" / "build" / "SomeKinases" / "CMGC" / "CDK.aln",
+    "DYRK.fasta": REPO / "profiles" / "SomeKinases" / "CMGC" / "DYRK.fasta",
+    "PKL.aln": REPO / "profiles" / "ROPK" / "PKL.aln",
+}
+
+# How the recorded command lines name the temporary file FastTree reads.
+TEMPORARY_FILE = "<tmpfile>"
+
+# FastTree ends a sequence name at any of these characters (ReadAlignment in
+# FastTree.c), so the recorded trees name some tips by a truncated identifier.
+FASTTREE_NAME_END = re.compile(r"[(),: \t\r\n]")
+
+# A tip label in a Newick tree written by FastTree.
+NEWICK_TIP = re.compile(r"(?<=[(,])[^(),:;]+(?=:)")
+
+
+def cluster_input_records(name):
+    """The records of the input of a cluster run, as read by Biopython."""
+    with open(CLUSTER_INPUTS[name], encoding="utf-8") as handle:
+        if name.endswith(".aln"):
+            return list(AlignIO.read(handle, "clustal"))
+        return list(SeqIO.parse(handle, "fasta"))
+
+
+class RecordedTools:
+    """Stand-in for ``subprocess.check_output`` that replays recorded calls.
+
+    Each call must match the next recorded command line, and gets the
+    recorded standard output.
+    The names in each temporary file FastTree is given are kept in
+    ``tree_inputs``.
+
+    The recorded FastTree output names each tip by the identifier FastTree
+    read, truncated where FastTree ends a name, while the current code gives
+    FastTree placeholder names.  Each recorded tip name is therefore replaced
+    by the name given to the same sequence, matched by position: MAFFT keeps
+    the input order, so the aligned sequences are in the order of the input.
+    """
+
+    def __init__(self, expected, seqids):
+        self.expected = expected
+        self.seqids = seqids
+        self.calls = 0
+        self.tree_inputs = []
+
+    def __call__(self, argv, *args, **kwargs):
+        assert self.calls < len(self.expected), f"unrecorded call {list(argv)}"
+        recorded_argv, output_file = self.expected[self.calls]
+        self.calls += 1
+        assert kwargs.get("text") is True
+        assert len(argv) == len(recorded_argv)
+        names = None
+        for actual, wanted in zip(argv, recorded_argv, strict=True):
+            if wanted == TEMPORARY_FILE:
+                # FastTree reads this file, so it must be complete when called.
+                assert os.path.isabs(actual)
+                with open(actual, encoding="utf-8") as handle:
+                    names = [
+                        line[1:].rstrip("\n") for line in handle if line[:1] == ">"
+                    ]
+                self.tree_inputs.append(names)
+            else:
+                assert actual == wanted
+        output = (DATA / output_file).read_bytes().decode("utf-8")
+        if names is None:
+            return output
+        given = {
+            FASTTREE_NAME_END.split(seqid, maxsplit=1)[0]: name
+            for seqid, name in zip(self.seqids, names, strict=True)
+        }
+        assert len(given) == len(names), "truncated identifiers are not unique"
+        return NEWICK_TIP.sub(lambda match: given[match.group()], output)
+
+
+def written_ids(path):
+    """The identifiers of the records in a FASTA file cluster wrote."""
+    with open(path, encoding="utf-8") as handle:
+        return fasta_ids(handle.read())
+
+
+def replay_cluster_run(name, workdir):
+    """Run cmd_cluster on the input of a recorded run, in workdir.
+
+    The recorded output of MAFFT and FastTree is replayed by RecordedTools,
+    and FastTree is not looked up on PATH, so that no external program is
+    needed.  Returns the run in the form of recorded_cluster_run, and the
+    stand-in.
+    """
+    record = load(CLUSTER_RUNS)[name]
+    shutil.copy(CLUSTER_INPUTS[name], workdir)
+    seqids = [rec.id for rec in cluster_input_records(name)]
+    tools = RecordedTools(record["tool_calls"], seqids)
+    with (
+        contextlib.chdir(workdir),
+        mock.patch.object(cluster, "fasttree_program", return_value="fasttree"),
+        mock.patch.object(cluster.subprocess, "check_output", tools),
+    ):
+        before = set(os.listdir())
+        result = outcome(
+            cluster.cmd_cluster, argparse.Namespace(sequences=name), log=True
+        )
+        written = sorted(set(os.listdir()) - before)
+        clusters = []
+        for index in itertools.count():
+            fname = f"{name}.{index}"
+            if fname not in written:
+                break
+            clusters.append(written_ids(fname))
+        unique = f"{name}.Unique"
+        current = {
+            "outcome": {key: result[key] for key in result if key != "log"},
+            "log": result["log"],
+            "files_written": written,
+            "clusters": clusters,
+            "unique": written_ids(unique) if unique in written else None,
+        }
+    return current, tools
+
+
+def recorded_cluster_run(name):
+    """A recorded cluster run, as the fields replay_cluster_run returns.
+
+    The recording lists the clusters by decreasing size and then by content,
+    since the recorded code numbered clusters of equal size in an order that
+    varied between runs, and it lists each member by its header line.
+    """
+    record = load(CLUSTER_RUNS)[name]
+    result = comparable(record["result"])
+    outputs = record["outputs"]
+    unique = outputs["unique"]
+    return {
+        "outcome": {key: result[key] for key in result if key != "log"},
+        "log": result["log"],
+        "files_written": outputs["files_written"],
+        "clusters": [header_ids(headers) for headers in outputs["clusters"]],
+        "unique": None if unique is None else header_ids(unique),
+    }
+
+
+def cluster_run_differences():
+    """The differences.json entries of e2e/cluster.json.
+
+    A run is compared by its outcome, its log, the files it wrote, the
+    members of each cluster in the order of the cluster numbers, and the
+    members of the Unique file; an entry gives the fields that differ.
+    """
+    found = []
+    for name in load(CLUSTER_RUNS):
+        recorded = recorded_cluster_run(name)
+        with tempfile.TemporaryDirectory(prefix="fammer-replay-cluster-") as workdir:
+            current, _tools = replay_cluster_run(name, workdir)
+        fields = [key for key in recorded if not same(current[key], recorded[key])]
+        if fields:
+            found.append(
+                {
+                    "file": CLUSTER_RUNS,
+                    "case": name,
+                    "recorded": {key: recorded[key] for key in fields},
+                    "current": {key: current[key] for key in fields},
+                }
+            )
+    return found
+
+
+# ---------------------------------------------------------------------------
+# Replayed end-to-end runs
+
+# The differences.json entries of each fixture of replayed runs.
+RUN_DIFFERENCES = {
+    UPDATE_FASTA_RUNS: update_fasta_run_differences,
+    CLUSTER_RUNS: cluster_run_differences,
+}

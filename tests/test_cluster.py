@@ -1,195 +1,71 @@
-"""Replay of the recorded ``cluster.cmd_cluster`` runs, without external programs.
+"""Tests of ``cluster``, on the recorded runs and on captured FastTree trees.
 
 ``py27/e2e/cluster.json`` records three runs of the Python 2 code base, with the
 standard output of each MAFFT and FastTree call kept under
 ``tool-outputs/cluster/``.
-Here ``subprocess.check_output`` is replaced by a function that checks the
-command line against the recorded one and returns the recorded output, so the
-tree handling, the clustering and the output files of the current code are
-compared with the recording on any machine.
+``reference_cases.replay_cluster_run`` runs the current code on the same inputs
+with that output replayed, so the tree handling, the clustering and the output
+files are tested on any machine.
+``tests/test_reference.py`` compares each replayed run with the recording; the
+tests here check properties of the replayed runs and of the functions that
+choose the clusters.
 """
 
-import argparse
 import io
-import logging
+import math
 import os
-import shutil
 import subprocess
 import sys
 
 import pytest
-from Bio import AlignIO, Phylo, SeqIO
-from reference_cases import DATA, FIXTURES, REPO, is_checkout, load
+from Bio import Phylo
+from reference_cases import (
+    CLUSTER_RUNS,
+    DATA,
+    FASTTREE_NAME_END,
+    cluster_input_records,
+    is_checkout,
+    load,
+    replay_cluster_run,
+)
 
 from fammer import cluster
+from fammer._share import UsageError
 
-RECORDED = load("e2e/cluster.json")
-
-# Where the capture script took each input from.
-INPUTS = {
-    "CDK.aln": FIXTURES / "e2e" / "build" / "SomeKinases" / "CMGC" / "CDK.aln",
-    "DYRK.fasta": REPO / "profiles" / "SomeKinases" / "CMGC" / "DYRK.fasta",
-    "PKL.aln": REPO / "profiles" / "ROPK" / "PKL.aln",
-}
-
-TEMPORARY_FILE = "<tmpfile>"
+RECORDED = load(CLUSTER_RUNS)
 
 
-def read_headers(path):
-    """Header lines of a FASTA file, without the leading '>'."""
-    with open(path, encoding="utf-8") as handle:
-        return [line[1:] for line in handle.read().splitlines() if line[0:1] == ">"]
-
-
-def header_ids(headers):
-    """The identifier of each header line, its first word."""
-    return [header.split(None, 1)[0] for header in headers]
-
-
-def input_records(name):
-    """The records of an input file, as read by Biopython."""
-    path = INPUTS[name]
-    with open(path, encoding="utf-8") as handle:
-        if name.endswith(".aln"):
-            return list(AlignIO.read(handle, "clustal"))
-        return list(SeqIO.parse(handle, "fasta"))
-
-
-def input_ids(name):
-    """Identifiers of the sequences in an input file, as read by Biopython."""
-    return [rec.id for rec in input_records(name)]
-
-
-class RecordedTools:
-    """Stand-in for ``subprocess.check_output`` that replays recorded calls."""
-
-    def __init__(self, expected):
-        self.expected = expected
-        self.calls = 0
-        self.temporary_inputs = []
-
-    def __call__(self, argv, *args, **kwargs):
-        assert self.calls < len(self.expected), f"unrecorded call {list(argv)}"
-        recorded_argv, output_file = self.expected[self.calls]
-        self.calls += 1
-        assert kwargs.get("text") is True
-        assert len(argv) == len(recorded_argv)
-        for actual, wanted in zip(argv, recorded_argv, strict=True):
-            if wanted == TEMPORARY_FILE:
-                # FastTree reads this file, so it must be complete when called.
-                assert os.path.isabs(actual)
-                with open(actual, encoding="utf-8") as handle:
-                    self.temporary_inputs.append(
-                        [line[1:].rstrip("\n") for line in handle if line[0:1] == ">"]
-                    )
-            else:
-                assert actual == wanted
-        return (DATA / output_file).read_bytes().decode("utf-8")
-
-
-def run_case(name, tmp_path, monkeypatch, caplog):
-    """Run cmd_cluster on one recorded input in tmp_path.
-
-    Returns the KeyError it raised, or None (any other exception propagates),
-    the names of the files it wrote, the log messages at level INFO and above,
-    and the stand-in for the tools.
-    """
-    if not is_checkout():
-        pytest.skip("requires a Git checkout for profiles/, which an sdist lacks")
-    record = RECORDED[name]
-    shutil.copy(INPUTS[name], tmp_path)
-    monkeypatch.chdir(tmp_path)
-    tools = RecordedTools(record["tool_calls"])
-    monkeypatch.setattr(cluster.subprocess, "check_output", tools)
-    before = set(os.listdir(tmp_path))
-    error = None
-    with caplog.at_level(logging.INFO):
-        try:
-            cluster.cmd_cluster(argparse.Namespace(sequences=name))
-        except KeyError as exc:
-            error = exc
-    written = set(os.listdir(tmp_path)) - before
-    messages = [
-        (rec.levelname, rec.getMessage())
-        for rec in caplog.records
-        if rec.levelno >= logging.INFO
-    ]
-    return error, written, messages, tools
+def read_fasta_pairs(path):
+    """The header and sequence lines of a FASTA file cluster wrote."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return list(zip(lines[::2], lines[1::2], strict=True))
 
 
 @pytest.fixture(params=sorted(RECORDED))
-def replay(request, tmp_path, monkeypatch, caplog):
-    """The recorded case name with the outcome of replaying it."""
+def replay(request, tmp_path):
+    """The recorded case name, its scratch directory, and the replayed run."""
+    if not is_checkout():
+        pytest.skip("requires a Git checkout for profiles/, which an sdist lacks")
     name = request.param
-    return name, tmp_path, run_case(name, tmp_path, monkeypatch, caplog)
+    current, tools = replay_cluster_run(name, tmp_path)
+    return name, tmp_path, current, tools
 
 
-@pytest.fixture
-def successful_replay(replay):
-    """The replay of a case whose recorded run succeeded."""
-    name = replay[0]
-    if "error" in RECORDED[name]["result"]:
-        pytest.skip("the recorded run fails; see test_outcome_matches_the_recording")
-    return replay
-
-
-def test_outcome_matches_the_recording(replay):
-    """A run succeeds or fails with the recorded exception type.
-
-    The CDK.aln run fails by recorded defect: Newick reserves ':', so the tip
-    names containing it come back truncated and are missing from the index.
-    """
-    name, _, (error, _, _, _) = replay
-    result = RECORDED[name]["result"]
-    if "error" in result:
-        assert result["error"]["type"] == "KeyError"
-        assert isinstance(error, KeyError)
-    else:
-        assert error is None
-
-
-def test_exactly_the_recorded_tool_calls_are_made(replay):
-    """MAFFT runs only for unaligned input, and FastTree reads every sequence."""
-    name, _, (_, _, _, tools) = replay
+def test_fasttree_reads_safe_unique_names(replay):
+    """FastTree is called once, on one name per input sequence, and no name
+    contains a character at which FastTree would end it."""
+    name, _, _, tools = replay
     assert tools.calls == len(RECORDED[name]["tool_calls"])
-    (tree_input,) = tools.temporary_inputs
-    assert sorted(tree_input) == sorted(input_ids(name))
+    (names,) = tools.tree_inputs
+    assert len(names) == len(cluster_input_records(name))
+    assert len(set(names)) == len(names)
+    assert not any(FASTTREE_NAME_END.search(n) for n in names)
 
 
-def test_files_written_match_the_recording(replay):
-    """The same set of files is written, including the Unique and phyloXML ones."""
-    name, _, (_, written, _, _) = replay
-    assert written == set(RECORDED[name]["outputs"]["files_written"])
-
-
-def test_clusters_match_the_recording(replay):
-    """Clusters have the recorded members, compared without their numbers.
-
-    Clusters of equal size are numbered in the order of a dictionary keyed by
-    clade objects, which Python 2 hashed by identity, so the recording lists
-    the memberships ordered by size and content.
-    Members are compared by identifier, because the recorded headers repeat
-    the identifier before the description.
-    """
-    name, tmp_path, (_, written, _, _) = replay
-    outputs = RECORDED[name]["outputs"]
-    found = []
-    unique = None
-    for fname in sorted(written):
-        if fname.endswith(".xml"):
-            continue
-        headers = header_ids(read_headers(tmp_path / fname))
-        if fname.endswith(".Unique"):
-            unique = headers
-        else:
-            found.append(headers)
-    found.sort(key=lambda headers: (-len(headers), headers))
-    recorded = sorted(map(header_ids, outputs["clusters"]), key=lambda h: (-len(h), h))
-    assert found == recorded
-    if outputs["unique"] is None:
-        assert unique is None
-    else:
-        assert unique == header_ids(outputs["unique"])
+def test_every_run_succeeds(replay):
+    """Each run succeeds, including CDK.aln, whose identifiers contain ':'."""
+    _, _, current, _ = replay
+    assert current["outcome"] == {"value": None}
 
 
 def test_written_records_keep_the_input_header(replay):
@@ -197,15 +73,13 @@ def test_written_records_keep_the_input_header(replay):
 
     The header names the identifier once, and sequences read from an alignment
     are written without gaps, in upper case.
-    The check covers the clusters written before a recorded failure.
     """
-    name, tmp_path, (_, written, _, _) = replay
-    by_id = {rec.id: rec for rec in input_records(name)}
-    for fname in written:
+    name, tmp_path, current, _ = replay
+    by_id = {rec.id: rec for rec in cluster_input_records(name)}
+    for fname in current["files_written"]:
         if fname.endswith(".xml"):
             continue
-        lines = (tmp_path / fname).read_text(encoding="utf-8").splitlines()
-        for header, seq in zip(lines[::2], lines[1::2], strict=True):
+        for header, seq in read_fasta_pairs(tmp_path / fname):
             rec = by_id[header[1:].split(None, 1)[0]]
             assert header == ">" + rec.description
             if name.endswith(".aln"):
@@ -214,41 +88,82 @@ def test_written_records_keep_the_input_header(replay):
                 assert seq == str(rec.seq)
 
 
-def test_log_matches_the_recording(replay):
-    """The log holds the recorded messages, in the recorded order.
-
-    Clusters are written by decreasing size, so the sequence of file names and
-    counts does not depend on how clusters of equal size are numbered.
-    """
-    name, _, (_, _, messages, _) = replay
-    wanted = [(level, text) for level, _, text in RECORDED[name]["result"]["log"]]
-    assert messages == wanted
-
-
-def test_clusters_and_unique_partition_the_input(successful_replay):
-    """Every input identifier is written to exactly one cluster or Unique file."""
-    name, tmp_path, (_, written, _, _) = successful_replay
-    members = []
-    for fname in written:
-        if not fname.endswith(".xml"):
-            members.extend(header_ids(read_headers(tmp_path / fname)))
-    ids = input_ids(name)
+def test_clusters_and_unique_partition_the_input(replay):
+    """Every input identifier is written to exactly one cluster or Unique file,
+    and the phyloXML tree names each input identifier once."""
+    name, tmp_path, current, _ = replay
+    ids = [rec.id for rec in cluster_input_records(name)]
     assert len(set(ids)) == len(ids)
+    members = [i for c in current["clusters"] for i in c] + current["unique"]
     assert sorted(members) == sorted(ids)
-    assert (tmp_path / (name + ".Unique")).is_file()
+    tree = Phylo.read(tmp_path / (name + ".xml"), "phyloxml")
+    assert sorted(tip.name for tip in tree.get_terminals()) == sorted(ids)
 
 
-def test_cluster_numbers_follow_decreasing_size(successful_replay):
-    """Cluster file 0 is the largest, and sizes never increase with the number."""
-    name, tmp_path, (_, written, _, _) = successful_replay
-    numbered = {
-        int(fname.rsplit(".", 1)[1]): len(read_headers(tmp_path / fname))
-        for fname in written
-        if fname.rsplit(".", 1)[1].isdigit()
-    }
-    assert sorted(numbered) == list(range(len(numbered)))
-    sizes = [numbered[i] for i in range(len(numbered))]
-    assert sizes == sorted(sizes, reverse=True)
+def test_clusters_are_numbered_by_size_then_members(replay):
+    """Cluster file 0 is the largest, and clusters of equal size are numbered
+    in the order of their sorted member identifiers.
+
+    CDK.aln and PKL.aln each have clusters of equal size.
+    """
+    _, _, current, _ = replay
+    clusters = current["clusters"]
+    assert all(c == sorted(c) for c in clusters)
+    keys = [(-len(c), c) for c in clusters]
+    assert keys == sorted(keys)
+
+
+# ---------------------------------------------------------------------------
+# The functions that choose the clusters, on captured FastTree trees
+
+
+def captured_tree(output_file):
+    """A tree FastTree wrote, from tool-outputs/cluster/."""
+    text = (DATA / "tool-outputs" / "cluster" / output_file).read_text("utf-8")
+    return Phylo.read(io.StringIO(text), "newick")
+
+
+def test_many_tips_do_not_underflow_the_threshold():
+    """On the 631 tips of PKL.aln, the cut threshold is the geometric mean of
+    the tip lengths, not zero, so not every internal clade is a candidate.
+
+    The product of the tip lengths underflows to zero.
+    """
+    tree = cluster.prepare_tree(captured_tree("PKL.aln.0.fasttree.out"))
+    lengths = [tip.branch_length for tip in tree.get_terminals()]
+    assert len(lengths) == 631
+    assert math.prod(lengths) == 0.0
+    assert cluster.geom_mean(lengths) == pytest.approx(0.07007, abs=1e-5)
+    assert len(cluster.get_clades_to_cut(tree)) == 369
+    assert len(tree.get_nonterminals()) == 418
+
+
+@pytest.mark.parametrize(
+    ("newick", "cut_lengths"),
+    [
+        # The geometric mean of the tips c, d and e is 0.2.
+        ("((a:0.0,b:0.0)0.9:0.05,(c:0.1,d:0.4)0.9:0.3,(e:0.2,f:0.0)0.9:0.0);", [0.3]),
+        # Every tip has length zero.
+        ("((a:0.0,b:0.0)0.9:0.5,(c:0.0,d:0.0)0.9:0.0);", [0.5]),
+    ],
+)
+def test_zero_lengths_neither_set_the_threshold_nor_are_cut(newick, cut_lengths):
+    """Tips of length zero, as FastTree gives identical sequences, do not make
+    the threshold zero, and a branch of length zero is never cut."""
+    tree = Phylo.read(io.StringIO(newick), "newick")
+    tree.root.branch_length = 0.0  # as prepare_tree leaves it
+    candidates = cluster.get_clades_to_cut(tree)
+    assert [cl.branch_length for cl in candidates] == cut_lengths
+
+
+def test_a_tree_without_supports_collapses_nothing():
+    """Without support values there is no evidence that a split is weak."""
+    tree = captured_tree("DYRK.fasta.1.fasttree.out")
+    for clade in tree.find_clades():
+        clade.confidence = None
+    internal = len(tree.get_nonterminals())
+    tree = cluster.prepare_tree(tree)
+    assert len(tree.get_nonterminals()) == internal
 
 
 def test_clusters_of_equal_size_are_numbered_by_members(tmp_path, monkeypatch):
@@ -262,6 +177,30 @@ def test_clusters_of_equal_size_are_numbered_by_members(tmp_path, monkeypatch):
     cluster.write_clusters("x.fasta", tree, clusters, set())
     assert (tmp_path / "x.fasta.0").read_text("ascii").startswith(">s0\n")
     assert (tmp_path / "x.fasta.1").read_text("ascii").startswith(">s4\n")
+
+
+# ---------------------------------------------------------------------------
+# Finding FastTree
+
+
+def make_program(directory, name):
+    path = directory / name
+    path.write_text("#!/bin/sh\n", encoding="ascii")
+    path.chmod(0o755)
+    return path
+
+
+@pytest.mark.parametrize("name", cluster.FASTTREE_NAMES)
+def test_fasttree_is_found_under_either_name(tmp_path, monkeypatch, name):
+    program = make_program(tmp_path, name)
+    monkeypatch.setenv("PATH", str(tmp_path))
+    assert os.path.samefile(cluster.fasttree_program(), program)
+
+
+def test_missing_fasttree_is_reported(tmp_path, monkeypatch):
+    monkeypatch.setenv("PATH", str(tmp_path))
+    with pytest.raises(UsageError, match="fasttree, FastTree"):
+        cluster.fasttree_program()
 
 
 def test_cluster_does_not_need_reportlab():

@@ -14,7 +14,7 @@ from reference_cases import (
     DATA,
     LIBRARY,
     LIBRARY_FIXTURES,
-    UPDATE_FASTA_RUNS,
+    RUN_DIFFERENCES,
     all_cases,
     case_outcome,
     comparable,
@@ -24,7 +24,6 @@ from reference_cases import (
     matches,
     missing_requirements,
     sections,
-    update_fasta_run_differences,
 )
 
 
@@ -36,7 +35,7 @@ def difference_entries():
 
 def library_entries():
     return [
-        entry for entry in difference_entries() if entry["file"] != UPDATE_FASTA_RUNS
+        entry for entry in difference_entries() if entry["file"] not in RUN_DIFFERENCES
     ]
 
 
@@ -82,12 +81,13 @@ def test_every_recorded_section_is_compared():
         assert enumerated == set(sections(file)), file
 
 
-def test_update_fasta_runs():
-    """The update-fasta runs differ from the recorded ones as listed."""
+@pytest.mark.parametrize("file", RUN_DIFFERENCES)
+def test_runs(file):
+    """The replayed runs of a fixture differ from the recorded ones as listed."""
     if not is_checkout():
         pytest.skip("requires checkout")
-    expected = [e for e in difference_entries() if e["file"] == UPDATE_FASTA_RUNS]
-    assert update_fasta_run_differences() == expected
+    expected = [e for e in difference_entries() if e["file"] == file]
+    assert RUN_DIFFERENCES[file]() == expected
 
 
 def test_differences_name_changed_cases():

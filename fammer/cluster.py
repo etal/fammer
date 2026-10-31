@@ -4,16 +4,17 @@ Uses FastTree to quickly build a tree with branch support values, then extracts
 well-supported clades from the tree and writes the corresponding sequence sets
 to FASTA files. Unclustered sequences are written to another "Unique" file.
 Also writes a phyloXML tree file (.xml) showing clusters as colorized clades.
+The output files are written to the current directory and named after the
+base name of the input file.
 
 Depends:
     biopython (pip install biopython)
-    fasttree (apt-get install fasttree)
+    FastTree, as fasttree or FastTree (apt-get install fasttree)
     mafft (apt-get install mafft)
 
 """
 
 import colorsys
-import functools
 import logging
 import math
 import os.path
@@ -27,12 +28,16 @@ from Bio.Seq import Seq
 from biofrills import alnutils
 
 from ._share import UsageError, ungapped, write_fasta
+from .tasks import which
 
 logger = logging.getLogger(__name__)
 
 SUFFIX_ERROR = (
     "Input sequences must be a Clustal alignment (.aln) or unaligned FASTA (.fasta)"
 )
+
+# Debian installs FastTree as fasttree, and bioconda as FastTree.
+FASTTREE_NAMES = ("fasttree", "FastTree")
 
 
 def cmd_cluster(args):
@@ -93,64 +98,103 @@ def cmd_cluster(args):
 
 def load_tree(seqfname):
     """Load an alignment, build & prep a tree, return the tree object."""
+    if not seqfname.endswith((".aln", ".fasta")):
+        # A built-in ValueError, not UsageError: tests/data/py27/library/
+        # cluster.json records this type, and the reference comparison looks
+        # exception types up among the built-in names.
+        raise ValueError(SUFFIX_ERROR)
+    fasttree = fasttree_program()
     if seqfname.endswith(".aln"):
         aln = AlignIO.read(seqfname, "clustal")
-    elif seqfname.endswith(".fasta"):
+    else:
         # Run MAFFT quickly
         alndata = subprocess.check_output(
             ["mafft", "--quiet", "--auto", seqfname], text=True
         )
         aln = AlignIO.read(StringIO(alndata), "fasta")
-    else:
-        # A built-in ValueError, not UsageError: tests/data/py27/library/
-        # cluster.json records this type, and the reference comparison looks
-        # exception types up among the built-in names.
-        raise ValueError(SUFFIX_ERROR)
 
     # Use conserved (less-gappy) blocks to build the tree
     aln = alnutils.blocks(aln, 0.4)
+    # FastTree ends a name at ':', ',', a parenthesis or whitespace, so the
+    # identifiers it writes back can be truncated and no longer unique.  It
+    # is given placeholder names instead, and the tips of the tree it returns
+    # are renamed to the original identifiers.
+    seqids = {}
+    for index, rec in enumerate(aln):
+        name = f"seq{index}"
+        seqids[name] = rec.id
+        rec.id = name
+        rec.description = ""
     with tempfile.NamedTemporaryFile(mode="w") as tmp:
         AlignIO.write(aln, tmp, "fasta")
         tmp.flush()
         treedata = subprocess.check_output(
-            ["fasttree", "-pseudo", "-gamma", "-wag", tmp.name], text=True
+            [fasttree, "-pseudo", "-gamma", "-wag", tmp.name], text=True
         )
     tree = Phylo.read(StringIO(treedata), "newick")
+    for tip in tree.get_terminals():
+        tip.name = seqids[tip.name]
+    return prepare_tree(tree)
 
-    # Collapse weakly supported splits
+
+def fasttree_program():
+    """The path of the FastTree executable, under either of its names."""
+    path = which(FASTTREE_NAMES)
+    if path is None:
+        raise UsageError(
+            "FastTree is not on PATH under either name: " + ", ".join(FASTTREE_NAMES)
+        )
+    return path
+
+
+def prepare_tree(tree):
+    """Collapse weakly supported splits, ladderize, and zero the root branch.
+
+    A split is weakly supported when its support is below the mean of the
+    tree's support values.  A tree without any support values gives no
+    evidence that a split is weak, so nothing is collapsed.
+    """
     confs = [c.confidence for c in tree.find_clades() if c.confidence is not None]
-    # ENH: accept min_confidence as an option
-    min_confidence = math.fsum(confs) / len(confs)
-    # A clade without a support value counts as weakly supported.
-    tree.collapse_all(lambda c: c.confidence is None or c.confidence < min_confidence)
+    if confs:
+        # ENH: accept min_confidence as an option
+        min_confidence = math.fsum(confs) / len(confs)
+        # A clade without a support value counts as weakly supported.
+        tree.collapse_all(
+            lambda c: c.confidence is None or c.confidence < min_confidence
+        )
     tree.ladderize(reverse=True)
     tree.root.branch_length = 0.0
     return tree
 
 
 def get_clades_to_cut(tree):
-    """Select long internal branches to cut the tree at."""
-    # Index internal branches by length & clade
-    tip_branch_lengths = []
-    inner_branch_lengths = []
-    for clade in tree.find_clades():
-        if clade.is_terminal():
-            tip_branch_lengths.append(clade.branch_length)
-        else:
-            inner_branch_lengths.append(clade.branch_length)
-    tip_mean = geom_mean(tip_branch_lengths)
+    """Select long internal branches to cut the tree at.
+
+    A branch is long when it is at least the geometric mean of the tip
+    branch lengths.  A tip of length zero, which FastTree gives to a sequence
+    identical to another, has no logarithm and is left out of the mean, and
+    a branch of length zero is never long.  When every tip has length zero,
+    every branch of positive length is long.
+    """
+    tip_lengths = [cl.branch_length for cl in tree.get_terminals() if cl.branch_length]
+    tip_mean = geom_mean(tip_lengths) if tip_lengths else 0.0
     clades_to_cut = [
-        cl for cl in tree.get_nonterminals() if cl.branch_length >= tip_mean
+        cl
+        for cl in tree.get_nonterminals()
+        if cl.branch_length and cl.branch_length >= tip_mean
     ]
     clades_to_cut.sort(key=lambda cl: cl.branch_length, reverse=True)
     logger.info("# to cut (up to): %s", len(clades_to_cut))
     return clades_to_cut
 
 
-def geom_mean(arr):
-    """Geometric mean of an array of numbers."""
-    prod = functools.reduce(float.__mul__, map(float, arr))
-    return pow(prod, 1.0 / len(arr))
+def geom_mean(values):
+    """Geometric mean of a non-empty sequence of positive numbers.
+
+    It is computed in log space, because the product of a few hundred branch
+    lengths underflows to zero.
+    """
+    return math.exp(math.fsum(map(math.log, values)) / len(values))
 
 
 def write_clusters(seqfname, tree, clusters, unclustered):

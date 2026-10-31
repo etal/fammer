@@ -28,7 +28,7 @@ from reference_cases import (
     log_messages,
 )
 
-from fammer import _share, add
+from fammer import _share, add, cluster, tasks
 
 pytestmark = pytest.mark.integration
 
@@ -46,8 +46,15 @@ def skip_unless_required(reason):
 
 
 def require(*programs):
-    """Skip the test unless every program is on PATH; see skip_unless_required."""
-    missing = [name for name in programs if shutil.which(name) is None]
+    """Skip the test unless every program is on PATH; see skip_unless_required.
+
+    A tuple names one program under any of several names.
+    """
+    missing = [
+        "/".join(names)
+        for names in (p if isinstance(p, tuple) else (p,) for p in programs)
+        if tasks.which(names) is None
+    ]
     if missing:
         skip_unless_required("not on PATH: " + ", ".join(missing))
 
@@ -423,23 +430,25 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
     assert tree_state(built_workspace) == written
 
 
-def test_cluster_partitions_the_input_sequences(tmp_path):
+@pytest.mark.parametrize("name", ["DYRK.fasta", "CDK.fasta"])
+def test_cluster_partitions_the_input_sequences(tmp_path, name):
     """``cluster`` splits a sequence set into clusters and a Unique set.
 
     The cluster files, numbered from 0 by decreasing size, and the Unique file
     hold every input sequence once and unchanged, and the phyloXML tree has
     one tip per input sequence. Which sequences form a cluster depends on the
-    FastTree version, so membership is not checked.
+    FastTree version, so membership is not checked. Two identifiers of
+    CDK.fasta contain ':', at which FastTree would end a name.
     """
-    require("fammer", "mafft", "fasttree")
-    source = REPO / "profiles" / "SomeKinases" / "CMGC" / "DYRK.fasta"
+    require("fammer", "mafft", cluster.FASTTREE_NAMES)
+    source = REPO / "profiles" / "SomeKinases" / "CMGC" / name
     shutil.copy(source, tmp_path)
-    proc = run_fammer(tmp_path, ["cluster", "DYRK.fasta"])
+    proc = run_fammer(tmp_path, ["cluster", name])
     assert proc.returncode == 0, proc.stderr
 
-    given = read_records(tmp_path / "DYRK.fasta", "fasta")
+    given = read_records(tmp_path / name, "fasta")
     numbered = sorted(
-        (path for path in tmp_path.glob("DYRK.fasta.*") if path.suffix[1:].isdigit()),
+        (path for path in tmp_path.glob(name + ".*") if path.suffix[1:].isdigit()),
         key=lambda path: int(path.suffix[1:]),
     )
     assert [path.suffix[1:] for path in numbered] == [
@@ -450,16 +459,16 @@ def test_cluster_partitions_the_input_sequences(tmp_path):
     assert [len(part) for part in parts] == sorted(
         (len(part) for part in parts), reverse=True
     )
-    unique = tmp_path / "DYRK.fasta.Unique"
+    unique = tmp_path / (name + ".Unique")
     if unique.exists():
         parts.append(read_records(unique, "fasta"))
     assert parts
     assert sorted(record for part in parts for record in part) == sorted(given)
 
-    with open(tmp_path / "DYRK.fasta.xml", encoding="utf-8") as handle:
+    with open(tmp_path / (name + ".xml"), encoding="utf-8") as handle:
         tree = Phylo.read(handle, "phyloxml")
     assert sorted(tip.name for tip in tree.get_terminals()) == sorted(
-        name for name, _seq in given
+        seqid for seqid, _seq in given
     )
 
 

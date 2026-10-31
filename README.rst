@@ -277,10 +277,14 @@ cluster
 
 Extract clusters from a sequence set based on phylogenetic relationships.
 
-Uses FastTree to quickly build a tree with branch support values, then extracts
-well-supported clades from the tree and writes the corresponding sequence sets
-to FASTA files. Unclustered sequences are written to another "Unique" file.
+Uses FastTree to quickly build a tree with branch support values, then extracts well-supported clades from the tree and writes the corresponding sequence sets to FASTA files.
+Unclustered sequences are written to another "Unique" file.
 Also writes a phyloXML tree file (.xml) showing clusters as colorized clades.
+
+The output files are written to the current directory, not beside the input, and are named after the base name of the input file: ``cluster path/to/fam.aln`` writes ``fam.aln.0``, ``fam.aln.1`` and so on, ``fam.aln.Unique`` and ``fam.aln.xml``.
+Clusters are numbered by decreasing size, and clusters of equal size by their sorted sequence identifiers.
+Sequences read from an alignment (``.aln``) are written without gaps; an unaligned input (``.fasta``) is first aligned with MAFFT.
+FastTree is run as ``fasttree`` or as ``FastTree``, whichever is found on ``PATH``.
 
 
 Bundled modules

@@ -297,6 +297,78 @@
   },
   {
    "file": "library/cluster.json",
+   "section": "geom_mean",
+   "case": "three_values",
+   "recorded": {
+    "value": 0.20000000000000004
+   },
+   "current": {
+    "value": 0.2
+   }
+  },
+  {
+   "file": "library/cluster.json",
+   "section": "geom_mean",
+   "case": "n100_of_0.05",
+   "recorded": {
+    "value": 0.05
+   },
+   "current": {
+    "value": 0.05000000000000001
+   }
+  },
+  {
+   "file": "library/cluster.json",
+   "section": "geom_mean",
+   "case": "n250_of_0.05",
+   "recorded": {
+    "value": 0.0
+   },
+   "current": {
+    "value": 0.05000000000000001
+   }
+  },
+  {
+   "file": "library/cluster.json",
+   "section": "geom_mean",
+   "case": "n500_of_0.05",
+   "recorded": {
+    "value": 0.0
+   },
+   "current": {
+    "value": 0.05000000000000001
+   }
+  },
+  {
+   "file": "library/cluster.json",
+   "section": "geom_mean",
+   "case": "with_zero",
+   "recorded": {
+    "value": 0.0
+   },
+   "current": {
+    "error": {
+     "type": "ValueError"
+    }
+   }
+  },
+  {
+   "file": "library/cluster.json",
+   "section": "geom_mean",
+   "case": "empty",
+   "recorded": {
+    "error": {
+     "type": "TypeError"
+    }
+   },
+   "current": {
+    "error": {
+     "type": "ZeroDivisionError"
+    }
+   }
+  },
+  {
+   "file": "library/cluster.json",
    "section": "write_fasta",
    "case": "with_description",
    "recorded": {
@@ -495,6 +567,398 @@
      "only_recorded": [],
      "only_current": []
     }
+   }
+  },
+  {
+   "file": "e2e/cluster.json",
+   "case": "CDK.aln",
+   "recorded": {
+    "outcome": {
+     "error": {
+      "type": "KeyError"
+     }
+    },
+    "log": [
+     [
+      "INFO",
+      "cluster",
+      "# to cut (up to): 100"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.0 (26 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.1 (18 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.2 (17 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.3 (9 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.4 (8 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.5 (8 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.6 (7 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.7 (7 sequences)"
+     ]
+    ],
+    "files_written": [
+     "CDK.aln.0",
+     "CDK.aln.1",
+     "CDK.aln.2",
+     "CDK.aln.3",
+     "CDK.aln.4",
+     "CDK.aln.5",
+     "CDK.aln.6",
+     "CDK.aln.7"
+    ],
+    "unique": null
+   },
+   "current": {
+    "outcome": {
+     "value": null
+    },
+    "log": [
+     [
+      "INFO",
+      "cluster",
+      "# to cut (up to): 100"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.0 (26 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.1 (18 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.2 (17 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.3 (9 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.4 (8 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.5 (8 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.6 (7 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.7 (7 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.Unique (45 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote CDK.aln.xml"
+     ]
+    ],
+    "files_written": [
+     "CDK.aln.0",
+     "CDK.aln.1",
+     "CDK.aln.2",
+     "CDK.aln.3",
+     "CDK.aln.4",
+     "CDK.aln.5",
+     "CDK.aln.6",
+     "CDK.aln.7",
+     "CDK.aln.Unique",
+     "CDK.aln.xml"
+    ],
+    "unique": [
+     "13176_Tt",
+     "21599_Tt",
+     "23583_Tt",
+     "25533_Tt",
+     "25907_Tt",
+     "26940_Tt",
+     "6129_Tt",
+     "6298_Tt",
+     "9119_Tt",
+     "9560_Tt",
+     "AqueK095_Aq",
+     "AqueK097_Aq",
+     "CC1G_03659_Cc",
+     "CC1G_03767_Cc",
+     "CDC2-2_Sm",
+     "CDK10_Hsap",
+     "CDK10_Mmus",
+     "CDK10_Spur",
+     "CDK11_a-1_Sm",
+     "CDK11_a-2_Sm",
+     "CDK11_b-2_Sm",
+     "CDK5_Hsap",
+     "CDK5_Mmus",
+     "CDKB_a-2_Sm",
+     "CDKB_b_Sm",
+     "CDKB_c_Sm",
+     "Cdc2_Ddis",
+     "Cdk5_Ddis",
+     "Cdk5_Dmel",
+     "DDB0216376_Ddis",
+     "DDB0229427_Ddis",
+     "GK020_Gl",
+     "GK022_Gl",
+     "GK023_Gl",
+     "K03E5.3_Cele",
+     "PHO85_Scer",
+     "TAIR|Locus:2037410",
+     "TAIR|locus:2011761",
+     "cdc2rk_Dmel",
+     "cdk-5_Cele",
+     "gi|158430247|pdb|2QKR|A",
+     "gi|42543186|pdb|1OB3|A",
+     "gi|56966251|pdb|1UNG|A",
+     "psu|MAL13P1.279",
+     "psu|PF10_0141"
+    ]
+   }
+  },
+  {
+   "file": "e2e/cluster.json",
+   "case": "PKL.aln",
+   "recorded": {
+    "log": [
+     [
+      "INFO",
+      "cluster",
+      "# to cut (up to): 418"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.0 (68 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.1 (62 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.2 (47 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.3 (26 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.4 (22 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.5 (21 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.6 (21 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.7 (20 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.8 (20 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.9 (19 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.10 (18 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.11 (17 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.12 (17 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.13 (15 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.14 (13 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.15 (13 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.Unique (212 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.xml"
+     ]
+    ]
+   },
+   "current": {
+    "log": [
+     [
+      "INFO",
+      "cluster",
+      "# to cut (up to): 369"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.0 (68 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.1 (62 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.2 (47 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.3 (26 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.4 (22 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.5 (21 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.6 (21 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.7 (20 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.8 (20 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.9 (19 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.10 (18 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.11 (17 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.12 (17 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.13 (15 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.14 (13 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.15 (13 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.Unique (212 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote PKL.aln.xml"
+     ]
+    ]
    }
   }
  ]
