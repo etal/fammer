@@ -11,6 +11,7 @@ tests here check properties of the replayed runs and of the functions that
 choose the clusters.
 """
 
+import argparse
 import io
 import math
 import os
@@ -174,9 +175,38 @@ def test_clusters_of_equal_size_are_numbered_by_members(tmp_path, monkeypatch):
     tree = Phylo.read(io.StringIO("((s4,s5,s6,s7),(s0,s1,s2,s3));"), "newick")
     first, second = tree.root.clades
     clusters = {first: {"s4", "s5", "s6", "s7"}, second: {"s0", "s1", "s2", "s3"}}
-    cluster.write_clusters("x.fasta", tree, clusters, set())
+    seq_idx = cluster.read_sequences("x.fasta")
+    cluster.write_clusters("x.fasta", seq_idx, tree, clusters, set())
     assert (tmp_path / "x.fasta.0").read_text("ascii").startswith(">s0\n")
     assert (tmp_path / "x.fasta.1").read_text("ascii").startswith(">s4\n")
+
+
+@pytest.mark.parametrize(
+    ("fname", "text"),
+    [
+        ("x.fasta", ">a\nACDE\n>b one\nACDF\n>a two\nACDG\n>c\nAC\n>c\nAC\n"),
+        ("x.aln", "CLUSTAL W\n\na   AC-D\nb   ACED\nc   ACGD\na   ACGE\n"),
+    ],
+)
+def test_duplicate_identifiers_are_reported_before_any_program_runs(
+    tmp_path, monkeypatch, fname, text
+):
+    """A duplicated identifier is reported by name before MAFFT, for unaligned
+    input, or FastTree is run, and nothing is written."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / fname).write_text(text, encoding="ascii")
+
+    def no_program(*args, **kwargs):
+        raise AssertionError("an external program was run")
+
+    monkeypatch.setattr(cluster.subprocess, "check_output", no_program)
+    monkeypatch.setattr(cluster, "fasttree_program", no_program)
+    expected = "a, c" if fname.endswith(".fasta") else "a$"
+    with pytest.raises(
+        UsageError, match=f"Duplicate sequence identifiers .*: {expected}"
+    ):
+        cluster.cmd_cluster(argparse.Namespace(sequences=fname))
+    assert sorted(os.listdir(tmp_path)) == [fname]
 
 
 # ---------------------------------------------------------------------------

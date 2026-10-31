@@ -20,6 +20,7 @@ import math
 import os.path
 import subprocess
 import tempfile
+from collections import Counter
 from io import StringIO
 
 from Bio import AlignIO, Phylo, SeqIO
@@ -53,6 +54,7 @@ def cmd_cluster(args):
         raise UsageError(f"No sequence file at {args.sequences}")
     if not args.sequences.endswith((".aln", ".fasta")):
         raise UsageError(f"{SUFFIX_ERROR}: {args.sequences}")
+    seq_idx = read_sequences(args.sequences)
     tree = load_tree(args.sequences)
 
     # Extract clusters of acceptable size
@@ -93,7 +95,28 @@ def cmd_cluster(args):
             else:
                 unclustered.update(taxa)
 
-    write_clusters(args.sequences, tree, clusters, unclustered)
+    write_clusters(args.sequences, seq_idx, tree, clusters, unclustered)
+
+
+def read_sequences(seqfname):
+    """The input records by identifier, ungapped if read from an alignment.
+
+    Raises UsageError if an identifier occurs more than once, before MAFFT or
+    FastTree is run, since the clusters could not name such a sequence.
+    """
+    is_aln = seqfname.endswith(".aln")
+    with SeqIO.parse(seqfname, "clustal" if is_aln else "fasta") as parsed:
+        records = list(parsed)
+    counts = Counter(rec.id for rec in records)
+    duplicates = sorted(seqid for seqid, count in counts.items() if count > 1)
+    if duplicates:
+        raise UsageError(
+            f"Duplicate sequence identifiers in {seqfname}: " + ", ".join(duplicates)
+        )
+    if is_aln:
+        for rec in records:
+            rec.seq = Seq(ungapped(rec.seq))
+    return {rec.id: rec for rec in records}
 
 
 def load_tree(seqfname):
@@ -197,19 +220,13 @@ def geom_mean(values):
     return math.exp(math.fsum(map(math.log, values)) / len(values))
 
 
-def write_clusters(seqfname, tree, clusters, unclustered):
+def write_clusters(seqfname, seq_idx, tree, clusters, unclustered):
     """Write output files: clusters & unique as FASTA, tree as phyloXML.
 
-    Sequences read from an alignment are written ungapped.  Clusters are
-    numbered by decreasing size, and clusters of equal size by their sorted
-    member identifiers.
+    seq_idx maps each identifier to its record, as read_sequences returns it.
+    Clusters are numbered by decreasing size, and clusters of equal size by
+    their sorted member identifiers.
     """
-    is_aln = seqfname.endswith(".aln")
-    with SeqIO.parse(seqfname, "clustal" if is_aln else "fasta") as parsed:
-        seq_idx = SeqIO.to_dict(parsed)
-    if is_aln:
-        for rec in seq_idx.values():
-            rec.seq = Seq(ungapped(rec.seq))
 
     def write_cluster(seqids, fname):
         """Write the sequences of the given identifiers to a FASTA file."""
