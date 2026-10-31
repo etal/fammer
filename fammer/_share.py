@@ -85,6 +85,12 @@ def parse_scanned_hits(tblfile):
 # Helpers
 
 
+def repeated_names(names):
+    """The names that occur more than once, sorted."""
+    counts = collections.Counter(names)
+    return sorted(name for name, count in counts.items() if count > 1)
+
+
 def ungapped(seq):
     """The sequence as a string without gap characters, in upper case."""
     return str(seq).replace("-", "").replace(".", "").upper()

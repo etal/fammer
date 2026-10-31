@@ -18,7 +18,6 @@ splits seed file paths at whitespace. Every structure and seed file must exist.
 
 """
 
-import collections
 import logging
 import math
 import os
@@ -32,7 +31,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from biofrills import alnutils
 
-from ._share import UsageError
+from ._share import UsageError, repeated_names
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +50,7 @@ def _check_file_names(pdb_fnames, seed_fnames):
         raise UsageError(
             "File names must not contain whitespace: " + ", ".join(map(repr, split))
         )
-    counts = collections.Counter(pdb_fnames)
-    repeated = sorted(fname for fname, count in counts.items() if count > 1)
+    repeated = repeated_names(pdb_fnames)
     if repeated:
         raise UsageError(
             "Each structure must be given once: " + ", ".join(map(repr, repeated))

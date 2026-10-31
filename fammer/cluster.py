@@ -24,7 +24,6 @@ import math
 import os.path
 import subprocess
 import tempfile
-from collections import Counter
 from io import StringIO
 
 import numpy as np
@@ -34,7 +33,7 @@ from Bio.Phylo.NewickIO import NewickError
 from Bio.Seq import Seq
 from biofrills import alnutils
 
-from ._share import UsageError, ungapped, write_fasta
+from ._share import UsageError, repeated_names, ungapped, write_fasta
 from .tasks import which
 
 logger = logging.getLogger(__name__)
@@ -126,8 +125,7 @@ def read_sequences(seqfname):
     is_aln = seqfname.endswith(".aln")
     with SeqIO.parse(seqfname, "clustal" if is_aln else "fasta") as parsed:
         records = list(parsed)
-    counts = Counter(rec.id for rec in records)
-    duplicates = sorted(seqid for seqid, count in counts.items() if count > 1)
+    duplicates = repeated_names(rec.id for rec in records)
     if duplicates:
         raise UsageError(
             f"Duplicate sequence identifiers in {seqfname}: " + ", ".join(duplicates)
@@ -200,16 +198,18 @@ def read_tree(treefname, seqids):
     unnamed = sum(not name for name in names)
     if unnamed:
         raise UsageError(f"Tips of {treefname} without a name: {unnamed}")
-    counts = Counter(names)
-    repeated = sorted(name for name, count in counts.items() if count > 1)
-    if repeated:
-        raise UsageError(f"Duplicate tip names in {treefname}: " + ", ".join(repeated))
-    unknown = sorted(set(counts) - seqids)
+    duplicates = repeated_names(names)
+    if duplicates:
+        raise UsageError(
+            f"Duplicate tip names in {treefname}: " + ", ".join(duplicates)
+        )
+    present = set(names)
+    unknown = sorted(present - seqids)
     if unknown:
         raise UsageError(
             f"Tips of {treefname} that name no input sequence: " + ", ".join(unknown)
         )
-    missing = sorted(seqids - set(counts))
+    missing = sorted(seqids - present)
     if missing:
         raise UsageError(
             f"Input sequences that no tip of {treefname} names: " + ", ".join(missing)
