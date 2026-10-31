@@ -156,7 +156,9 @@ def geom_mean(arr):
 def write_clusters(seqfname, tree, clusters, unclustered):
     """Write output files: clusters & unique as FASTA, tree as phyloXML.
 
-    Sequences read from an alignment are written ungapped.
+    Sequences read from an alignment are written ungapped.  Clusters are
+    numbered by decreasing size, and clusters of equal size by their sorted
+    member identifiers.
     """
     is_aln = seqfname.endswith(".aln")
     with SeqIO.parse(seqfname, "clustal" if is_aln else "fasta") as parsed:
@@ -165,23 +167,24 @@ def write_clusters(seqfname, tree, clusters, unclustered):
         for rec in seq_idx.values():
             rec.seq = Seq(ungapped(rec.seq))
 
-    def write_cluster(cluster, fname):
-        """Write the sequences of cluster tips to a FASTA file."""
-        records = [seq_idx[seqid] for seqid in sorted(cluster)]
+    def write_cluster(seqids, fname):
+        """Write the sequences of the given identifiers to a FASTA file."""
+        records = [seq_idx[seqid] for seqid in seqids]
         write_fasta(records, fname)
         logger.info("Wrote %s (%d sequences)", fname, len(records))
 
-    for i, item in enumerate(
-        sorted(clusters.items(), reverse=True, key=lambda kv: len(kv[1]))
-    ):
-        clade, cluster = item
-        write_cluster(cluster, os.path.basename(seqfname) + "." + str(i))
+    ordered = sorted(
+        ((sorted(taxa), clade) for clade, taxa in clusters.items()),
+        key=lambda item: (-len(item[0]), item[0]),
+    )
+    for i, (seqids, clade) in enumerate(ordered):
+        write_cluster(seqids, os.path.basename(seqfname) + "." + str(i))
         # Evenly spaced hues, one per cluster.
-        rgb = colorsys.hsv_to_rgb(i / len(clusters), 0.7, 0.9)
+        rgb = colorsys.hsv_to_rgb(i / len(ordered), 0.7, 0.9)
         clade.color = BranchColor(*(int(x * 255) for x in rgb))
         clade.width = 2
     if unclustered:
-        write_cluster(unclustered, os.path.basename(seqfname) + ".Unique")
+        write_cluster(sorted(unclustered), os.path.basename(seqfname) + ".Unique")
 
     treefname = os.path.basename(seqfname) + ".xml"
     Phylo.write(tree, treefname, "phyloxml")

@@ -10,6 +10,7 @@ compared with the recording on any machine.
 """
 
 import argparse
+import io
 import logging
 import os
 import shutil
@@ -17,7 +18,7 @@ import subprocess
 import sys
 
 import pytest
-from Bio import AlignIO, SeqIO
+from Bio import AlignIO, Phylo, SeqIO
 from reference_cases import DATA, FIXTURES, REPO, is_checkout, load
 
 from fammer import cluster
@@ -248,6 +249,19 @@ def test_cluster_numbers_follow_decreasing_size(successful_replay):
     assert sorted(numbered) == list(range(len(numbered)))
     sizes = [numbered[i] for i in range(len(numbered))]
     assert sizes == sorted(sizes, reverse=True)
+
+
+def test_clusters_of_equal_size_are_numbered_by_members(tmp_path, monkeypatch):
+    """The numbering does not depend on the order in which clusters were found."""
+    monkeypatch.chdir(tmp_path)
+    records = "".join(f">s{i}\nACDE\n" for i in range(8))
+    (tmp_path / "x.fasta").write_text(records, encoding="ascii")
+    tree = Phylo.read(io.StringIO("((s4,s5,s6,s7),(s0,s1,s2,s3));"), "newick")
+    first, second = tree.root.clades
+    clusters = {first: {"s4", "s5", "s6", "s7"}, second: {"s0", "s1", "s2", "s3"}}
+    cluster.write_clusters("x.fasta", tree, clusters, set())
+    assert (tmp_path / "x.fasta.0").read_text("ascii").startswith(">s0\n")
+    assert (tmp_path / "x.fasta.1").read_text("ascii").startswith(">s4\n")
 
 
 def test_cluster_does_not_need_reportlab():
