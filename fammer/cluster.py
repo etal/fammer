@@ -69,46 +69,7 @@ def cmd_cluster(args):
     # threshold as well as the clusters do.
     names, distances = patristic_distances(tree)
     tree = prepare_tree(tree, args.confidence)
-
-    # Extract clusters of acceptable size
-    min_size = args.size
-    if min_size is None:
-        min_size = max(4, round(tree.count_terminals() ** 0.4))
-    clusters = {}
-    unclustered = set()
-    seen_subnodes = set([tree.root])
-
-    # Cluster according to long internal branches first
-    # Take clades below "cut" branches as clusters
-    for clade in get_clades_to_cut(tree):
-        subnodes = list(clade.find_clades())
-        if not seen_subnodes.isdisjoint(subnodes):
-            continue
-        taxa = set([k.name for k in subnodes if k.is_terminal()])
-        if len(taxa) >= min_size:
-            clusters[clade] = taxa
-            seen_subnodes.update(subnodes)
-
-    # Find any remaining supported clades & assign those to clusters too
-    # Any tips not assigned to a cluster -> Unique
-    for clade in tree.find_clades(order="level"):
-        if clade in seen_subnodes:
-            continue
-        elif clade.is_terminal():
-            unclustered.add(clade.name)
-        else:
-            subnodes = list(clade.find_clades())
-            # If any part of this clade was a "cut" cluster, skip down to the
-            # next layer to find untouched sub-clades
-            if not seen_subnodes.isdisjoint(subnodes):
-                continue
-            # Extract all terminals into a new cluster
-            seen_subnodes.update(subnodes)
-            taxa = set([k.name for k in subnodes if k.is_terminal()])
-            if len(taxa) >= min_size:
-                clusters[clade] = taxa
-            else:
-                unclustered.update(taxa)
+    clusters, unclustered = find_clusters(tree, args.size)
 
     ordered = ordered_clusters(clusters)
     basename = os.path.basename(args.sequences)
@@ -295,6 +256,53 @@ def geom_mean(values):
     lengths underflows to zero.
     """
     return math.exp(math.fsum(map(math.log, values)) / len(values))
+
+
+def find_clusters(tree, min_size=None):
+    """The clusters of a prepared tree, and the tips left out of them.
+
+    A cluster is a clade of at least min_size tips, by default the larger of
+    4 and the number of tips to the power 0.4, rounded; the whole tree is
+    never a cluster, and a tip clade is left out rather than taken as one.
+    The clades below the long branches get_clades_to_cut selects are taken
+    first, longest branch first; then each remaining clade that no cluster
+    overlaps is taken in level order, as a cluster if it has enough tips, and
+    otherwise its tips are left out.
+
+    Returns the clusters, as a mapping of each clade to the names of its
+    tips, and the set of names of the tips left out.
+    """
+    if min_size is None:
+        min_size = max(4, round(tree.count_terminals() ** 0.4))
+    clusters = {}
+    unclustered = set()
+    seen_subnodes = set([tree.root])
+    for clade in get_clades_to_cut(tree):
+        subnodes = list(clade.find_clades())
+        if not seen_subnodes.isdisjoint(subnodes):
+            continue
+        taxa = set([k.name for k in subnodes if k.is_terminal()])
+        if len(taxa) >= min_size:
+            clusters[clade] = taxa
+            seen_subnodes.update(subnodes)
+    for clade in tree.find_clades(order="level"):
+        if clade in seen_subnodes:
+            continue
+        elif clade.is_terminal():
+            unclustered.add(clade.name)
+        else:
+            subnodes = list(clade.find_clades())
+            # If any part of this clade was a "cut" cluster, skip down to the
+            # next layer to find untouched sub-clades
+            if not seen_subnodes.isdisjoint(subnodes):
+                continue
+            seen_subnodes.update(subnodes)
+            taxa = set([k.name for k in subnodes if k.is_terminal()])
+            if len(taxa) >= min_size:
+                clusters[clade] = taxa
+            else:
+                unclustered.update(taxa)
+    return clusters, unclustered
 
 
 def ordered_clusters(clusters):

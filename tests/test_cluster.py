@@ -191,6 +191,43 @@ def test_the_root_support_does_not_set_the_default_threshold():
     assert sorted(c.confidence for c in tree.get_nonterminals()) == [0.7, 0.95]
 
 
+@pytest.mark.parametrize(
+    ("output_file", "confidence", "min_size", "minimum", "count", "unclustered"),
+    [
+        ("CDK.aln.0.fasttree.out", None, None, 7, 8, 45),
+        ("CDK.aln.0.fasttree.out", 0.9, None, 7, 8, 53),
+        ("CDK.aln.0.fasttree.out", None, 4, 4, 15, 24),
+        ("PKL.aln.0.fasttree.out", 0.9, None, 13, 13, 289),
+        ("PKL.aln.0.fasttree.out", None, 8, 8, 26, 208),
+    ],
+)
+def test_find_clusters_partitions_the_tips(
+    output_file, confidence, min_size, minimum, count, unclustered
+):
+    """Every tip is in exactly one cluster or left out, and no cluster is
+    smaller than the minimum size, which is explicit or, by default, 7 for the
+    145 tips of CDK.aln and 13 for the 631 tips of PKL.aln."""
+    tree = cluster.prepare_tree(captured_tree(output_file), confidence)
+    clusters, left_out = cluster.find_clusters(tree, min_size)
+    members = [name for taxa in clusters.values() for name in taxa]
+    assert (len(clusters), len(left_out)) == (count, unclustered)
+    assert len(members) == len(set(members))
+    assert not set(members) & left_out
+    assert set(members) | left_out == {tip.name for tip in tree.get_terminals()}
+    assert min(len(taxa) for taxa in clusters.values()) >= minimum
+
+
+def test_the_default_minimum_size():
+    """The default is the tip count to the power 0.4, rounded: 7 for the 145
+    tips of CDK.aln, and 4 rather than 2 for a tree of 4 tips."""
+    tree = cluster.prepare_tree(captured_tree("CDK.aln.0.fasttree.out"))
+    assert cluster.find_clusters(tree) == cluster.find_clusters(tree, 7)
+    assert cluster.find_clusters(tree) != cluster.find_clusters(tree, 8)
+    newick = "((a:1,b:1)0.9:1,(c:1,d:1)0.9:1);"
+    small = cluster.prepare_tree(Phylo.read(io.StringIO(newick), "newick"))
+    assert cluster.find_clusters(small) == ({}, {"a", "b", "c", "d"})
+
+
 def test_clusters_of_equal_size_are_numbered_by_members(tmp_path, monkeypatch):
     """The numbering does not depend on the order in which clusters were found."""
     monkeypatch.chdir(tmp_path)
@@ -338,25 +375,18 @@ def test_patristic_distances_match_biopython():
     assert distances == pytest.approx(np.array(expected), abs=1e-12)
 
 
-@pytest.mark.parametrize(
-    ("name", "options", "count", "unique"),
-    [
-        ("CDK.aln", {}, 8, 45),
-        ("CDK.aln", {"confidence": 0.9}, 8, 53),
-        ("CDK.aln", {"size": 4}, 15, 24),
-        ("PKL.aln", {"confidence": 0.9}, 13, 289),
-        ("PKL.aln", {"size": 8}, 26, 208),
-    ],
-)
-def test_size_and_confidence_options(tree_run, name, options, count, unique):
-    """The number of clusters, and of Unique sequences, under each option."""
-    result, workdir = tree_run(name, **options)
+def test_size_and_confidence_options_reach_the_command(tree_run):
+    """Both options change which files are written, and the logged silhouette
+    covers the sequences of those files."""
+    name = "CDK.aln"
+    count = 13
+    result, workdir = tree_run(name, size=4, confidence=0.9)
     assert result["value"] is None
     written = os.listdir(workdir)
     assert sum(f"{name}.{index}" in written for index in range(count + 1)) == count
-    assert len(written_ids(workdir / f"{name}.Unique")) == unique
     sizes = [len(written_ids(workdir / f"{name}.{i}")) for i in range(count)]
-    assert min(sizes) >= options.get("size", 0)
+    assert min(sizes) >= 4
+    assert len(written_ids(workdir / f"{name}.Unique")) == 41
     assert f"over the {sum(sizes)} sequences of {count} clusters" in str(result["log"])
 
 
