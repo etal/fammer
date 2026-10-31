@@ -523,6 +523,9 @@ The tests marked ``integration`` run ``fammer build`` on a copy of ``profiles/So
 ``pixi run test`` leaves them out, and elsewhere they are skipped unless the programs are on ``PATH`` and the tests run from a Git checkout, so ``uv run pytest`` runs the unit tests alone unless those programs are already installed; ``pixi run test-integration`` fails instead of skipping.
 MAPGAPS is not packaged for either workflow, so ``--mapgaps`` cannot be run end to end.
 
+The GitHub Actions workflow in ``.github/workflows/ci.yml`` runs on every pull request and every push to ``master``, and can also be started by hand.
+It checks the code with ``ruff check`` and ``ruff format --check``, runs the unit tests with uv on every supported Python version on Linux and macOS, and runs ``pixi run test-integration`` on both systems.
+
 Code is formatted with ``ruff format``, and the formatting-only commits are listed in ``.git-blame-ignore-revs``.
 To skip them in ``git blame``::
 

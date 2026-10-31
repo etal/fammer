@@ -9,6 +9,7 @@ The 2013 Python 2 code base has been ported to Python 3.12+ and current Biopytho
 - `profiles/`: example profile trees (`SomeKinases`, `ROPK`) used as test inputs; data, not code.
 - `test/`: example sequence files used as test inputs.
 - `tests/`: pytest suite; `tests/data/` holds the Python 2.7 reference outputs and is documented in `tests/data/README.md`.
+- `.github/workflows/ci.yml`: CI; its Python matrix follows the classifiers in `pyproject.toml`.
 
 ## Commands
 
