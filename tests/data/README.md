@@ -241,10 +241,17 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   It accepts positive numbers only, so `with_zero` raises `ValueError`, and `empty` raises `ZeroDivisionError` instead of `TypeError`.
   `get_clades_to_cut` leaves tips of length zero, which FastTree gives to a sequence identical to another, out of the mean, and never cuts a branch of length zero.
   `statistics.geometric_mean` is not used, because Python 3.12 raises an error on a zero and Python 3.13 and later return zero.
-  On `PKL.aln` the threshold is 0.0701 instead of zero, and 369 of the 418 internal clades are candidates to cut; the clusters and the Unique file are unchanged, and only the logged count differs.
+  On `PKL.aln` the threshold is 0.0701 instead of zero, and 369 of the 418 internal clades are candidates to cut; the clusters and the Unique file are unchanged, and of the lines the recorded run logged, only the count differs.
   The trees of `CDK.aln` and `DYRK.fasta`, whose products did not underflow, keep 100 and 42 candidates.
 - **Identifiers containing a colon** (one run).
   `cluster` gives FastTree the names `seq0`, `seq1` and so on, in alignment order, and renames the tips of the tree it returns to the original identifiers.
   The `CDK.aln` run now succeeds: after the same eight clusters it writes `CDK.aln.Unique` with 45 sequences, including `TAIR|locus:2011761` and `TAIR|Locus:2037410`, and `CDK.aln.xml`, and logs both files.
   The recorded FastTree output names each tip by the identifier FastTree read, truncated at the first `:` or other character that ends a name, so the replay renames those tips to the names the current code gives FastTree, matching the sequences by position.
   FastTree 2.2.0 on the `CDK.aln` blocks with the placeholder names returns the recorded topology.
+- **Silhouette of the clusters** (three runs).
+  `cluster` now logs, after the files it wrote, the mean silhouette of the clustered sequences and the mean silhouette of each cluster, which the recorded code did not compute; the clusters, the Unique file and the files written are unchanged.
+  The silhouette is computed from the patristic distances of the tree FastTree returned, before weakly supported splits are collapsed.
+  `collapse_all` adds the length of a collapsed branch to each of its children, which keeps the depth of every tip but lengthens the path between two tips below the collapsed split, so distances taken afterwards would depend on the support threshold.
+  The Unique sequences are not a cluster and are left out of the score.
+  `CDK.aln`, `DYRK.fasta` and `PKL.aln` log mean silhouettes of 0.398, 0.630 and 0.367; computed on the collapsed trees they would be 0.393, 0.596 and 0.355.
+  The values are logged to three decimals, and none of the 33 values of the three runs lies within 3.9e-5 of a rounding boundary, so a difference in the last bits of a sum between platforms does not change the log.

@@ -23,8 +23,8 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-# biopython and networkx floors follow the versions Ubuntu 26.04 ships. The
-# biofrills and biocma floors are development versions, because biofrills
+# biopython, networkx and numpy floors follow the versions Ubuntu 26.04 ships.
+# The biofrills and biocma floors are development versions, because biofrills
 # 0.4.0 and biocma 0.3.0 are not yet released and PEP 440 orders 0.4.0.dev0
 # below 0.4. A development floor also admits later pre-releases, so raise both
 # floors to the release versions once those exist.
@@ -32,6 +32,7 @@ dependencies = [
     "biofrills>=0.4.0.dev0",
     "biopython>=1.86",
     "networkx>=3.2.1",
+    "numpy>=2.3.5",
 ]
 
 [project.optional-dependencies]
@@ -44,10 +45,13 @@ fammer-tmalign = "fammer.cli:tmalign_main"
 [project.urls]
 homepage = "https://github.com/etal/fammer"
 
+# scikit-learn is the independent implementation of the silhouette that the
+# tests compare fammer's with; its floor follows Ubuntu 26.04.
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
     "ruff>=0.17.2",
+    "scikit-learn>=1.7.2",
 ]
 
 # Named explicitly: automatic discovery in this flat layout also finds the
@@ -99,6 +103,7 @@ platforms = ["osx-arm64", "linux-64"]
 [tool.pixi.dependencies]
 biopython = "*"
 networkx = "*"
+numpy = "*"
 mafft = "*"
 hmmer = "*"
 tmalign = "*"
@@ -111,6 +116,7 @@ fammer = {path = ".", editable = true, extras = ["mapgaps"]}
 [tool.pixi.feature.dev.dependencies]
 pytest = "*"
 ruff = "*"
+scikit-learn = "*"
 
 # The oldest supported Python; keep in step with requires-python.
 [tool.pixi.feature.py312.dependencies]

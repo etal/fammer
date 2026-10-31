@@ -49,7 +49,7 @@ first to save yourself some time::
 
     sudo apt-get install mafft hmmer tm-align fasttree python3-pip
 
-Then install Fammer and its Python dependencies (Biopython_, biofrills_ and networkx_) with pip.
+Then install Fammer and its Python dependencies (Biopython_, biofrills_, networkx_ and NumPy_) with pip.
 Fammer requires biofrills 0.4, which is not yet released on PyPI, so install biofrills from its repository first; then, from the Fammer source directory::
 
     pip install git+https://github.com/etal/biofrills
@@ -64,6 +64,7 @@ default and is likewise not yet on PyPI. To include it, run
 .. _biofrills: https://github.com/etal/biofrills
 .. _biocma: https://github.com/etal/biocma
 .. _networkx: http://networkx.lanl.gov/
+.. _NumPy: https://numpy.org/
 
 
 
@@ -277,7 +278,7 @@ cluster
 
 Extract clusters from a sequence set based on phylogenetic relationships.
 
-Uses FastTree to quickly build a tree with branch support values, then extracts well-supported clades from the tree and writes the corresponding sequence sets to FASTA files.
+Uses FastTree to quickly build a tree with branch support values, or reads a given Newick tree, then extracts well-supported clades from the tree and writes the corresponding sequence sets to FASTA files.
 Unclustered sequences are written to another "Unique" file.
 Also writes a phyloXML tree file (.xml) showing clusters as colorized clades.
 
@@ -285,6 +286,40 @@ The output files are written to the current directory, not beside the input, and
 Clusters are numbered by decreasing size, and clusters of equal size by their sorted sequence identifiers.
 Sequences read from an alignment (``.aln``) are written without gaps; an unaligned input (``.fasta``) is first aligned with MAFFT.
 FastTree is run as ``fasttree`` or as ``FastTree``, whichever is found on ``PATH``.
+Each sequence identifier must occur once in the input.
+
+Three options set the tree and the thresholds that choose the clusters:
+
+``--size N``
+    The smallest number of sequences in a cluster; the sequences of a smaller clade go to the Unique file.
+    By default, the larger of 4 and the number of sequences to the power 0.4, rounded to an integer.
+
+``--confidence X``
+    Collapse the splits whose branch support is below X before clustering, on the scale of the tree's own support values: FastTree writes values between 0 and 1, while bootstrap percentages run from 0 to 100.
+    The splits are the internal clades other than the root, which is never collapsed.
+    A split without a support value counts as weakly supported.
+    By default, X is the mean of the splits' support values, and a tree whose splits have no support values is not collapsed.
+    An explicit X is reported as an error if no split has a support value, or if X is above every split's support.
+
+``--tree FILE``
+    Cluster this Newick tree instead of building one, so that neither MAFFT nor FastTree is run.
+    The tips must be named by exactly the identifiers of the sequence file, each once.
+    An identifier containing whitespace or any of the characters ``:,;()[]'`` must be quoted, as in ``'TAIR|locus:2011201'``; unquoted, Newick reads it as a shorter name, which is then reported as naming no input sequence.
+    The sequence file is still required, for the sequences to write.
+
+After writing the files, ``cluster`` logs the silhouette of the clusters, in lines such as::
+
+    Mean silhouette 0.630 over the 53 sequences of 6 clusters, leaving out 11 Unique sequences
+    Silhouette of DYRK.fasta.0: 0.592
+
+The silhouette of a sequence compares its mean distance to the other members of its cluster with its mean distance to the members of the nearest other cluster.
+It ranges from -1 to 1, and higher values mean tighter and better separated clusters.
+The first line gives the mean over all clustered sequences, as ``sklearn.metrics.silhouette_score`` computes it, and each following line the mean over the members of one cluster.
+The distances are patristic distances, the summed branch lengths between two tips, in the tree as FastTree built it or as given with ``--tree``.
+They are measured before weakly supported splits are collapsed, because collapsing a split lengthens the path between the tips below it, which would make the distances depend on ``--confidence``.
+The Unique sequences are not a cluster, so they are left out of the score.
+With fewer than two clusters the silhouette is undefined, and a line saying so is logged instead.
+A larger ``--size`` or ``--confidence`` moves sequences to the Unique file, and leaving out the sequences that fit no cluster tends to raise the score, so compare settings by the score together with the number of sequences it covers.
 
 
 Bundled modules
@@ -460,7 +495,7 @@ Development
 -----------
 
 Two development workflows are supported from the same ``pyproject.toml``, and both lock files are committed.
-Both install Fammer in editable mode with its ``mapgaps`` extra and the tools in the ``dev`` dependency group, pytest and ruff.
+Both install Fammer in editable mode with its ``mapgaps`` extra and the tools in the ``dev`` dependency group: pytest, ruff, and scikit-learn, which the tests use as an independent implementation of the silhouette.
 Both also need a ``git`` executable, because biofrills and biocma are installed from their repositories until they are released on PyPI.
 
 uv_ takes the other Python packages from PyPI, at the versions recorded in ``uv.lock``::

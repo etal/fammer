@@ -39,6 +39,25 @@ def test_evalue_must_be_a_positive_number(capsys, value):
     assert f"not a positive number: {value!r}" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize(
+    "option, value, message",
+    [
+        ("--size", "0", "not a positive whole number"),
+        ("--size", "2.5", "not a positive whole number"),
+        ("--confidence", "-0.1", "not a non-negative number"),
+        ("--confidence", "nan", "not a non-negative number"),
+        ("--confidence", "inf", "not a non-negative number"),
+    ],
+)
+def test_cluster_thresholds_are_checked(capsys, option, value, message):
+    """A cluster size below one or a support threshold that is negative or not
+    finite is rejected before any file is read."""
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(["cluster", "seqs.aln", f"{option}={value}"])
+    assert excinfo.value.code == 2
+    assert f"{message}: {value!r}" in capsys.readouterr().err
+
+
 def test_tmalign_output_file_is_written_only_after_alignment(
     tmp_path, monkeypatch, capsys
 ):

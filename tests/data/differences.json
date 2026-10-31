@@ -696,6 +696,51 @@
       "INFO",
       "cluster",
       "Wrote CDK.aln.xml"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Mean silhouette 0.398 over the 100 sequences of 8 clusters, leaving out 45 Unique sequences"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of CDK.aln.0: 0.277"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of CDK.aln.1: 0.442"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of CDK.aln.2: 0.308"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of CDK.aln.3: 0.507"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of CDK.aln.4: 0.324"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of CDK.aln.5: 0.449"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of CDK.aln.6: 0.526"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of CDK.aln.7: 0.711"
      ]
     ],
     "files_written": [
@@ -756,6 +801,143 @@
      "gi|56966251|pdb|1UNG|A",
      "psu|MAL13P1.279",
      "psu|PF10_0141"
+    ]
+   }
+  },
+  {
+   "file": "e2e/cluster.json",
+   "case": "DYRK.fasta",
+   "recorded": {
+    "log": [
+     [
+      "INFO",
+      "cluster",
+      "# to cut (up to): 42"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.0 (12 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.1 (11 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.2 (10 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.3 (9 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.4 (6 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.5 (5 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.Unique (11 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.xml"
+     ]
+    ]
+   },
+   "current": {
+    "log": [
+     [
+      "INFO",
+      "cluster",
+      "# to cut (up to): 42"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.0 (12 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.1 (11 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.2 (10 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.3 (9 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.4 (6 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.5 (5 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.Unique (11 sequences)"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Wrote DYRK.fasta.xml"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Mean silhouette 0.630 over the 53 sequences of 6 clusters, leaving out 11 Unique sequences"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of DYRK.fasta.0: 0.592"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of DYRK.fasta.1: 0.724"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of DYRK.fasta.2: 0.742"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of DYRK.fasta.3: 0.608"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of DYRK.fasta.4: 0.528"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of DYRK.fasta.5: 0.456"
+     ]
     ]
    }
   },
@@ -957,6 +1139,91 @@
       "INFO",
       "cluster",
       "Wrote PKL.aln.xml"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Mean silhouette 0.367 over the 419 sequences of 16 clusters, leaving out 212 Unique sequences"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.0: 0.419"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.1: 0.320"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.2: 0.428"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.3: 0.355"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.4: 0.281"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.5: 0.375"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.6: 0.412"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.7: 0.508"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.8: 0.637"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.9: 0.463"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.10: 0.060"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.11: -0.025"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.12: 0.278"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.13: 0.477"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.14: 0.365"
+     ],
+     [
+      "INFO",
+      "cluster",
+      "Silhouette of PKL.aln.15: 0.345"
      ]
     ]
    }

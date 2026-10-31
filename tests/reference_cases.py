@@ -1158,6 +1158,11 @@ def cluster_input_records(name):
         return list(SeqIO.parse(handle, "fasta"))
 
 
+def cluster_input_ids(name):
+    """The identifiers of the input sequences of a cluster run, in order."""
+    return [rec.id for rec in cluster_input_records(name)]
+
+
 class RecordedTools:
     """Stand-in for ``subprocess.check_output`` that replays recorded calls.
 
@@ -1200,12 +1205,40 @@ class RecordedTools:
         output = (DATA / output_file).read_bytes().decode("utf-8")
         if names is None:
             return output
-        given = {
-            FASTTREE_NAME_END.split(seqid, maxsplit=1)[0]: name
-            for seqid, name in zip(self.seqids, names, strict=True)
-        }
-        assert len(given) == len(names), "truncated identifiers are not unique"
-        return NEWICK_TIP.sub(lambda match: given[match.group()], output)
+        return rename_recorded_tips(output, self.seqids, names)
+
+
+def rename_recorded_tips(text, seqids, names):
+    """A recorded FastTree tree with the tip of each identifier in seqids
+    renamed to the name in the same position of names.
+
+    A recorded tip is named by the identifier FastTree read, truncated where
+    FastTree ends a name.
+    """
+    given = {
+        FASTTREE_NAME_END.split(seqid, maxsplit=1)[0]: name
+        for seqid, name in zip(seqids, names, strict=True)
+    }
+    assert len(given) == len(names), "truncated identifiers are not unique"
+    return NEWICK_TIP.sub(lambda match: given[match.group()], text)
+
+
+def named_cluster_tree(name):
+    """The tree FastTree built for a recorded cluster run, as Newick text with
+    each tip named by its input identifier, quoted, since Newick ends an
+    unquoted name at ':' and other characters some identifiers contain."""
+    _argv, output_file = load(CLUSTER_RUNS)[name]["tool_calls"][-1]
+    text = (DATA / output_file).read_text("utf-8")
+    seqids = cluster_input_ids(name)
+    quoted = ["'" + seqid.replace("'", "''") + "'" for seqid in seqids]
+    return rename_recorded_tips(text, seqids, quoted)
+
+
+def cluster_args(sequences, size=None, confidence=None, tree=None):
+    """The arguments of cmd_cluster, as the fammer cluster command passes them."""
+    return argparse.Namespace(
+        sequences=sequences, size=size, confidence=confidence, tree=tree
+    )
 
 
 def written_ids(path):
@@ -1224,7 +1257,7 @@ def replay_cluster_run(name, workdir):
     """
     record = load(CLUSTER_RUNS)[name]
     shutil.copy(CLUSTER_INPUTS[name], workdir)
-    seqids = [rec.id for rec in cluster_input_records(name)]
+    seqids = cluster_input_ids(name)
     tools = RecordedTools(record["tool_calls"], seqids)
     with (
         contextlib.chdir(workdir),
@@ -1232,9 +1265,7 @@ def replay_cluster_run(name, workdir):
         mock.patch.object(cluster.subprocess, "check_output", tools),
     ):
         before = set(os.listdir())
-        result = outcome(
-            cluster.cmd_cluster, argparse.Namespace(sequences=name), log=True
-        )
+        result = outcome(cluster.cmd_cluster, cluster_args(name), log=True)
         written = sorted(set(os.listdir()) - before)
         clusters = []
         for index in itertools.count():

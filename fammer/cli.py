@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import math
 import sys
 
 from Bio import SeqIO
@@ -35,6 +36,29 @@ def _evalue(text):
     # Rejects zero, negative numbers, NaN, and literals that underflow to zero.
     if not value > 0:
         raise argparse.ArgumentTypeError(f"not a positive number: {text!r}")
+    return value
+
+
+def _positive_int(text):
+    """A count from the command line: a positive whole number."""
+    try:
+        value = int(text)
+    except ValueError:
+        value = 0
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"not a positive whole number: {text!r}")
+    return value
+
+
+def _support(text):
+    """A branch-support threshold from the command line: a non-negative number."""
+    try:
+        value = float(text)
+    except ValueError:
+        value = float("nan")
+    # Rejects negative numbers, NaN and infinity.
+    if not 0 <= value < math.inf:
+        raise argparse.ArgumentTypeError(f"not a non-negative number: {text!r}")
     return value
 
 
@@ -206,6 +230,32 @@ def main(argv=None):
     )
     P_cluster.add_argument(
         "sequences", help="Clustal alignment (.aln) or unaligned FASTA (.fasta)."
+    )
+    P_cluster.add_argument(
+        "--size",
+        metavar="N",
+        type=_positive_int,
+        help="""Smallest number of sequences in a cluster; the sequences of a
+            smaller clade go to the Unique file. By default, the larger of 4
+            and the number of sequences to the power 0.4, rounded.""",
+    )
+    P_cluster.add_argument(
+        "--confidence",
+        metavar="X",
+        type=_support,
+        help="""Collapse the splits whose branch support is below this value,
+            on the scale of the tree's support values: FastTree writes support
+            values between 0 and 1. The splits are the internal clades other
+            than the root. By default the threshold is the mean of the splits'
+            support values, and a tree whose splits have no support values is
+            not collapsed.""",
+    )
+    P_cluster.add_argument(
+        "--tree",
+        metavar="FILE",
+        help="""Cluster this Newick tree, with branch support values, instead
+            of building one with MAFFT and FastTree. Its tips must be named by
+            the sequence identifiers.""",
     )
     P_cluster.set_defaults(func=cmd_cluster)
 
