@@ -245,10 +245,12 @@ def main(argv=None):
         type=_support,
         help="""Collapse the splits whose branch support is below this value,
             on the scale of the tree's support values: FastTree writes support
-            values between 0 and 1. The splits are the internal clades other
-            than the root. By default the threshold is the mean of the splits'
-            support values, and a tree whose splits have no support values is
-            not collapsed.""",
+            values between 0 and 1, and a positive value up to 1 is rejected
+            for a tree whose support values run above 1, such as bootstrap
+            percentages. The splits are the internal clades other than the
+            root. By default the threshold is the mean of the splits' support
+            values, and a tree whose splits have no support values is not
+            collapsed.""",
     )
     P_cluster.add_argument(
         "--tree",

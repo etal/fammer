@@ -198,7 +198,10 @@ def prepare_tree(tree, min_confidence=None):
     supported.  A tree whose splits have no support values gives no evidence
     that a split is weak, so by default nothing is collapsed, and an explicit
     min_confidence is an error.  So is one above every split's support, which
-    would collapse the tree to a single node.
+    would collapse the tree to a single node, and one above 0 and up to 1 on
+    a tree whose supports run above 1, such as bootstrap percentages, which
+    would collapse almost no split.  A threshold of 0, which collapses only
+    the splits without a support value, means the same on either scale.
     """
     splits = [
         c.confidence
@@ -218,6 +221,13 @@ def prepare_tree(tree, min_confidence=None):
             f"No split of the tree has support of {min_confidence:g} or more; the "
             f"largest is {max(splits):g}, and FastTree writes support values "
             "between 0 and 1, while bootstrap percentages run from 0 to 100"
+        )
+    elif 0 < min_confidence <= 1 < max(splits):
+        raise UsageError(
+            f"A threshold of {min_confidence:g} would collapse almost no split of "
+            f"this tree, whose support values run up to {max(splits):g}; give the "
+            "threshold on the tree's own scale, such as 90 rather than 0.9 for "
+            "bootstrap percentages"
         )
     if min_confidence is not None:
         tree.collapse_all(

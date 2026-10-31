@@ -228,6 +228,24 @@ def test_the_default_minimum_size():
     assert cluster.find_clusters(small) == ({}, {"a", "b", "c", "d"})
 
 
+@pytest.mark.parametrize(
+    ("newick", "min_confidence", "kept"),
+    [
+        # On bootstrap percentages, 0 collapses only the split without a
+        # support value, and 2 also the split of support 0.
+        ("((a,b)0,((c,d)95,(e,f))88)100;", 0, [0, 88, 95]),
+        ("((a,b)0,((c,d)95,(e,f))88)100;", 2, [88, 95]),
+        # On FastTree's scale, 1 keeps only the splits of support 1.
+        ("((a,b)0.5,((c,d)1.0,(e,f))0.8);", 1, [1.0]),
+    ],
+)
+def test_thresholds_on_the_tree_scale_are_accepted(newick, min_confidence, kept):
+    tree = Phylo.read(io.StringIO(newick), "newick")
+    tree = cluster.prepare_tree(tree, min_confidence)
+    splits = [c for c in tree.get_nonterminals() if c is not tree.root]
+    assert sorted(c.confidence for c in splits) == kept
+
+
 def test_clusters_of_equal_size_are_numbered_by_members(tmp_path, monkeypatch):
     """The numbering does not depend on the order in which clusters were found."""
     monkeypatch.chdir(tmp_path)
@@ -432,6 +450,18 @@ FOUR_SEQUENCES = ">a\nACDE\n>b\nACDF\n>c:1\nACDG\n>d\nACDH\n"
             "No split of the tree has support of 0.9 or more; the largest is 0.7,",
         ),
         ("((a,b),('c:1',d),'');", {}, "Tips of tree.nwk without a name: 1$"),
+        # A threshold up to 1 on a tree of bootstrap percentages.
+        (
+            "((a,b)95,('c:1',d)72)100;",
+            {"confidence": 0.9},
+            "A threshold of 0.9 would collapse almost no split of this tree, "
+            "whose support values run up to 95;",
+        ),
+        (
+            "((a,b)95,('c:1',d)72)100;",
+            {"confidence": 1},
+            "A threshold of 1 would collapse almost no split",
+        ),
     ],
 )
 def test_unusable_trees_are_reported(

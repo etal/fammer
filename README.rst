@@ -299,7 +299,8 @@ Three options set the tree and the thresholds that choose the clusters:
     The splits are the internal clades other than the root, which is never collapsed.
     A split without a support value counts as weakly supported.
     By default, X is the mean of the splits' support values, and a tree whose splits have no support values is not collapsed.
-    An explicit X is reported as an error if no split has a support value, or if X is above every split's support.
+    An explicit X is reported as an error if no split has a support value, if X is above every split's support, or if X is above 0 and up to 1 while the tree's supports run above 1, as bootstrap percentages do, since X would then collapse almost no split.
+    X of 0, which collapses only the splits without a support value, is allowed on either scale.
 
 ``--tree FILE``
     Cluster this Newick tree instead of building one, so that neither MAFFT nor FastTree is run.
