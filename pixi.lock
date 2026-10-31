@@ -89,7 +89,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
       - pypi: ./
       - pypi: git+https://github.com/etal/biocma.git?rev=307d607b1739f647610918113176bc7dcd71dbbc#307d607b1739f647610918113176bc7dcd71dbbc
-      - pypi: git+https://github.com/etal/biofrills.git?rev=522d735fd2ff18d0b470515cca3b90cb800e35a0#522d735fd2ff18d0b470515cca3b90cb800e35a0
+      - pypi: git+https://github.com/etal/biofrills.git?rev=069053d6b28b08b3fcbbb95072ef723010db619d#069053d6b28b08b3fcbbb95072ef723010db619d
       - pypi: https://files.pythonhosted.org/packages/f0/20/fecedea2209f574ab92033b344e01a7f0c2dc76c6d6d19a14c9f8141173f/ruff-0.17.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       osx-arm64:
       - conda: https://conda.anaconda.org/bioconda/osx-arm64/fasttree-2.2.0-hd34ca47_1.conda
@@ -157,7 +157,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
       - pypi: ./
       - pypi: git+https://github.com/etal/biocma.git?rev=307d607b1739f647610918113176bc7dcd71dbbc#307d607b1739f647610918113176bc7dcd71dbbc
-      - pypi: git+https://github.com/etal/biofrills.git?rev=522d735fd2ff18d0b470515cca3b90cb800e35a0#522d735fd2ff18d0b470515cca3b90cb800e35a0
+      - pypi: git+https://github.com/etal/biofrills.git?rev=069053d6b28b08b3fcbbb95072ef723010db619d#069053d6b28b08b3fcbbb95072ef723010db619d
   py312:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -236,7 +236,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026e-h5d301ff_0.conda
       - pypi: ./
       - pypi: git+https://github.com/etal/biocma.git?rev=307d607b1739f647610918113176bc7dcd71dbbc#307d607b1739f647610918113176bc7dcd71dbbc
-      - pypi: git+https://github.com/etal/biofrills.git?rev=522d735fd2ff18d0b470515cca3b90cb800e35a0#522d735fd2ff18d0b470515cca3b90cb800e35a0
+      - pypi: git+https://github.com/etal/biofrills.git?rev=069053d6b28b08b3fcbbb95072ef723010db619d#069053d6b28b08b3fcbbb95072ef723010db619d
       - pypi: https://files.pythonhosted.org/packages/f0/20/fecedea2209f574ab92033b344e01a7f0c2dc76c6d6d19a14c9f8141173f/ruff-0.17.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       osx-arm64:
       - conda: https://conda.anaconda.org/bioconda/osx-arm64/fasttree-2.2.0-hd34ca47_1.conda
@@ -302,7 +302,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-1.3.2-h8088a28_3.conda
       - pypi: ./
       - pypi: git+https://github.com/etal/biocma.git?rev=307d607b1739f647610918113176bc7dcd71dbbc#307d607b1739f647610918113176bc7dcd71dbbc
-      - pypi: git+https://github.com/etal/biofrills.git?rev=522d735fd2ff18d0b470515cca3b90cb800e35a0#522d735fd2ff18d0b470515cca3b90cb800e35a0
+      - pypi: git+https://github.com/etal/biofrills.git?rev=069053d6b28b08b3fcbbb95072ef723010db619d#069053d6b28b08b3fcbbb95072ef723010db619d
 packages:
 - conda: https://conda.anaconda.org/bioconda/linux-64/fasttree-2.2.0-h7b50bb2_1.conda
   sha256: d9a6d06fab5f22e5d6a0dfcaf2d51fa07fd9b080f12794ab53e60b1ea1d3ac97
@@ -2308,7 +2308,7 @@ packages:
 - pypi: ./
   name: fammer
   requires_dist:
-  - biofrills @ git+https://github.com/etal/biofrills.git@522d735fd2ff18d0b470515cca3b90cb800e35a0
+  - biofrills @ git+https://github.com/etal/biofrills.git@069053d6b28b08b3fcbbb95072ef723010db619d
   - biopython>=1.86
   - networkx>=3.2.1
   - numpy>=2.3.5
@@ -2320,7 +2320,7 @@ packages:
   requires_dist:
   - biopython>=1.86
   requires_python: '>=3.12'
-- pypi: git+https://github.com/etal/biofrills.git?rev=522d735fd2ff18d0b470515cca3b90cb800e35a0#522d735fd2ff18d0b470515cca3b90cb800e35a0
+- pypi: git+https://github.com/etal/biofrills.git?rev=069053d6b28b08b3fcbbb95072ef723010db619d#069053d6b28b08b3fcbbb95072ef723010db619d
   name: biofrills
   version: 0.4.0.dev0
   requires_dist:
