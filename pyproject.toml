@@ -23,18 +23,15 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-# biopython, networkx and reportlab floors follow the versions Ubuntu 26.04
-# ships. reportlab is required by every command: fammer.cli imports
-# fammer.cluster, which imports Bio.Graphics.ColorSpiral. The biofrills and
-# biocma floors are development versions, because biofrills 0.4.0 and biocma
-# 0.3.0 are not yet released and PEP 440 orders 0.4.0.dev0 below 0.4. A
-# development floor also admits later pre-releases, so raise both floors to
-# the release versions once those exist.
+# biopython and networkx floors follow the versions Ubuntu 26.04 ships. The
+# biofrills and biocma floors are development versions, because biofrills
+# 0.4.0 and biocma 0.3.0 are not yet released and PEP 440 orders 0.4.0.dev0
+# below 0.4. A development floor also admits later pre-releases, so raise both
+# floors to the release versions once those exist.
 dependencies = [
     "biofrills>=0.4.0.dev0",
     "biopython>=1.86",
     "networkx>=3.2.1",
-    "reportlab>=4.4.10",
 ]
 
 [project.optional-dependencies]
@@ -102,7 +99,6 @@ platforms = ["osx-arm64", "linux-64"]
 [tool.pixi.dependencies]
 biopython = "*"
 networkx = "*"
-reportlab = "*"
 mafft = "*"
 hmmer = "*"
 tmalign = "*"

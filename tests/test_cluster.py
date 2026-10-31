@@ -13,6 +13,8 @@ import argparse
 import logging
 import os
 import shutil
+import subprocess
+import sys
 
 import pytest
 from Bio import AlignIO, SeqIO
@@ -246,3 +248,11 @@ def test_cluster_numbers_follow_decreasing_size(successful_replay):
     assert sorted(numbered) == list(range(len(numbered)))
     sizes = [numbered[i] for i in range(len(numbered))]
     assert sizes == sorted(sizes, reverse=True)
+
+
+def test_cluster_does_not_need_reportlab():
+    """The commands import without reportlab, which fammer does not declare."""
+    code = (
+        "import sys; sys.modules['reportlab'] = None; import fammer.cli, fammer.cluster"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)

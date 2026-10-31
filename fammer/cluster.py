@@ -12,6 +12,7 @@ Depends:
 
 """
 
+import colorsys
 import functools
 import logging
 import math
@@ -21,7 +22,6 @@ import tempfile
 from io import StringIO
 
 from Bio import AlignIO, Phylo, SeqIO
-from Bio.Graphics.ColorSpiral import ColorSpiral
 from Bio.Phylo.BaseTree import BranchColor
 from Bio.Seq import Seq
 from biofrills import alnutils
@@ -171,16 +171,14 @@ def write_clusters(seqfname, tree, clusters, unclustered):
         write_fasta(records, fname)
         logger.info("Wrote %s (%d sequences)", fname, len(records))
 
-    colors = [
-        BranchColor(*map(lambda x: int(x * 255), rgb))
-        for rgb in ColorSpiral().get_colors(len(clusters))
-    ]
     for i, item in enumerate(
         sorted(clusters.items(), reverse=True, key=lambda kv: len(kv[1]))
     ):
         clade, cluster = item
         write_cluster(cluster, os.path.basename(seqfname) + "." + str(i))
-        clade.color = colors[i]
+        # Evenly spaced hues, one per cluster.
+        rgb = colorsys.hsv_to_rgb(i / len(clusters), 0.7, 0.9)
+        clade.color = BranchColor(*(int(x * 255) for x in rgb))
         clade.width = 2
     if unclustered:
         write_cluster(unclustered, os.path.basename(seqfname) + ".Unique")

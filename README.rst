@@ -49,10 +49,8 @@ first to save yourself some time::
 
     sudo apt-get install mafft hmmer tm-align fasttree python3-pip
 
-Then install Fammer and its Python dependencies (Biopython_, biofrills_,
-networkx_ and ReportLab_) with pip. Fammer requires biofrills 0.4, which is not
-yet released on PyPI, so install biofrills from its repository first; then,
-from the Fammer source directory::
+Then install Fammer and its Python dependencies (Biopython_, biofrills_ and networkx_) with pip.
+Fammer requires biofrills 0.4, which is not yet released on PyPI, so install biofrills from its repository first; then, from the Fammer source directory::
 
     pip install git+https://github.com/etal/biofrills
     pip install .
@@ -66,7 +64,6 @@ default and is likewise not yet on PyPI. To include it, run
 .. _biofrills: https://github.com/etal/biofrills
 .. _biocma: https://github.com/etal/biocma
 .. _networkx: http://networkx.lanl.gov/
-.. _ReportLab: https://www.reportlab.com/opensource/
 
 
 
