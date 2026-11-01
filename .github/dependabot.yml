@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # The Python dependencies are not listed: uv.lock and pixi.lock change
+  # together and biofrills and biocma are pinned to git commits, while
+  # Dependabot would update uv.lock alone.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ["*"]

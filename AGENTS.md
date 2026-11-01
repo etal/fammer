@@ -10,6 +10,7 @@ The 2013 Python 2 code base has been ported to Python 3.12+ and current Biopytho
 - `test/`: example sequence files used as test inputs.
 - `tests/`: pytest suite; `tests/data/` holds the Python 2.7 reference outputs and is documented in `tests/data/README.md`.
 - `.github/workflows/ci.yml`: CI; its Python matrix follows the classifiers in `pyproject.toml`.
+- `.github/dependabot.yml`: monthly version updates of the actions in `ci.yml`; it does not update the `pixi-version` pin and is not configured for the Python dependencies.
 
 ## Commands
 

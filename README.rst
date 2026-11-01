@@ -526,6 +526,8 @@ MAPGAPS is not packaged for either workflow, so ``--mapgaps`` cannot be run end 
 
 The GitHub Actions workflow in ``.github/workflows/ci.yml`` runs on every pull request and every push to ``master``, and can also be started by hand.
 It checks the code with ``ruff check`` and ``ruff format --check``, runs the unit tests with uv on every supported Python version on Linux and macOS, and runs ``pixi run test-integration`` on both systems.
+Dependabot, configured in ``.github/dependabot.yml``, proposes new releases of the actions that the workflow uses in one pull request a month.
+It does not update the pixi release that the integration job installs, and it is not configured for the Python dependencies, because ``uv.lock`` and ``pixi.lock`` must change together.
 
 Code is formatted with ``ruff format``, and the formatting-only commits are listed in ``.git-blame-ignore-revs``.
 To skip them in ``git blame``::
