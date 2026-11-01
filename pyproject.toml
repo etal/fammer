@@ -134,3 +134,4 @@ test = "pytest -m 'not integration'"
 test-integration = {cmd = "pytest -m integration", env = {FAMMER_REQUIRE_TOOLS = "1"}}
 lint = "ruff check"
 fmt = "ruff format"
+fmt-check = "ruff format --check"

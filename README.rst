@@ -517,6 +517,7 @@ conda-forge provides, and ``py312`` the oldest supported one::
     pixi run test-integration
     pixi run lint            # ruff check
     pixi run fmt             # ruff format
+    pixi run fmt-check       # ruff format --check
 
 The unit tests compare the library with reference outputs recorded under Python 2.7 in ``tests/data``, replay the recorded ``cluster`` runs with the recorded output of MAFFT and FastTree, and check properties that need no reference.
 The tests marked ``integration`` run ``fammer build`` on a copy of ``profiles/SomeKinases`` and compare the result with the reference outputs, then run ``scan``, ``update-fasta`` and ``cluster`` with the external programs.

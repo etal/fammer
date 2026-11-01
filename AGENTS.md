@@ -21,6 +21,7 @@ pixi run -e py312 test       # oldest supported Python
 pixi run test-integration    # build, scan, update-fasta and cluster with the external programs
 pixi run lint                # ruff check
 pixi run fmt                 # ruff format
+pixi run fmt-check           # ruff format --check
 ```
 
 `uv run pytest` also works, but it skips the integration tests unless the programs are on `PATH`.
