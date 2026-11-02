@@ -66,6 +66,19 @@ def is_empty(path):
     return os.stat(path).st_size < 2
 
 
+def ends_with_newline(path):
+    """True if the last byte of a file is a newline, or the file is empty.
+
+    Text appended to a file whose last line has no ending would continue that
+    line.
+    """
+    with open(path, "rb") as handle:
+        if handle.seek(0, os.SEEK_END) == 0:
+            return True
+        handle.seek(-1, os.SEEK_END)
+        return handle.read(1) == b"\n"
+
+
 class Task:
     """Solve the cache-invalidation problem.
 

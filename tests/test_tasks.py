@@ -6,6 +6,9 @@ it is missing or strictly older than some dependency. A target whose
 modification time equals a dependency's counts as up to date. The few scenarios
 recorded from the Python 2 code base are compared separately, in the reference
 tests.
+
+``ends_with_newline`` is true for a file that ends with a line ending or holds
+no bytes.
 """
 
 import itertools
@@ -14,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from fammer.tasks import Task
+from fammer.tasks import Task, ends_with_newline
 
 # Fixed modification times, far in the past, so that a file written by an
 # action (which receives the current time) is newer than every fixed one.
@@ -265,3 +268,21 @@ def test_clean_removes_only_listed_existing_files_recursively(tmp_path):
     top.clean()
     assert all(os.path.exists(p) for p in kept + [source])
     assert recorder.calls == []
+
+
+@pytest.mark.parametrize(
+    "content, expected",
+    [
+        (b"", True),
+        (b"x", False),
+        (b"x\n", True),
+        (b"x\n\n", True),
+        (b"x\r\n", True),
+        (b"\nx", False),
+    ],
+)
+def test_ends_with_newline_reads_the_last_byte(tmp_path, content, expected):
+    """Only the last byte decides; an empty file needs no line ending first."""
+    path = tmp_path / "file"
+    path.write_bytes(content)
+    assert ends_with_newline(path) is expected

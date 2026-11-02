@@ -16,7 +16,7 @@ from ._share import (
     ungapped,
     write_fasta,
 )
-from .tasks import ext, noext, sh
+from .tasks import ends_with_newline, ext, noext, sh
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +100,13 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
     #   to the aligned bit -- if only 2aa available, then take that much
     # - can I tell from the alignment? (# terminal gaps)
 
-    # Add the accepted hits to the FASTA profile
+    # Add the accepted hits to the FASTA profile. A profile whose last line
+    # has no line ending gets one first, so the first header starts a line.
     logger.info("Adding %d hits to profile %s", len(hit_seqs), fasta)
+    needs_newline = not ends_with_newline(fasta)
     with open(fasta, "a") as fafile:
+        if needs_newline:
+            fafile.write("\n")
         write_fasta(hit_seqs, fafile)
 
 

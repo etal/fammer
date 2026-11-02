@@ -265,5 +265,7 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   `add` skips the hits whose identifier the profile already holds, keeps the longest domain of a sequence with several, skips with a warning a profile that has hits that it does not yet hold but whose HMM finds none of its own sequences at 0.001 or better, and writes its temporary sequence file outside the profile tree.
   It also accepts sequence names that contain `/`, which `test_sequence_names_may_contain_a_slash` in `tests/test_add.py` covers.
   It appends its records through `_share.write_fasta`, so each sequence is on one line where the recorded run wrapped it at 60 columns.
+  It also writes a line ending before the first appended record when the profile file lacks one, where the recorded code would have joined that record to the last sequence line.
+  Every recorded profile ends with a line ending, so the recorded run does not exercise this.
   On `add.json` the 30 appended records, their headers and their sequences are otherwise unchanged; a second run on the result changes no file.
   The run needs HMMER, so `replay.py` does not replay it and `differences.json` has no entry for it; `test_add_appends_the_recorded_hits_once` compares it instead.

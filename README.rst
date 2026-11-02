@@ -267,6 +267,7 @@ A sequence with several domains that pass these thresholds contributes its longe
 A second run with the same target therefore adds nothing, unless the sequences added by the first run loosened a threshold: HMMER scales an E-value by the number of sequences searched, so the E-values of a profile's own sequences grow with the profile.
 If a profile has hits that it does not yet hold, but its HMM finds none of its own sequences at 0.001 or better, there is no worst E-value to compare against, and the profile is skipped with a warning.
 A target that is empty or holds only whitespace has no hits, which ``add`` reports as an error.
+When a profile file does not end with a line ending, as a hand edit can leave it, ``add`` writes one before the first added record.
 
 
 refine

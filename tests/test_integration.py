@@ -531,6 +531,28 @@ def test_add_skips_a_profile_that_misses_its_own_sequences(scan_workspace, conte
     assert len(read_records(cdpk, "fasta")) > members
 
 
+def test_add_ends_the_last_line_of_a_profile_before_appending(scan_workspace):
+    """A profile whose last line has no line ending keeps its last record.
+
+    CDPK.fasta loses its final newline, as a hand edit can leave it. ``add``
+    writes one before the recorded records, so neither the last member nor the
+    first appended record is joined to the other.
+    """
+    require("fammer", "hmmsearch")
+    name = "SomeKinases/CAMK/CDPK.fasta"
+    cdpk = scan_workspace / name
+    text = cdpk.read_text(encoding="utf-8").rstrip("\n")
+    cdpk.write_text(text, encoding="utf-8")
+    members = read_records(cdpk, "fasta")
+    run = recorded("add.json")
+    proc = run_fammer(scan_workspace, run["argv"])
+    assert proc.returncode == 0, proc.stderr
+    appended = cdpk.read_text(encoding="utf-8")[len(text) :]
+    assert appended.startswith("\n>")
+    assert fasta_records(appended) == fasta_records(run["appended"][name])
+    assert read_records(cdpk, "fasta")[: len(members)] == members
+
+
 @pytest.mark.parametrize("name", ["DYRK.fasta", "CDK.fasta"])
 def test_cluster_partitions_the_input_sequences(tmp_path, name):
     """``cluster`` splits a sequence set into clusters and a Unique set.
