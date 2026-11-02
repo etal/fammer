@@ -126,6 +126,7 @@ Each run records its arguments, exit status, standard output, standard error, an
   Each run also left the hmmsearch table `<target>.tbl` in the working directory; the current code writes the table to a temporary file and removes it, so `test_scan_reproduces_recorded_run` expects every recorded file except that one.
 - `update-fasta.json`: `fammer update-fasta` on the built tree and on one alignment, each before and after the last record of an alignment (`CDK.aln`, then `DYRK.aln`) was deleted.
 - `add.json`: `fammer add SomeKinases TgME49.pep` on the built tree, with the text appended to each FASTA file.
+  `test_add_appends_the_recorded_hits_once` compares the appended records, header and sequence, as a multiset per file; see "Repeated runs of `add`" under "Deliberate differences".
 - `refine.json`: `fammer refine SomeKinases -n -u SomeKinases/Testfam-Unclassified.fasta`.
 - `pdb.json`: `fammer build` with structures enabled, and `tmalign.py` on two and on three structures.
   Both `tmalign.py` runs fail; the first lists `tm.out.fasta` as created because the recorded sources opened the `-o` file before aligning, and the second lists it as neither created nor modified because the first had left it empty.
@@ -156,6 +157,11 @@ A port that reproduces these cases is faithful; the fixes are separate, delibera
   `mst_pairs` raises `TypeError` because Biopython 1.67 and later cannot hash a `SeqRecord`.
   Its `identity_hash_emulation` case is not this environment's behavior: it gives `SeqRecord` the identity hash of Biopython before 1.67 and shows that the function then returns all six pairs of four structures, not a three-edge spanning tree.
   The current code reads the output as written and returns a spanning tree; see "Structure alignment" under "Deliberate differences".
+- **`add` duplicates sequences.**
+  The recorded `add` appends every accepted hit without checking the identifiers the profile already holds, so a second run appends the same 30 records again, and `build` then fails on the duplicate identifiers when it writes the Stockholm alignment.
+  It also appends one record for each domain that `hmmsearch -A` aligns in a sequence, under the same identifier; at the default `-L 0.8` no recorded sequence has two domains that pass the length filter, so the recorded run is free of this defect.
+  A profile whose HMM hits none of its own sequences raises `ValueError` after the profiles visited before it were already appended to, and so does a hit whose sequence name contains `/`, since the record names of `hmmsearch -A` are split at every `/`; the recorded run exercises neither, since every profile's HMM hits some of its own sequences and no recorded identifier contains a slash.
+  The temporary `<profile>.hmm.fa` file, written into the profile tree, is left there when `hmmsearch` exits with an error.
 - **`cluster` fails on identifiers containing `:`.**
   Newick reserves `:`, so tip names such as `TAIR|locus:2011201` are read back truncated, and the `CDK.aln` run raises `KeyError` after writing its first clusters.
   The current code gives FastTree placeholder names; see "Identifiers containing a colon" under "Deliberate differences".
@@ -255,3 +261,9 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   The Unique sequences are not a cluster and are left out of the score.
   `CDK.aln`, `DYRK.fasta` and `PKL.aln` log mean silhouettes of 0.398, 0.630 and 0.367; computed on the collapsed trees they would be 0.393, 0.596 and 0.355.
   The values are logged to three decimals, and none of the 33 values of the three runs lies within 3.9e-5 of a rounding boundary, so a difference in the last bits of a sum between platforms does not change the log.
+- **Repeated runs of `add`** (one run, not replayed).
+  `add` skips the hits whose identifier the profile already holds, keeps the longest domain of a sequence with several, skips with a warning a profile that has hits that it does not yet hold but whose HMM finds none of its own sequences at 0.001 or better, and writes its temporary sequence file outside the profile tree.
+  It also accepts sequence names that contain `/`, which `test_sequence_names_may_contain_a_slash` in `tests/test_add.py` covers.
+  It appends its records through `_share.write_fasta`, so each sequence is on one line where the recorded run wrapped it at 60 columns.
+  On `add.json` the 30 appended records, their headers and their sequences are otherwise unchanged; a second run on the result changes no file.
+  The run needs HMMER, so `replay.py` does not replay it and `differences.json` has no entry for it; `test_add_appends_the_recorded_hits_once` compares it instead.

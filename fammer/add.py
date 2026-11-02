@@ -9,7 +9,13 @@ from os.path import basename, isdir, isfile, join
 from Bio import SeqIO
 from Bio.Seq import Seq
 
-from ._share import UsageError, get_hmm_evalues, get_hmm_hits, ungapped
+from ._share import (
+    UsageError,
+    get_hmm_evalues,
+    get_hmm_hits,
+    ungapped,
+    write_fasta,
+)
 from .tasks import ext, noext, sh
 
 logger = logging.getLogger(__name__)
@@ -43,13 +49,29 @@ def cmd_add(args):
 def add_hits(fasta, hmm, dbhits, index, min_length):
     """Append the database hits that a profile accepts to its FASTA file."""
     logger.info("Processing %s ...", noext(fasta))
-    # HMMscan the corresponding FASTA file; record the max (worst) e-value
-    seq_evals = get_hmm_evalues(hmm, fasta)
-    max_eval = max(seq_evals.values())
-
     # Select the hits matching the current profile
     hits = list(filter_profile(dbhits, basename(noext(fasta))))
-    # Filter hits by this profile's maximum (worst) e-value
+    if not hits:
+        return
+    # Skip the sequences the profile already holds, so that a repeated run
+    # adds each sequence once
+    members = member_names(fasta)
+    hits = list(filter_present(hits, members))
+    if not hits:
+        return
+
+    # Score the profile's own sequences with its own HMM; the worst e-value is
+    # the acceptance threshold. hmmsearch rejects an empty file, which has no
+    # e-values anyway.
+    seq_evals = get_hmm_evalues(hmm, fasta) if members else {}
+    if not seq_evals:
+        logger.warning(
+            "Skipping %s: its HMM profile hits none of its own sequences at "
+            "e-value 0.001 or better, so there is no threshold to accept a hit",
+            fasta,
+        )
+        return
+    max_eval = max(seq_evals.values())
     hits = list(filter_evalue(hits, max_eval))
     if not hits:
         return
@@ -61,16 +83,8 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
     hmm_len = get_hmm_len(hmm)
     min_len_aa = int(hmm_len * min_length)
 
-    # Fetch the aligned sequence regions as SeqRecords
     hit_seqs = []
-    for record in aln:
-        # Read the domain hit start/end position from Stockholm record ID
-        acc, _offset = record.id.split("/")
-        start, end = map(int, _offset.split("-"))
-        # Filter hits by minimum length
-        hit_len = end - start + 1  # HMMer uses 1-based numbering
-        if hit_len < min_len_aa:
-            continue
+    for acc, record in longest_domains(aln, min_len_aa):
         # Remove the "/123-456" suffix from aligned record keys
         record.id = acc
         # Remove gaps from the hit sequence. The per-residue posterior
@@ -79,6 +93,8 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
         record.letter_annotations = {}
         record.seq = Seq(ungapped(record.seq))
         hit_seqs.append(record)
+    if not hit_seqs:
+        return
 
     # ENH: extend hits that are close to the edge of the profile (e.g. 5aa) to
     # fill sequence to the edges (no gaps)
@@ -89,7 +105,7 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
     # Add the accepted hits to the FASTA profile
     logger.info("Adding %d hits to profile %s", len(hit_seqs), fasta)
     with open(fasta, "a") as fafile:
-        SeqIO.write(hit_seqs, fafile, "fasta")
+        write_fasta(hit_seqs, fafile)
 
 
 def walk_profiles(topdir):
@@ -106,18 +122,21 @@ def walk_profiles(topdir):
 
 
 def get_hmm_alignment(hmmfname, hits, index):
+    """Align the hit sequences to the HMM profile with hmmsearch -A.
+
+    Returns the Stockholm records, one per aligned domain, each named
+    ``<sequence name>/<start>-<end>``.
+    """
     fullseqs = [index[seqname] for seqname, _e in hits]
-    assert fullseqs
-    tmp_seqfname = hmmfname + ".fa"
-    with open(tmp_seqfname, "w+") as handle:
-        SeqIO.write(fullseqs, handle, "fasta")
-        handle.flush()
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".stk") as alnfile:
-        sh(f"hmmsearch --noali -A {alnfile.name} {hmmfname} {tmp_seqfname} > /dev/null")
+    with (
+        tempfile.NamedTemporaryFile(mode="w+", suffix=".fa") as seqfile,
+        tempfile.NamedTemporaryFile(mode="w+", suffix=".stk") as alnfile,
+    ):
+        write_fasta(fullseqs, seqfile)
+        seqfile.flush()
+        sh(f"hmmsearch --noali -A {alnfile.name} {hmmfname} {seqfile.name} > /dev/null")
         alnfile.seek(0)
-        alignment = list(SeqIO.parse(alnfile, "stockholm"))
-    os.remove(tmp_seqfname)
-    return alignment
+        return list(SeqIO.parse(alnfile, "stockholm"))
 
 
 def get_hmm_len(hmmfname):
@@ -141,6 +160,44 @@ def filter_profile(hits, profile_name):
         profname, evalue = data
         if profname == profile_name:
             yield (seqname, evalue)
+
+
+def member_names(fasta):
+    """The identifiers of the sequences in a profile's FASTA file."""
+    with SeqIO.parse(fasta, "fasta") as records:
+        return {record.id for record in records}
+
+
+def filter_present(hits, members):
+    """Skip the hits whose sequence name is among the given members."""
+    for hit in hits:
+        if hit[0] not in members:
+            yield hit
+
+
+def longest_domains(records, min_len_aa):
+    """Select the longest domain of each sequence that hmmsearch -A aligned.
+
+    The records are named ``<sequence name>/<start>-<end>``, one per aligned
+    domain, so a sequence with several domains appears several times. Domains
+    shorter than min_len_aa are skipped; of two equally long domains, the
+    first is kept.
+
+    Generates tuples of: (sequence name, record)
+    """
+    longest = {}
+    for record in records:
+        # Sequence names may themselves contain "/"
+        acc, offset = record.id.rsplit("/", 1)
+        start, end = map(int, offset.split("-"))
+        hit_len = end - start + 1  # HMMer uses 1-based numbering
+        if hit_len < min_len_aa:
+            continue
+        if acc in longest and longest[acc][0] >= hit_len:
+            continue
+        longest[acc] = (hit_len, record)
+    for acc, (_hit_len, record) in longest.items():
+        yield acc, record
 
 
 def filter_evalue(hits, max_evalue):

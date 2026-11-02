@@ -258,6 +258,13 @@ initially, or a larger sequence database like **refseq_proteins**, if you're
 confident in your coverage of the superfamily and want to improve the
 sensitivity of your profiles.
 
+Each hit is considered for the profile that scores it best.
+It is accepted when it passes the significance cutoff ``-E`` in the target database, when its E-value there is no worse than the worst E-value among the sequences already in the profile that the profile's own HMM hits at 0.001 or better, and when the aligned region covers at least the fraction ``-L`` of the profile length.
+Only that aligned region is added, not the full-length sequence.
+A sequence with several domains that pass these thresholds contributes its longest domain once, and a sequence whose identifier is already in the profile is not added again.
+A second run with the same target therefore adds nothing, unless the sequences added by the first run loosened a threshold: HMMER scales an E-value by the number of sequences searched, so the E-values of a profile's own sequences grow with the profile.
+If a profile has hits that it does not yet hold, but its HMM finds none of its own sequences at 0.001 or better, there is no worst E-value to compare against, and the profile is skipped with a warning.
+
 
 refine
 ``````

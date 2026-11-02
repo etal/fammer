@@ -430,6 +430,80 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
     assert tree_state(built_workspace) == written
 
 
+def test_add_appends_the_recorded_hits_once(scan_workspace):
+    """``add`` appends the recorded hits, and a second run changes nothing.
+
+    The first run appends to each FASTA file the records that the Python 2
+    code base appended, each on two lines where the recorded run wrapped the
+    sequence; the log lines are compared as a multiset, since the tree is
+    walked in file-system order. The second run finds each accepted hit
+    already in its profile, so it writes to no file.
+    """
+    require("fammer", "hmmsearch")
+    run = recorded("add.json")
+    before = {
+        path.relative_to(scan_workspace).as_posix(): path.read_text(encoding="utf-8")
+        for path in (scan_workspace / "SomeKinases").rglob("*.fasta")
+    }
+    proc = run_fammer(scan_workspace, run["argv"])
+    assert proc.returncode == run["returncode"], proc.stderr
+    assert log_messages(proc.stderr) == log_messages(run["stderr"])
+    appended = {}
+    for name, text in before.items():
+        after = (scan_workspace / name).read_text(encoding="utf-8")
+        assert after.startswith(text), name
+        if after != text:
+            appended[name] = after[len(text) :]
+    assert appended.keys() == run["appended"].keys()
+    for name, text in appended.items():
+        records = fasta_records(text)
+        assert records == fasta_records(run["appended"][name]), name
+        assert len(text.splitlines()) == 2 * records.total(), name
+
+    written = tree_state(scan_workspace)
+    proc = run_fammer(scan_workspace, run["argv"])
+    assert proc.returncode == 0, proc.stderr
+    assert tree_state(scan_workspace) == written
+
+
+def test_add_appends_one_domain_per_sequence(scan_workspace):
+    """A sequence with several domains that pass ``-L`` is appended once.
+
+    At ``-L 0.3`` two domains of TGME49_237210, of 96 and then 179 residues,
+    pass the length filter for STE-Unclassified; the longer one is kept.
+    """
+    require("fammer", "hmmsearch")
+    proc = run_fammer(scan_workspace, ["add", "SomeKinases", "TgME49.pep", "-L", "0.3"])
+    assert proc.returncode == 0, proc.stderr
+    for path in (scan_workspace / "SomeKinases").rglob("*.fasta"):
+        names = [name for name, _seq in read_records(path, "fasta")]
+        assert _share.repeated_names(names) == [], path
+    fasta = scan_workspace / "SomeKinases" / "STE" / "STE-Unclassified.fasta"
+    added = dict(read_records(fasta, "fasta"))["TGME49_237210"]
+    assert len(added) == 179
+
+
+def test_add_skips_a_profile_that_misses_its_own_sequences(scan_workspace):
+    """A profile whose HMM hits none of its own sequences accepts no hit.
+
+    Without a hit of its HMM on one of its own sequences, there is no e-value
+    threshold. The ULK sequences are replaced by one that its HMM does not
+    match, while the tree's HMMs still assign a TgME49 protein to ULK; ``add``
+    warns, leaves ULK.fasta alone, and goes on to the other profiles.
+    """
+    require("fammer", "hmmsearch")
+    ulk = scan_workspace / "SomeKinases" / "ULK.fasta"
+    ulk.write_text(">poly\n" + "A" * 60 + "\n", encoding="utf-8")
+    unchanged = ulk.read_bytes()
+    cdpk = scan_workspace / "SomeKinases" / "CAMK" / "CDPK.fasta"
+    members = len(read_records(cdpk, "fasta"))
+    proc = run_fammer(scan_workspace, ["add", "SomeKinases", "TgME49.pep"])
+    assert proc.returncode == 0, proc.stderr
+    assert "Skipping SomeKinases/ULK.fasta: its HMM profile hits none" in proc.stderr
+    assert ulk.read_bytes() == unchanged
+    assert len(read_records(cdpk, "fasta")) > members
+
+
 @pytest.mark.parametrize("name", ["DYRK.fasta", "CDK.fasta"])
 def test_cluster_partitions_the_input_sequences(tmp_path, name):
     """``cluster`` splits a sequence set into clusters and a Unique set.
