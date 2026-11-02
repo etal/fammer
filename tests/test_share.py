@@ -12,7 +12,8 @@ line, with the record's identifier once in the header.
 get_hmm_hits finds no hits in a sequence file of zero bytes without running
 hmmsearch, which exits with an error on one, and runs it on any other file;
 get_hmm_evalues and get_hmm_scores take the E-value and the bit score of its
-hits.
+hits. leave_one_out_hmms builds each HMM from every aligned row but the one
+held out.
 """
 
 import io
@@ -29,6 +30,7 @@ from fammer._share import (
     get_hmm_evalues,
     get_hmm_hits,
     get_hmm_scores,
+    leave_one_out_hmms,
     parse_scanned_hits,
     write_fasta,
 )
@@ -298,3 +300,39 @@ def test_evalues_and_scores_are_those_of_each_sequences_best_domain(
     seqfile.write_text(">s\nACDE\n>t\nACDE\n")
     assert get_hmm_evalues("p.hmm", str(seqfile)) == {"s": 1e-30, "t": 2e-5}
     assert get_hmm_scores("p.hmm", str(seqfile)) == {"s": 120.5, "t": 35.0}
+
+
+def test_each_held_out_hmm_is_built_from_the_other_rows(monkeypatch, tmp_path):
+    """Only the rows named are held out, one at a time, and the rest stay in.
+
+    hmmbuild is replaced by a record of the Stockholm rows it would read, taken
+    when it runs, since every HMM is written to the same file.
+    """
+    built = []
+
+    def hmmbuild(cmd):
+        hmmfname, stkfname = cmd.split()[1:]
+        with open(stkfname) as handle:
+            built.append(
+                (hmmfname, [rec.id for rec in SeqIO.parse(handle, "stockholm")])
+            )
+
+    monkeypatch.setattr(_share, "sh", hmmbuild)
+    rows = [
+        SeqRecord(Seq(seq), id=name, description="")
+        for name, seq in [
+            ("a", "AC-DE"),
+            ("seed", "ACQDE"),
+            ("b", "A-QDE"),
+            ("c", "ACQD-"),
+        ]
+    ]
+    held = [
+        (name, hmmfname, built[-1])
+        for name, hmmfname in leave_one_out_hmms(rows, {"a", "c", "absent"}, tmp_path)
+    ]
+    hmmfname = str(tmp_path / "held-out.hmm")
+    assert held == [
+        ("a", hmmfname, (hmmfname, ["seed", "b", "c"])),
+        ("c", hmmfname, (hmmfname, ["a", "seed", "b"])),
+    ]

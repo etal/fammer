@@ -8,18 +8,24 @@ from os.path import basename, isdir, isfile, join
 
 from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 from ._share import (
     MEMBER_EVALUE,
     UsageError,
     get_hmm_hits,
     get_hmm_scores,
+    leave_one_out_hmms,
     ungapped,
     write_fasta,
 )
 from .tasks import ends_with_newline, ext, noext, sh
 
 logger = logging.getLogger(__name__)
+
+# A profile of at most this many sequences takes its acceptance threshold from
+# leave-one-out scores; see profile_threshold.
+LEAVE_ONE_OUT_MAX = 10
 
 
 def cmd_add(args):
@@ -60,12 +66,12 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
     if not hits:
         return
 
-    # Score the profile's own sequences with its own HMM; the lowest
-    # best-domain bit score is the acceptance threshold. A bit score, unlike an
-    # e-value, does not depend on the number of sequences searched, so the
-    # profile's own scores and the target's are comparable.
-    member_scores = get_hmm_scores(hmm, fasta)
-    if not member_scores:
+    # The weakest of the profile's own sequences sets the acceptance
+    # threshold, in bits. A bit score, unlike an e-value, does not depend on
+    # the number of sequences searched, so the profile's own scores and the
+    # target's are comparable.
+    min_score = profile_threshold(fasta, hmm)
+    if min_score is None:
         logger.warning(
             "Skipping %s: its HMM profile hits none of its own sequences at "
             "e-value %s or better, so there is no threshold to accept a hit",
@@ -73,7 +79,7 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
             MEMBER_EVALUE,
         )
         return
-    hits = list(filter_score(hits, min(member_scores.values())))
+    hits = list(filter_score(hits, min_score))
     if not hits:
         return
 
@@ -124,6 +130,48 @@ def walk_profiles(topdir):
                     f"No .hmm profile for {fasta}; run fammer build --hmmer first"
                 )
             yield fasta, hmm_fname
+
+
+def profile_threshold(fasta, hmm):
+    """The lowest best-domain bit score among a profile's own sequences.
+
+    The sequences are the rows of the profile's alignment (.aln), from which
+    fammer build made its HMM, that are also in its FASTA file, scored without
+    gaps; a profile without an alignment uses its FASTA file. A record that
+    add appended since the last build is not a row, so it cannot lower the
+    threshold before the HMM is rebuilt with it.
+
+    A profile of at most LEAVE_ONE_OUT_MAX sequences scores each against an HMM
+    built from the alignment without its row, since against an HMM built
+    partly from itself a sequence of a small profile scores far higher than an
+    unseen member of the family does. A larger profile scores them against its
+    own HMM. Only the sequences hit at MEMBER_EVALUE or better count; without
+    any, the result is None.
+    """
+    alnfname = ext(fasta, "aln")
+    if not isfile(alnfname):
+        return min(get_hmm_scores(hmm, fasta).values(), default=None)
+    names = member_names(fasta)
+    with SeqIO.parse(alnfname, "clustal") as parsed:
+        rows = list(parsed)
+    members = [
+        SeqRecord(Seq(ungapped(row.seq)), id=row.id, description="")
+        for row in rows
+        if row.id in names
+    ]
+    with tempfile.TemporaryDirectory(prefix="fammer-") as workdir:
+        seqfname = join(workdir, "members.fasta")
+        write_fasta(members, seqfname)
+        if len(rows) < 2 or len(members) > LEAVE_ONE_OUT_MAX:
+            scores = get_hmm_scores(hmm, seqfname)
+        else:
+            scores = {}
+            held_out = {member.id for member in members}
+            for name, lean in leave_one_out_hmms(rows, held_out, workdir):
+                score = get_hmm_scores(lean, seqfname).get(name)
+                if score is not None:
+                    scores[name] = score
+    return min(scores.values(), default=None)
 
 
 def get_hmm_alignment(hmmfname, hits, index):

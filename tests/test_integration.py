@@ -570,6 +570,29 @@ def test_add_ends_the_last_line_of_a_profile_before_appending(scan_workspace):
     assert read_records(cdpk, "fasta")[: len(members)] == members
 
 
+@pytest.mark.parametrize(
+    ("name", "leave_one_out"),
+    [("SomeKinases/CAMK/Chk1L", True), ("SomeKinases/CAMK/CAMK2", False)],
+)
+def test_a_small_profile_takes_its_threshold_from_held_out_scores(
+    built_workspace, monkeypatch, name, leave_one_out
+):
+    """A profile of up to ten sequences scores each without its own row.
+
+    Chk1L has five sequences, each of which scores higher against the HMM
+    built from all five than against the HMM built from the other four, so its
+    threshold falls below the lowest score against its own HMM. CAMK2 has
+    eleven, so the lowest score against its own HMM is its threshold.
+    """
+    require("hmmsearch", "hmmbuild")
+    monkeypatch.chdir(built_workspace)
+    fasta, hmm = name + ".fasta", name + ".hmm"
+    assert len(read_records(fasta, "fasta")) == (5 if leave_one_out else 11)
+    own = min(_share.get_hmm_scores(hmm, fasta).values())
+    threshold = add.profile_threshold(fasta, hmm)
+    assert (threshold < own) if leave_one_out else (threshold == own)
+
+
 @pytest.mark.parametrize("name", ["DYRK.fasta", "CDK.fasta"])
 def test_cluster_partitions_the_input_sequences(tmp_path, name):
     """``cluster`` splits a sequence set into clusters and a Unique set.

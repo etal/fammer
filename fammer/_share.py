@@ -2,11 +2,11 @@
 
 import collections
 import tempfile
-from os.path import getsize
+from os.path import getsize, join
 
 from Bio import SeqIO
 
-from .tasks import sh
+from .tasks import ext, sh
 
 
 class UsageError(ValueError):
@@ -56,6 +56,34 @@ def get_hmm_scores(hmmfname, seqfname):
     """Map each sequence that an HMM profile hits to its best-domain bit score."""
     hits = get_hmm_hits(hmmfname, seqfname, MEMBER_EVALUE)
     return {seqname: score for seqname, (_prof, _evalue, score) in hits.items()}
+
+
+def build_hmm(records, hmmfname):
+    """Build an HMM profile from aligned records, as fammer build does.
+
+    The records are written as Stockholm beside the HMM file, then hmmbuild
+    reads them with its default options.
+    """
+    stkfname = ext(hmmfname, "stk")
+    SeqIO.write(records, stkfname, "stockholm")
+    sh(f"hmmbuild {hmmfname} {stkfname}")
+
+
+def leave_one_out_hmms(rows, held_out, workdir):
+    """Build, for each row to hold out, an HMM from the other aligned rows.
+
+    The rows are the aligned records of one profile, and held_out the
+    identifiers of the rows to hold out in turn; the other rows stay in every
+    HMM. Generates tuples of (identifier, HMM file name) in row order. Each HMM
+    is written to the same file in workdir, so a caller uses it before taking
+    the next one.
+    """
+    hmmfname = join(workdir, "held-out.hmm")
+    for index, row in enumerate(rows):
+        if row.id not in held_out:
+            continue
+        build_hmm(rows[:index] + rows[index + 1 :], hmmfname)
+        yield row.id, hmmfname
 
 
 def parse_scanned_hits(tblfile):
