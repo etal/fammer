@@ -1,8 +1,10 @@
 "Add sequences from a scanned database to the profile tree."
 
+import functools
 import logging
 import os
 import tempfile
+from collections import defaultdict
 from contextlib import closing
 from os.path import basename, isdir, isfile, join
 
@@ -13,8 +15,10 @@ from Bio.SeqRecord import SeqRecord
 from ._share import (
     MEMBER_EVALUE,
     UsageError,
-    get_hmm_hits,
+    best_hits,
+    get_hmm_rows,
     get_hmm_scores,
+    is_catch_all,
     leave_one_out_hmms,
     ungapped,
     write_fasta,
@@ -43,34 +47,76 @@ def cmd_add(args):
 
     # Traverse the directory tree -- if there's an unbuilt HMM that we'll need,
     # best to identify it now and raise an error
-    fastas_and_hmms = list(walk_profiles(args.basedir))
-    # Scan & classify the target database, just like in cmd_scan
-    dbhits = get_hmm_hits(hmmdb, args.sequence_db, args.evalue)
-    if not dbhits:
+    profiles = {}
+    for fasta, hmm in walk_profiles(args.basedir):
+        name = basename(noext(fasta))
+        if name in profiles:
+            raise UsageError(
+                f"Two profiles are named {name}: {profiles[name][0]} and {fasta}"
+            )
+        profiles[name] = (fasta, hmm)
+    # A sequence already in any profile is not added again, to that profile or
+    # to another, so a repeated run adds each sequence once
+    present = set().union(*(member_names(fasta) for fasta, _hmm in profiles.values()))
+    # Scan the target database with every profile of the tree, as cmd_scan
+    # does, but assign each sequence only among the profiles that have a FASTA
+    # file to receive it
+    rows = get_hmm_rows(hmmdb, args.sequence_db, args.evalue)
+    if not rows:
         raise UsageError(f"No profile hits in {args.sequence_db}")
+    rows = [row for row in filter_present(rows, present) if row[1] in profiles]
+    threshold = functools.cache(lambda name: profile_threshold(*profiles[name]))
+    dbhits = assign_hits(rows, threshold)
     with closing(SeqIO.index(args.sequence_db, "fasta")) as index:
-        for fasta, hmm in fastas_and_hmms:
-            add_hits(fasta, hmm, dbhits, index, args.min_length)
+        for name, (fasta, hmm) in profiles.items():
+            logger.info("Processing %s ...", noext(fasta))
+            hits = list(filter_profile(dbhits, name))
+            if hits:
+                add_hits(fasta, hmm, hits, threshold(name), index, args.min_length)
 
 
-def add_hits(fasta, hmm, dbhits, index, min_length):
-    """Append the database hits that a profile accepts to its FASTA file."""
-    logger.info("Processing %s ...", noext(fasta))
-    # Select the hits matching the current profile
-    hits = list(filter_profile(dbhits, basename(noext(fasta))))
-    if not hits:
-        return
-    # Skip the sequences the profile already holds, so that a repeated run
-    # adds each sequence once
-    hits = list(filter_present(hits, member_names(fasta)))
-    if not hits:
-        return
+def assign_hits(rows, threshold):
+    """Assign each sequence of hmmsearch table rows to one profile.
 
+    The rows are tuples of (sequence name, profile name, e-value, bit score),
+    and threshold maps a profile name to its acceptance threshold in bits, or
+    to None if it has none. A sequence goes to the profile whose best domain
+    has the smallest e-value, as best_hits selects it, unless that profile is
+    a catch-all: then it goes to the subfamily profile with the smallest
+    e-value among those whose threshold its bit score reaches, if there is
+    one, since a catch-all holds only the sequences that fit no subfamily.
+
+    Returns a dict of {sequence name: (profile name, e-value, bit score)}.
+    """
+    rows_of = defaultdict(list)
+    for row in rows:
+        rows_of[row[0]].append(row)
+    best = best_hits(rows)
+    for seqname, (profname, _evalue, _score) in best.items():
+        if not is_catch_all(profname):
+            continue
+        accepted = [
+            row
+            for row in rows_of[seqname]
+            if not is_catch_all(row[1])
+            and threshold(row[1]) is not None
+            and row[3] >= threshold(row[1])
+        ]
+        if accepted:
+            best[seqname] = best_hits(accepted)[seqname]
+    return best
+
+
+def add_hits(fasta, hmm, hits, min_score, index, min_length):
+    """Append the hits that a profile accepts to its FASTA file.
+
+    The hits are tuples of (sequence name, bit score), and min_score is the
+    profile's acceptance threshold (see profile_threshold), or None.
+    """
     # The weakest of the profile's own sequences sets the acceptance
     # threshold, in bits. A bit score, unlike an e-value, does not depend on
     # the number of sequences searched, so the profile's own scores and the
     # target's are comparable.
-    min_score = profile_threshold(fasta, hmm)
     if min_score is None:
         logger.warning(
             "Skipping %s: its HMM profile hits none of its own sequences at "

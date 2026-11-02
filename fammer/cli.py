@@ -185,7 +185,6 @@ def main(argv=None):
         help="""Minimum length, as a proportion of the profile length, of
             hits to accept into the profiles.""",
     )
-    # ENH: -u, --unclassified : exclude? put parent-level hits here?
     P_add.set_defaults(func=cmd_add)
 
     # Sub-command: refine

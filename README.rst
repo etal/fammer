@@ -260,19 +260,20 @@ initially, or a larger sequence database like **refseq_proteins**, if you're
 confident in your coverage of the superfamily and want to improve the
 sensitivity of your profiles.
 
-Each hit is considered for the profile whose best-matching domain gives it the smallest E-value in the target database.
-Only profiles with a FASTA file of their own receive hits, so a hit that matches a group-level profile best is not added anywhere.
+Each hit is considered for one of the profiles that have a FASTA file of their own: the one whose best-matching domain gives it the smallest E-value in the target database.
+The group-level profiles do not take part, so a hit that matches a group profile best is considered for the best-matching profile among those with a FASTA file.
+A catch-all profile (see `Directory tree is the superfamily hierarchy`_) does not compete with the subfamilies: a hit that matches a catch-all best is considered instead for the subfamily profile with the smallest E-value among those whose threshold its bit score reaches, and stays with the catch-all only if there is none.
 A hit is accepted when it passes the significance cutoff ``-E`` in the target database, when the bit score of its best domain is at least the threshold of the profile, and when the aligned region covers at least the fraction ``-L`` of the profile length.
 The threshold is the lowest best-domain bit score among the profile's own sequences, counting those that its HMM hits at an E-value of 0.001 or better.
 The comparison uses bit scores because an E-value grows with the number of sequences searched, while a bit score does not, so the threshold is the same whatever the size of the target.
 The profile's own sequences are those of the alignment from which ``fammer build`` made the HMM, so a sequence that ``add`` appended since the last build does not count until the HMM is rebuilt with it.
 A profile of at most ten sequences scores each of them against an HMM built from its alignment without that sequence, since against an HMM built partly from itself a sequence of a small profile scores far higher than an unseen member of the family does; a larger profile scores its sequences against its own HMM.
 Only the aligned region is added, not the full-length sequence.
-A sequence with several domains that pass these thresholds contributes its longest domain once, and a sequence whose identifier is already in the profile is not added again.
+A sequence with several domains that pass these thresholds contributes its longest domain once, and a sequence whose identifier is already in any profile of the tree is not added again.
 A second run with the same target and the same HMMs therefore adds nothing.
 After ``fammer build`` has rebuilt the HMMs from the enlarged sequence sets, another run may add a few more sequences.
-Repeating the two commands can take many rounds to reach a run that adds nothing: on a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the runs after each of the first nine rebuilds added sequences to the catch-all ``STE-Unclassified`` profile, the run after the first rebuild also to ``MAPK``, and the run after the tenth rebuild added none.
-Review what each round adds before rebuilding.
+Repeating the two commands takes several rounds to reach a run that adds nothing: on a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the first run added 48 sequences, the runs after the first four rebuilds added 11, 2, 3 and 2 more, mostly to ``CAMK1`` and ``STE-Unclassified``, and the run after the fifth rebuild added none.
+Review what each round adds before rebuilding: a profile whose weakest sequence scores low, such as ``STE11`` or ``CAMK1`` in that tree, can accept a kinase of a family that the tree has no profile for.
 Holding each sequence out does not help a small profile whose sequences are nearly identical: each still scores far higher against the others than an unseen member of the family does, so the profile may accept nothing at all.
 If a profile has hits that it does not yet hold, but its HMM finds none of its own sequences at 0.001 or better, there is no threshold to compare against, and the profile is skipped with a warning.
 A target that is empty or holds only whitespace has no hits, which ``add`` reports as an error.
@@ -387,8 +388,8 @@ A simple un-nested layout looks like::
         ...
         Superfamily-Unclassified.fasta
 
-Typically, a protein superfamily will have some members that cannot be cleanly
-classified into subfamilies.
+Typically, a protein superfamily will have some members that cannot be cleanly classified into subfamilies.
+Put them in a catch-all file whose name ends with ``-Unclassified``, ``-Unclass`` or ``-Unique``; ``add`` and ``refine`` treat such a file as a set of leftovers rather than as a subfamily.
 
 Recursive nesting is also allowed (in fact, that's the point of this project).
 It looks like this::

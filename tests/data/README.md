@@ -262,7 +262,7 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   `CDK.aln`, `DYRK.fasta` and `PKL.aln` log mean silhouettes of 0.398, 0.630 and 0.367; computed on the collapsed trees they would be 0.393, 0.596 and 0.355.
   The values are logged to three decimals, and none of the 33 values of the three runs lies within 3.9e-5 of a rounding boundary, so a difference in the last bits of a sum between platforms does not change the log.
 - **Repeated runs of `add`** (one run, not replayed).
-  `add` skips the hits whose identifier the profile already holds, keeps the longest domain of a sequence with several, skips with a warning a profile that has hits that it does not yet hold but whose HMM finds none of its own sequences at 0.001 or better, and writes its temporary sequence file outside the profile tree.
+  `add` skips the hits whose identifier any profile of the tree already holds, keeps the longest domain of a sequence with several, skips with a warning a profile that has hits that it does not yet hold but whose HMM finds none of its own sequences at 0.001 or better, and writes its temporary sequence file outside the profile tree.
   It also accepts sequence names that contain `/`, which `test_sequence_names_may_contain_a_slash` in `tests/test_add.py` covers.
   It appends its records through `_share.write_fasta`, so each sequence is on one line where the recorded run wrapped it at 60 columns.
   It also writes a line ending before the first appended record when the profile file lacks one, where the recorded code would have joined that record to the last sequence line.
@@ -281,3 +281,12 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   The profile's sequences are the rows of the alignment from which `build` made its HMM that are also in its FASTA file, where the recorded code scored the whole FASTA file; a record that `add` appended since the last build therefore cannot lower the threshold.
   A profile of at most ten sequences scores each of them against an HMM built from its alignment without that row.
   In the built tree every alignment holds exactly the sequences of its FASTA file, and no profile of ten or fewer sequences accepts a hit of `TgME49.pep` under either rule, so neither change moves `add.json`.
+- **Assignment of `add` hits** (one run, not replayed; no replayed case moves).
+  `add` assigns each hit only among the profiles that have a FASTA file, where the recorded code assigned it among every profile of `SomeKinases_all.hmm` and so added no hit whose best match was a group-level profile: 55 of the 118 sequences of `TgME49.pep` that pass `-E 1e-20`.
+  A hit whose best profile is a catch-all, a profile named with the suffix `-Unclassified`, `-Unclass` or `-Unique`, goes instead to the subfamily profile of smallest e-value whose threshold its bit score reaches, if there is one.
+  On `add.json` the first run appends 48 records to 15 files, where the recorded run appended 30 to 13; `CHANGED_RECORDS` in `tests/test_integration.py` lists the differences by file.
+  Seventeen of the new records are hits of group profiles, and one is the Aurora record of the bit-score threshold.
+  Two recorded records move from a catch-all to a subfamily: TGME49_291050, an SNF1-family kinase, from `CAMK-Unclass` to `CDPK`, and TGME49_218400, a NEK kinase, from `STE-Unclassified` to `STE11`.
+  Judged by the product names of the target, not every new record is in its family: `STE11` also receives a second NEK kinase and a CK2-family kinase, and `MAPKAPK` receives CDPK9, since the tree has no NEK profile and the weakest sequences of `STE11` and `MAPKAPK` score 126.1 and 149.0 bits.
+  Alternating `build` and `add` on that tree adds 48, 11, 2, 3 and 2 records and then none, where assigning among every profile added records in ten rounds and left TGME49_244620 in both `STE11` and `STE-Unclassified`.
+  `scan` still assigns among every profile, so none of its runs moves; `parse_scanned_hits` returns what it returned, now through `parse_scanned_rows` and `best_hits`, which `add` uses to select among its own profiles.

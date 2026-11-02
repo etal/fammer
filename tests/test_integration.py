@@ -455,22 +455,64 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
     assert tree_state(built_workspace) == written
 
 
-# The bit-score threshold of add accepts one hit that the recorded e-value rule
-# rejected: TGME49_203010, an Aurora kinase, whose best domain scores 254.0 bits
-# against Aurora where the weakest of Aurora's 39 sequences scores 250.6.
-EXTRA_RECORD = ("SomeKinases/Aurora.fasta", "TGME49_203010")
+# How the first run of add differs from the recorded one, by file: the
+# identifiers of the records that it appends and the recorded run did not, and
+# of the recorded records that it does not append there. TGME49_203010 passes
+# the bit-score threshold that the recorded e-value rule failed; the others
+# follow from assigning hits only among profiles with a FASTA file, and from
+# passing a catch-all's hit to a subfamily that accepts it. See "Acceptance
+# threshold of add" and "Assignment of add hits" in tests/data/README.md.
+CHANGED_RECORDS = {
+    "SomeKinases/Aurora.fasta": ({"TGME49_203010"}, set()),
+    "SomeKinases/CAMK/CAMK-Unclass.fasta": (set(), {"TGME49_291050"}),
+    "SomeKinases/CAMK/CAMK1.fasta": (
+        {
+            "TGME49_226540",
+            "TGME49_239420",
+            "TGME49_254190",
+            "TGME49_266950",
+            "TGME49_268210",
+            "TGME49_275610",
+            "TGME49_281430",
+        },
+        set(),
+    ),
+    "SomeKinases/CAMK/CDPK.fasta": (
+        {
+            "TGME49_228750",
+            "TGME49_233905",
+            "TGME49_243500",
+            "TGME49_291050",
+            "TGME49_295760",
+            "TGME49_315190",
+        },
+        set(),
+    ),
+    "SomeKinases/CAMK/MAPKAPK.fasta": ({"TGME49_217600"}, set()),
+    "SomeKinases/CMGC/CMGC-Unclass.fasta": ({"TGME49_204280"}, set()),
+    "SomeKinases/STE/STE-Unclassified.fasta": ({"TGME49_231070"}, {"TGME49_218400"}),
+    "SomeKinases/STE/STE11.fasta": (
+        {"TGME49_218400", "TGME49_294260", "TGME49_307640"},
+        set(),
+    ),
+}
+
+
+def record_id(record):
+    """The identifier of a (header line, sequence) pair."""
+    return record[0][1:].split()[0]
 
 
 def test_add_appends_the_recorded_hits_once(scan_workspace):
-    """``add`` appends the recorded hits, and a second run changes nothing.
+    """``add`` appends the recorded hits as changed, and a second run changes nothing.
 
     The first run appends to each FASTA file the records that the Python 2
     code base appended, each on two lines where the recorded run wrapped the
-    sequence, and one Aurora domain that the recorded threshold rejected (see
-    "Acceptance threshold of add" in tests/data/README.md); the log lines are
-    compared as a multiset, since the tree is walked in file-system order. The
-    second run finds each accepted hit already in its profile, so it writes to
-    no file.
+    sequence, except for the records in CHANGED_RECORDS; each record that it
+    appends instead is a part of the sequence of that identifier in the
+    target. The log lines are compared as a multiset, since the tree is
+    walked in file-system order. The second run finds each accepted hit
+    already in the tree, so it writes to no file.
     """
     require("fammer", "hmmsearch")
     run = recorded("add.json")
@@ -480,27 +522,45 @@ def test_add_appends_the_recorded_hits_once(scan_workspace):
     }
     proc = run_fammer(scan_workspace, run["argv"])
     assert proc.returncode == run["returncode"], proc.stderr
-    extra_file, extra_id = EXTRA_RECORD
-    assert log_messages(proc.stderr) == sorted(
-        [*log_messages(run["stderr"]), f"add: Adding 1 hits to profile {extra_file}"]
-    )
     appended = {}
     for name, text in before.items():
         after = (scan_workspace / name).read_text(encoding="utf-8")
         assert after.startswith(text), name
         if after != text:
             appended[name] = after[len(text) :]
-    assert appended.keys() == {*run["appended"], extra_file}
-    (((header, residues), count),) = fasta_records(appended.pop(extra_file)).items()
-    assert count == 1
-    assert header.split()[0] == ">" + extra_id
+
     with open(scan_workspace / "TgME49.pep", encoding="utf-8") as handle:
-        full = next(rec for rec in SeqIO.parse(handle, "fasta") if rec.id == extra_id)
-    assert residues in str(full.seq)
-    for name, text in appended.items():
-        records = fasta_records(text)
-        assert records == fasta_records(run["appended"][name]), name
-        assert len(text.splitlines()) == 2 * records.total(), name
+        target = {rec.id: str(rec.seq) for rec in SeqIO.parse(handle, "fasta")}
+    expected_files = set()
+    for name in {*run["appended"], *CHANGED_RECORDS}:
+        added, removed = CHANGED_RECORDS.get(name, (set(), set()))
+        kept = Counter(
+            {
+                record: count
+                for record, count in fasta_records(
+                    run["appended"].get(name, "")
+                ).items()
+                if record_id(record) not in removed
+            }
+        )
+        if not kept and not added:
+            continue
+        expected_files.add(name)
+        records = fasta_records(appended.get(name, ""))
+        assert kept <= records, name
+        new = records - kept
+        assert sorted(map(record_id, new.elements())) == sorted(added), name
+        for record in new:
+            assert record[1] in target[record_id(record)], name
+        assert len(appended[name].splitlines()) == 2 * records.total(), name
+    assert appended.keys() == expected_files
+    assert log_messages(proc.stderr) == sorted(
+        [line for line in log_messages(run["stderr"]) if ": Processing " in line]
+        + [
+            f"add: Adding {fasta_records(text).total()} hits to profile {name}"
+            for name, text in appended.items()
+        ]
+    )
 
     written = tree_state(scan_workspace)
     proc = run_fammer(scan_workspace, run["argv"])
@@ -566,8 +626,37 @@ def test_add_ends_the_last_line_of_a_profile_before_appending(scan_workspace):
     assert proc.returncode == 0, proc.stderr
     appended = cdpk.read_text(encoding="utf-8")[len(text) :]
     assert appended.startswith("\n>")
-    assert fasta_records(appended) == fasta_records(run["appended"][name])
+    assert fasta_records(run["appended"][name]) <= fasta_records(appended)
     assert read_records(cdpk, "fasta")[: len(members)] == members
+
+
+def test_add_skips_a_sequence_that_another_profile_holds(scan_workspace):
+    """A hit that is already in any profile of the tree is appended nowhere.
+
+    TGME49_244620 is a hit that the recorded run appended to STE11. Placed in
+    CDPK.fasta first, as a run before an earlier rebuild could have left it,
+    it stays the only record of that identifier in the tree, while STE11
+    still receives its other hits.
+    """
+    require("fammer", "hmmsearch")
+    seqid = "TGME49_244620"
+    with open(scan_workspace / "TgME49.pep", encoding="utf-8") as handle:
+        record = next(rec for rec in SeqIO.parse(handle, "fasta") if rec.id == seqid)
+    cdpk = scan_workspace / "SomeKinases" / "CAMK" / "CDPK.fasta"
+    cdpk.write_text(
+        cdpk.read_text(encoding="utf-8") + f">{seqid}\n{record.seq}\n", encoding="utf-8"
+    )
+    ste11 = scan_workspace / "SomeKinases" / "STE" / "STE11.fasta"
+    members = len(read_records(ste11, "fasta"))
+    proc = run_fammer(scan_workspace, ["add", "SomeKinases", "TgME49.pep"])
+    assert proc.returncode == 0, proc.stderr
+    names = [
+        name
+        for path in (scan_workspace / "SomeKinases").rglob("*.fasta")
+        for name, _seq in read_records(path, "fasta")
+    ]
+    assert names.count(seqid) == 1
+    assert len(read_records(ste11, "fasta")) > members
 
 
 @pytest.mark.parametrize(

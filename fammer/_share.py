@@ -29,13 +29,21 @@ def get_hmm_hits(hmmfname, seqfname, evalue):
 
     Return a mapping of hit sequence names to the best profile, with the
     e-value and bit score of its best domain, as parse_scanned_hits does.
+    """
+    return best_hits(get_hmm_rows(hmmfname, seqfname, evalue))
+
+
+def get_hmm_rows(hmmfname, seqfname, evalue):
+    """Search a sequence database with an HMM profile database.
+
+    Return every row of the hmmsearch table, as parse_scanned_rows does.
 
     The sequence file is read as FASTA. A file of zero bytes has no hits, and
     hmmsearch is not run on it, since it exits with an error on one; a file of
     only whitespace has no hits either, and a misformatted file still fails.
     """
     if getsize(seqfname) == 0:
-        return {}
+        return []
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".tbl") as tbl:
         sh(
             "hmmsearch --tformat fasta --noali --notextw "
@@ -43,7 +51,7 @@ def get_hmm_hits(hmmfname, seqfname, evalue):
             f"{hmmfname} {seqfname} > /dev/null"
         )
         tbl.seek(0)
-        return parse_scanned_hits(tbl)
+        return list(parse_scanned_rows(tbl))
 
 
 def get_hmm_evalues(hmmfname, seqfname):
@@ -90,10 +98,7 @@ def parse_scanned_hits(tblfile):
     """Parse a file stream from hmmsearch --tblout.
 
     Returns a dict of {target_seq_name: (best_profile_name, e-value, bit score)}
-
-    Each sequence is matched to the profile whose best single domain has the
-    smallest e-value, the first such row on a tie. The e-value and the bit
-    score are those of that domain, from the same row.
+    of the rows that parse_scanned_rows reads, as best_hits selects them.
 
     Example contents::
 
@@ -104,7 +109,16 @@ def parse_scanned_hits(tblfile):
         gi|254575025|pdb|3HX4|A -          Testfam              -           1.4e-150  498.9   5.7  1.6e-150  498.7   4.0   1.0   1   0   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Cdpk1 Of Toxoplasma Gondii, Tgme49_1014 Presence Of Calcium
         TAIR|locus:2011201      -          Testfam              -           2.4e-137  455.2   0.0  2.7e-137  455.1   0.0   1.0   1   0   0   1   1   1   1 symbol:CDPK1 species:3702 "Arabidopsis thaliana"  AT1G18890
     """  # noqa: E501
-    best = {}
+    return best_hits(parse_scanned_rows(tblfile))
+
+
+def parse_scanned_rows(tblfile):
+    """Read the rows of a file stream from hmmsearch --tblout.
+
+    Generates tuples of (target_seq_name, profile_name, e-value, bit score) in
+    file order, one per row, with the e-value and bit score of the best single
+    domain.
+    """
     for line in tblfile:
         if line.startswith("#"):
             continue
@@ -121,10 +135,36 @@ def parse_scanned_hits(tblfile):
             dom_bias,
             _etc,
         ) = line.split(None, 10)
-        if seqname in best and float(dom_eval) >= best[seqname][1]:
+        yield seqname, profname, float(dom_eval), float(dom_score)
+
+
+def best_hits(rows):
+    """Match each sequence of hmmsearch table rows to its best profile.
+
+    The rows are tuples of (sequence name, profile name, e-value, bit score),
+    as parse_scanned_rows generates them. Each sequence is matched to the
+    profile whose best single domain has the smallest e-value, the first such
+    row on a tie. The e-value and the bit score are those of that domain, from
+    the same row.
+
+    Returns a dict of {sequence name: (profile name, e-value, bit score)}.
+    """
+    best = {}
+    for seqname, profname, evalue, score in rows:
+        if seqname in best and evalue >= best[seqname][1]:
             continue
-        best[seqname] = (profname, float(dom_eval), float(dom_score))
+        best[seqname] = (profname, evalue, score)
     return best
+
+
+# A profile whose name ends with one of these holds the sequences of a group
+# that fit none of its subfamilies.
+CATCH_ALL_SUFFIXES = ("-Unclassified", "-Unclass", "-Unique")
+
+
+def is_catch_all(profile_name):
+    """True if a profile is a catch-all set rather than a subfamily, by its name."""
+    return profile_name.endswith(CATCH_ALL_SUFFIXES)
 
 
 # Helpers
