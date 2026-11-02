@@ -450,6 +450,26 @@ much, but it will help the higher-level alignments that include the consensus
 sequence of that subfamily.
 
 
+Letter case in alignments
+`````````````````````````
+
+HMMER and CHAIN (Neuwald et al. 2003, Genome Research 13:673) mark the state of each residue by its case: an uppercase residue is aligned to a match column of a profile and a lowercase residue is an insertion relative to it.
+In HMMER alignments, ``-`` is a deletion in a match column and ``.`` a gap in an insert column.
+Alignments in this convention come from ``hmmalign`` and ``hmmsearch -A``, and from the CMA files that CHAIN and MAPGAPS read and write.
+BLAST and PSI-BLAST use lowercase for masking instead: with ``-lcase_masking``, lowercase residues in a query or subject sequence are masked, so convert such residues to uppercase before placing them in an alignment.
+
+MAFFT writes protein residues in uppercase, so every ``.aln`` file that ``fammer build`` creates is in uppercase, whatever the case of the input sequences.
+A family ``.aln`` file that you edit by hand is used unchanged by ``fammer build`` as long as it is newer than its ``.fasta`` file.
+In such a file, Fammer reads letter case as HMMER does: a column whose residues are all lowercase is an insert column, and the family consensus has a gap there; a column that mixes lowercase and uppercase residues is read as uppercase, with a warning.
+``hmmbuild`` does not read letter case in the alignments that Fammer gives it, so the match states of an HMM profile are chosen by the proportion of residues in each column, whatever their case.
+When ``fammer update-fasta`` rewrites a ``.fasta`` file from its edited ``.aln`` file, it writes the sequences in uppercase, and ``fammer build`` then realigns the family with MAFFT, so lowercase in that ``.aln`` file does not survive the rebuild.
+
+``fammer build --mapgaps`` writes a ``.cma`` profile for each family and a ``.tpl`` template for each group, in the CMA format of CHAIN and MAPGAPS, and these files use the convention themselves.
+A column of an alignment becomes a match column of its profile where the consensus of the alignment has a residue, and the residues of the other columns are written in lowercase, except that an insertion next to a deletion is written in uppercase as a match.
+A profile can therefore have match columns that its parent profile lacks, and in the parent's template the row of its consensus sequence holds lowercase residues at most of those columns.
+For example, built from ``profiles/SomeKinases``, the CAMK row of ``SomeKinases.tpl`` reads ``KDKlDREQ`` and ``LLDskDPD`` where ``CAMK.tpl`` reads ``KDKLDREQ`` and ``LLDSKDPD``.
+
+
 PDB files for structural alignment
 ``````````````````````````````````
 
