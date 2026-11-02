@@ -108,7 +108,7 @@ Pure-Python functions, called in-process.
 - `mapgaps.json` and `mapgaps/`: `build.mg_aln2cma`, which writes MAPGAPS profiles through biocma, on three alignments from `e2e/build/`, one per level of the profile tree: `SomeKinases/CAMK/CDPK.cma` (level 2), `SomeKinases/CAMK.tpl` (level 1) and `SomeKinases.tpl` (level 0).
   The written files are kept under `mapgaps/` at their paths in the build tree.
   Each case also records the consensus sequence that `mg_aln2cma` prepends to the alignment, so that the biocma writer can be compared on its own when the biofrills consensus differs.
-- `share-scan-add.json`: `_share.parse_scanned_hits` on the example in its docstring, on a synthetic table with ties, and on `tool-outputs/hmmsearch/twenty.fasta.SomeKinases_all.tbl`; `scan.write_summary` and `scan.write_table` output; `add.filter_profile` and `add.filter_evalue`; `_share.write_fasta`.
+- `share-scan-add.json`: `_share.parse_scanned_hits` on the example in its docstring, on a synthetic table with ties, and on `tool-outputs/hmmsearch/twenty.fasta.SomeKinases_all.tbl`; `scan.write_summary` and `scan.write_table` output; `add.filter_profile` and `add.filter_evalue` (since replaced; see "Acceptance threshold of `add`" under "Deliberate differences"); `_share.write_fasta`.
 - `update_fasta.json`: `ungap_and_unique` on synthetic record sets and on `profiles/ROPK/PKL.aln`, and `is_same_aln_fasta` against several FASTA variants of one alignment.
 - `tmalign.json`: `read_tmalign_as_seqrec_pair` on each file in `tool-outputs/tmalign/`, as written and with its final CPU-time line removed; `tmscore_from_description`, `clean_and_dedupe_seqs`, `purge_seqs` and `mst_pairs`.
 - `cluster.json`: `geom_mean`, `cluster.write_fasta` (since removed; see "FASTA headers" under "Deliberate differences"), and `load_tree` on input that is neither `.aln` nor `.fasta`.
@@ -126,7 +126,7 @@ Each run records its arguments, exit status, standard output, standard error, an
   Each run also left the hmmsearch table `<target>.tbl` in the working directory; the current code writes the table to a temporary file and removes it, so `test_scan_reproduces_recorded_run` expects every recorded file except that one.
 - `update-fasta.json`: `fammer update-fasta` on the built tree and on one alignment, each before and after the last record of an alignment (`CDK.aln`, then `DYRK.aln`) was deleted.
 - `add.json`: `fammer add SomeKinases TgME49.pep` on the built tree, with the text appended to each FASTA file.
-  `test_add_appends_the_recorded_hits_once` compares the appended records, header and sequence, as a multiset per file; see "Repeated runs of `add`" under "Deliberate differences".
+  `test_add_appends_the_recorded_hits_once` compares the appended records, header and sequence, as a multiset per file; see "Repeated runs of `add`" and "Acceptance threshold of `add`" under "Deliberate differences".
 - `refine.json`: `fammer refine SomeKinases -n -u SomeKinases/Testfam-Unclassified.fasta`.
 - `pdb.json`: `fammer build` with structures enabled, and `tmalign.py` on two and on three structures.
   Both `tmalign.py` runs fail; the first lists `tm.out.fasta` as created because the recorded sources opened the `-o` file before aligning, and the second lists it as neither created nor modified because the first had left it empty.
@@ -267,5 +267,14 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   It appends its records through `_share.write_fasta`, so each sequence is on one line where the recorded run wrapped it at 60 columns.
   It also writes a line ending before the first appended record when the profile file lacks one, where the recorded code would have joined that record to the last sequence line.
   Every recorded profile ends with a line ending, so the recorded run does not exercise this.
-  On `add.json` the 30 appended records, their headers and their sequences are otherwise unchanged; a second run on the result changes no file.
+  On `add.json` the 30 recorded records, their headers and their sequences are otherwise unchanged; a second run on the result changes no file.
   The run needs HMMER, so `replay.py` does not replay it and `differences.json` has no entry for it; `test_add_appends_the_recorded_hits_once` compares it instead.
+- **Acceptance threshold of `add`** (one run, not replayed; no replayed case moves).
+  `add` accepts a hit when the bit score of its best domain is at least the lowest best-domain bit score among the sequences of the profile that its HMM hits at 0.001 or better, where the recorded code compared the hit's best-domain e-value with the highest best-domain e-value among them.
+  hmmsearch scales a P-value by the number of sequences searched, so the recorded rule compared an e-value computed over the 8,320 sequences of `TgME49.pep` with e-values computed over the profile's own sequences, and for a profile of n sequences demanded a P-value 8,320/n times smaller than that of the profile's weakest sequence: 213 times for Aurora's 39.
+  Bit scores do not depend on the number of sequences searched.
+  On `add.json` the change adds one record to `SomeKinases/Aurora.fasta`: a domain of TGME49_203010, an Aurora kinase, which scores 254.0 bits against Aurora where Aurora's weakest sequence scores 250.6; its e-value, 5.3e-76, was 19.6 times the recorded threshold of 2.7e-77.
+  Which profile a hit is assigned to is unchanged, so no run of `scan` moves.
+  `parse_scanned_hits` now also returns the bit score from the row that wins the assignment; the replay compares the profile and e-value that the recorded code returned and leaves the score out, so its cases do not move.
+  `add.filter_profile` now yields each hit's bit score instead of its e-value; the replay looks up the e-value of each selected sequence in the table, so its cases do not move either.
+  `add.filter_evalue` is replaced by `add.filter_score`, which replays its four recorded cases: within one profile a smaller e-value is never a lower bit score, so each recorded e-value threshold becomes the lowest bit score among the profile's rows that it keeps, or an infinite score when it keeps none, and each case selects the recorded hits.

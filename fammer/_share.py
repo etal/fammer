@@ -19,11 +19,16 @@ class UsageError(ValueError):
 
 # HMMer utilities
 
+# The e-value at or below which a profile's HMM counts as hitting a sequence,
+# when a set of sequences is scored against one profile.
+MEMBER_EVALUE = 0.001
+
 
 def get_hmm_hits(hmmfname, seqfname, evalue):
     """Search a sequence database with an HMM profile database.
 
-    Return a mapping of hit sequence names to the best profile and e-value.
+    Return a mapping of hit sequence names to the best profile, with the
+    e-value and bit score of its best domain, as parse_scanned_hits does.
 
     The sequence file is read as FASTA. A file of zero bytes has no hits, and
     hmmsearch is not run on it, since it exits with an error on one; a file of
@@ -42,15 +47,25 @@ def get_hmm_hits(hmmfname, seqfname, evalue):
 
 
 def get_hmm_evalues(hmmfname, seqfname):
-    """Map each sequence that an HMM profile hits to its best e-value."""
-    hits = get_hmm_hits(hmmfname, seqfname, 0.001)
-    return {seqname: evalue for seqname, (_prof, evalue) in hits.items()}
+    """Map each sequence that an HMM profile hits to its best-domain e-value."""
+    hits = get_hmm_hits(hmmfname, seqfname, MEMBER_EVALUE)
+    return {seqname: evalue for seqname, (_prof, evalue, _score) in hits.items()}
+
+
+def get_hmm_scores(hmmfname, seqfname):
+    """Map each sequence that an HMM profile hits to its best-domain bit score."""
+    hits = get_hmm_hits(hmmfname, seqfname, MEMBER_EVALUE)
+    return {seqname: score for seqname, (_prof, _evalue, score) in hits.items()}
 
 
 def parse_scanned_hits(tblfile):
     """Parse a file stream from hmmsearch --tblout.
 
-    Returns a dict of {target_seq_name: (best_profile_name, e-value)}
+    Returns a dict of {target_seq_name: (best_profile_name, e-value, bit score)}
+
+    Each sequence is matched to the profile whose best single domain has the
+    smallest e-value, the first such row on a tie. The e-value and the bit
+    score are those of that domain, from the same row.
 
     Example contents::
 
@@ -61,13 +76,10 @@ def parse_scanned_hits(tblfile):
         gi|254575025|pdb|3HX4|A -          Testfam              -           1.4e-150  498.9   5.7  1.6e-150  498.7   4.0   1.0   1   0   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Cdpk1 Of Toxoplasma Gondii, Tgme49_1014 Presence Of Calcium
         TAIR|locus:2011201      -          Testfam              -           2.4e-137  455.2   0.0  2.7e-137  455.1   0.0   1.0   1   0   0   1   1   1   1 symbol:CDPK1 species:3702 "Arabidopsis thaliana"  AT1G18890
     """  # noqa: E501
-    topevals = collections.defaultdict(int)
-    topprofs = {}
-    _lines = 0
+    best = {}
     for line in tblfile:
         if line.startswith("#"):
             continue
-        _lines += 1
         (
             seqname,
             _acc1,
@@ -81,12 +93,10 @@ def parse_scanned_hits(tblfile):
             dom_bias,
             _etc,
         ) = line.split(None, 10)
-        # Match each sequence to its highest-scoring profile
-        if seqname in topevals and float(dom_eval) >= topevals[seqname]:
+        if seqname in best and float(dom_eval) >= best[seqname][1]:
             continue
-        topevals[seqname] = float(dom_eval)
-        topprofs[seqname] = profname
-    return dict((seq, (prof, topevals[seq])) for seq, prof in topprofs.items())
+        best[seqname] = (profname, float(dom_eval), float(dom_score))
+    return best
 
 
 # Helpers

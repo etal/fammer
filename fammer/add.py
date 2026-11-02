@@ -10,9 +10,10 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 
 from ._share import (
+    MEMBER_EVALUE,
     UsageError,
-    get_hmm_evalues,
     get_hmm_hits,
+    get_hmm_scores,
     ungapped,
     write_fasta,
 )
@@ -59,18 +60,20 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
     if not hits:
         return
 
-    # Score the profile's own sequences with its own HMM; the worst e-value is
-    # the acceptance threshold.
-    seq_evals = get_hmm_evalues(hmm, fasta)
-    if not seq_evals:
+    # Score the profile's own sequences with its own HMM; the lowest
+    # best-domain bit score is the acceptance threshold. A bit score, unlike an
+    # e-value, does not depend on the number of sequences searched, so the
+    # profile's own scores and the target's are comparable.
+    member_scores = get_hmm_scores(hmm, fasta)
+    if not member_scores:
         logger.warning(
             "Skipping %s: its HMM profile hits none of its own sequences at "
-            "e-value 0.001 or better, so there is no threshold to accept a hit",
+            "e-value %s or better, so there is no threshold to accept a hit",
             fasta,
+            MEMBER_EVALUE,
         )
         return
-    max_eval = max(seq_evals.values())
-    hits = list(filter_evalue(hits, max_eval))
+    hits = list(filter_score(hits, min(member_scores.values())))
     if not hits:
         return
 
@@ -129,7 +132,7 @@ def get_hmm_alignment(hmmfname, hits, index):
     Returns the Stockholm records, one per aligned domain, each named
     ``<sequence name>/<start>-<end>``.
     """
-    fullseqs = [index[seqname] for seqname, _e in hits]
+    fullseqs = [index[hit[0]] for hit in hits]
     with (
         tempfile.NamedTemporaryFile(mode="w+", suffix=".fa") as seqfile,
         tempfile.NamedTemporaryFile(mode="w+", suffix=".stk") as alnfile,
@@ -154,14 +157,13 @@ def get_hmm_len(hmmfname):
 def filter_profile(hits, profile_name):
     """Select the hits matching the given profile name.
 
-    Hits are a dict of: {sequence name: (best profile, e-value)}
+    Hits are a dict of: {sequence name: (best profile, e-value, bit score)}
 
-    Generates tuples of: (sequence name, e-value)
+    Generates tuples of: (sequence name, bit score)
     """
-    for seqname, data in hits.items():
-        profname, evalue = data
+    for seqname, (profname, _evalue, score) in hits.items():
         if profname == profile_name:
-            yield (seqname, evalue)
+            yield (seqname, score)
 
 
 def member_names(fasta):
@@ -202,8 +204,8 @@ def longest_domains(records, min_len_aa):
         yield acc, record
 
 
-def filter_evalue(hits, max_evalue):
-    """Skip hits that are above the given e-value."""
+def filter_score(hits, min_score):
+    """Skip hits whose bit score is below the given one."""
     for hit in hits:
-        if hit[1] <= max_evalue:
+        if hit[1] >= min_score:
             yield hit

@@ -455,14 +455,22 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
     assert tree_state(built_workspace) == written
 
 
+# The bit-score threshold of add accepts one hit that the recorded e-value rule
+# rejected: TGME49_203010, an Aurora kinase, whose best domain scores 254.0 bits
+# against Aurora where the weakest of Aurora's 39 sequences scores 250.6.
+EXTRA_RECORD = ("SomeKinases/Aurora.fasta", "TGME49_203010")
+
+
 def test_add_appends_the_recorded_hits_once(scan_workspace):
     """``add`` appends the recorded hits, and a second run changes nothing.
 
     The first run appends to each FASTA file the records that the Python 2
     code base appended, each on two lines where the recorded run wrapped the
-    sequence; the log lines are compared as a multiset, since the tree is
-    walked in file-system order. The second run finds each accepted hit
-    already in its profile, so it writes to no file.
+    sequence, and one Aurora domain that the recorded threshold rejected (see
+    "Acceptance threshold of add" in tests/data/README.md); the log lines are
+    compared as a multiset, since the tree is walked in file-system order. The
+    second run finds each accepted hit already in its profile, so it writes to
+    no file.
     """
     require("fammer", "hmmsearch")
     run = recorded("add.json")
@@ -472,14 +480,23 @@ def test_add_appends_the_recorded_hits_once(scan_workspace):
     }
     proc = run_fammer(scan_workspace, run["argv"])
     assert proc.returncode == run["returncode"], proc.stderr
-    assert log_messages(proc.stderr) == log_messages(run["stderr"])
+    extra_file, extra_id = EXTRA_RECORD
+    assert log_messages(proc.stderr) == sorted(
+        [*log_messages(run["stderr"]), f"add: Adding 1 hits to profile {extra_file}"]
+    )
     appended = {}
     for name, text in before.items():
         after = (scan_workspace / name).read_text(encoding="utf-8")
         assert after.startswith(text), name
         if after != text:
             appended[name] = after[len(text) :]
-    assert appended.keys() == run["appended"].keys()
+    assert appended.keys() == {*run["appended"], extra_file}
+    (((header, residues), count),) = fasta_records(appended.pop(extra_file)).items()
+    assert count == 1
+    assert header.split()[0] == ">" + extra_id
+    with open(scan_workspace / "TgME49.pep", encoding="utf-8") as handle:
+        full = next(rec for rec in SeqIO.parse(handle, "fasta") if rec.id == extra_id)
+    assert residues in str(full.seq)
     for name, text in appended.items():
         records = fasta_records(text)
         assert records == fasta_records(run["appended"][name]), name
@@ -512,7 +529,7 @@ def test_add_appends_one_domain_per_sequence(scan_workspace):
 def test_add_skips_a_profile_that_misses_its_own_sequences(scan_workspace, content):
     """A profile whose HMM hits none of its own sequences accepts no hit.
 
-    Without a hit of its HMM on one of its own sequences, there is no e-value
+    Without a hit of its HMM on one of its own sequences, there is no
     threshold. The ULK sequences are replaced by one that its HMM does not
     match, or by none, while the tree's HMMs still assign a TgME49 protein to
     ULK; ``add`` warns, leaves ULK.fasta alone, and goes on to the other

@@ -1,19 +1,23 @@
-"""Properties of parse_scanned_hits, write_fasta and get_hmm_hits in fammer._share.
+"""Properties of parse_scanned_hits, write_fasta and the hmmsearch helpers in _share.
 
 For each target sequence the parser keeps the profile with the smallest
 best-1-domain E-value (column 8). When several profiles tie, the profile on the
-first such row is kept. The tests compare the parser with an independent
-oracle over every ordering of a small table.
+first such row is kept. The E-value and the bit score (column 9) it returns
+are those of that row. The tests compare the parser with an independent oracle
+over every ordering of a small table.
 
 write_fasta writes each record as one header line and one unwrapped sequence
 line, with the record's identifier once in the header.
 
 get_hmm_hits finds no hits in a sequence file of zero bytes without running
-hmmsearch, which exits with an error on one, and runs it on any other file.
+hmmsearch, which exits with an error on one, and runs it on any other file;
+get_hmm_evalues and get_hmm_scores take the E-value and the bit score of its
+hits.
 """
 
 import io
 import itertools
+import re
 
 import pytest
 from Bio import SeqIO
@@ -21,7 +25,13 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from fammer import _share
-from fammer._share import get_hmm_evalues, get_hmm_hits, parse_scanned_hits, write_fasta
+from fammer._share import (
+    get_hmm_evalues,
+    get_hmm_hits,
+    get_hmm_scores,
+    parse_scanned_hits,
+    write_fasta,
+)
 
 HEADER = [
     "#                                  --- full sequence ---- --- best 1 dom ----\n",
@@ -36,22 +46,30 @@ FOOTER = [
 ]
 
 
-def tblout_line(seq, prof, dom_eval, seq_eval="1e-20", description="-"):
+def tblout_line(
+    seq, prof, dom_eval, dom_score="99.0", seq_eval="1e-20", description="-"
+):
     """One data line with the 18 fixed columns and a free-text description."""
     return (
         f"{seq:<24} -          {prof:<12} -          {seq_eval:>9}  100.0   0.1 "
-        f"{dom_eval:>9}  99.0   0.1   1.0   1   0   0   1   1   1   1 {description}\n"
+        f"{dom_eval:>9} {dom_score:>6}   0.1   1.0   1   0   0   1   1   1   1 "
+        f"{description}\n"
     )
 
 
 def oracle(rows):
-    """Expected result by direct statement of the rule, from (seq, prof, eval)."""
+    """Expected result by direct statement of the rule.
+
+    Rows are (seq, prof, eval) or (seq, prof, eval, score), the score 99.0 when
+    it is not given, as in tblout_line.
+    """
     expected = {}
     for seq in {row[0] for row in rows}:
         mine = [row for row in rows if row[0] == seq]
         # min() returns the first of several equal minima.
         best = min(mine, key=lambda row: float(row[2]))
-        expected[seq] = (best[1], float(best[2]))
+        score = float(best[3]) if len(best) > 3 else 99.0
+        expected[seq] = (best[1], float(best[2]), score)
     return expected
 
 
@@ -60,13 +78,15 @@ def parse(lines):
 
 
 # Two sequences, one tie within each sequence and one clear minimum, written in
-# different notations so that ties are numeric rather than textual.
+# different notations so that ties are numeric rather than textual. The bit
+# scores order the rows differently from the E-values, so a score taken from
+# any row but the winning one is detected.
 TABLE = [
-    ("seqA", "prof1", "1.0e-5"),
-    ("seqA", "prof2", "1e-05"),
-    ("seqA", "prof3", "2e-4"),
-    ("seqB", "prof1", "3e-10"),
-    ("seqB", "prof2", "1e-12"),
+    ("seqA", "prof1", "1.0e-5", "40.5"),
+    ("seqA", "prof2", "1e-05", "60.0"),
+    ("seqA", "prof3", "2e-4", "10.0"),
+    ("seqB", "prof1", "3e-10", "70.0"),
+    ("seqB", "prof2", "1e-12", "20.0"),
 ]
 
 
@@ -81,10 +101,11 @@ def test_every_row_order_gives_the_minimum_with_first_row_winning_ties():
                 seq,
                 prof,
                 dom,
+                score,
                 seq_eval=f"{i + 1}e-30",
                 description=f'symbol:X species:1 "A b"  tail {i}',
             )
-            for i, (seq, prof, dom) in enumerate(rows)
+            for i, (seq, prof, dom, score) in enumerate(rows)
         ]
         assert parse(lines) == oracle(rows), rows
 
@@ -95,8 +116,8 @@ def test_tied_rows_keep_the_first_whatever_profile_name_or_full_evalue():
         tblout_line("s", "zzz", "1e-8", seq_eval="1e-1"),
         tblout_line("s", "aaa", "1e-8", seq_eval="1e-99"),
     ]
-    assert parse(lines) == {"s": ("zzz", 1e-8)}
-    assert parse(lines[::-1]) == {"s": ("aaa", 1e-8)}
+    assert parse(lines) == {"s": ("zzz", 1e-8, 99.0)}
+    assert parse(lines[::-1]) == {"s": ("aaa", 1e-8, 99.0)}
 
 
 def test_selection_uses_the_domain_evalue_not_the_full_sequence_evalue():
@@ -105,7 +126,17 @@ def test_selection_uses_the_domain_evalue_not_the_full_sequence_evalue():
         tblout_line("s", "wholeBest", "1e-3", seq_eval="1e-50"),
         tblout_line("s", "domainBest", "1e-9", seq_eval="1e-5"),
     ]
-    assert parse(lines) == {"s": ("domainBest", 1e-9)}
+    assert parse(lines) == {"s": ("domainBest", 1e-9, 99.0)}
+
+
+def test_the_bit_score_is_that_of_the_row_with_the_best_evalue():
+    """A higher bit score on another row neither decides the profile nor is returned."""
+    lines = [
+        tblout_line("s", "byEvalue", "1e-30", dom_score="120.0"),
+        tblout_line("s", "byScore", "1e-20", dom_score="300.0"),
+    ]
+    assert parse(lines) == {"s": ("byEvalue", 1e-30, 120.0)}
+    assert parse(lines[::-1]) == {"s": ("byEvalue", 1e-30, 120.0)}
 
 
 def test_comment_lines_are_ignored_wherever_they_occur():
@@ -117,7 +148,7 @@ def test_comment_lines_are_ignored_wherever_they_occur():
         + [data[1]]
         + FOOTER
     )
-    assert parse(lines) == {"s1": ("p1", 1e-7), "s2": ("p2", 5e-3)}
+    assert parse(lines) == {"s1": ("p1", 1e-7, 99.0), "s2": ("p2", 5e-3, 99.0)}
 
 
 def test_the_description_does_not_affect_the_result():
@@ -151,7 +182,7 @@ def test_sequences_are_independent_and_input_without_hits_is_empty():
         tblout_line("a", "p3", "1e-4"),
         tblout_line("b", "p1", "1e-1"),
     ]
-    assert parse(lines) == {"a": ("p3", 1e-4), "b": ("p2", 1e-9)}
+    assert parse(lines) == {"a": ("p3", 1e-4, 99.0), "b": ("p2", 1e-9, 99.0)}
 
 
 @pytest.mark.parametrize(
@@ -160,7 +191,7 @@ def test_sequences_are_independent_and_input_without_hits_is_empty():
 def test_evalue_notations_are_returned_as_floats(text, value):
     """The E-value is a float whatever its textual form; zero is a valid value."""
     hits = parse([tblout_line("s", "p", text)])
-    assert hits == {"s": ("p", value)}
+    assert hits == {"s": ("p", value, 99.0)}
     assert isinstance(hits["s"][1], float)
 
 
@@ -169,7 +200,7 @@ def test_zero_evalue_beats_every_positive_one_in_any_order():
     rows = [("s", "p1", "1e-300"), ("s", "p2", "0"), ("s", "p3", "1e-100")]
     for order in itertools.permutations(rows):
         assert parse([tblout_line(*row) for row in order]) == oracle(list(order))
-        assert parse([tblout_line(*row) for row in order])["s"] == ("p2", 0.0)
+        assert parse([tblout_line(*row) for row in order])["s"] == ("p2", 0.0, 99.0)
 
 
 def written(records):
@@ -225,11 +256,12 @@ def hmmsearch_calls(monkeypatch):
 def test_an_empty_sequence_file_has_no_hits_and_hmmsearch_does_not_run(
     tmp_path, hmmsearch_calls
 ):
-    """Both entry points skip hmmsearch, so refine also reaches the guard."""
+    """Every entry point skips hmmsearch, so refine and add also reach the guard."""
     empty = tmp_path / "empty.fasta"
     empty.write_bytes(b"")
     assert get_hmm_hits("profiles.hmm", str(empty), 1e-4) == {}
     assert get_hmm_evalues("profiles.hmm", str(empty)) == {}
+    assert get_hmm_scores("profiles.hmm", str(empty)) == {}
     assert hmmsearch_calls == []
 
 
@@ -245,3 +277,24 @@ def test_hmmsearch_runs_on_any_file_of_nonzero_size(tmp_path, hmmsearch_calls, c
     assert get_hmm_hits("profiles.hmm", str(seqfile), 1e-4) == {}
     assert len(hmmsearch_calls) == 1
     assert str(seqfile) in hmmsearch_calls[0]
+
+
+def test_evalues_and_scores_are_those_of_each_sequences_best_domain(
+    monkeypatch, tmp_path
+):
+    """get_hmm_evalues and get_hmm_scores read the two columns of one row."""
+    rows = [
+        tblout_line("s", "p", "1e-30", dom_score="120.5"),
+        tblout_line("t", "p", "2e-5", dom_score="35.0"),
+    ]
+
+    def hmmsearch(cmd):
+        tblout = re.search(r"--tblout (\S+)", cmd).group(1)
+        with open(tblout, "w") as handle:
+            handle.writelines(HEADER + rows + FOOTER)
+
+    monkeypatch.setattr(_share, "sh", hmmsearch)
+    seqfile = tmp_path / "seqs.fasta"
+    seqfile.write_text(">s\nACDE\n>t\nACDE\n")
+    assert get_hmm_evalues("p.hmm", str(seqfile)) == {"s": 1e-30, "t": 2e-5}
+    assert get_hmm_scores("p.hmm", str(seqfile)) == {"s": 120.5, "t": 35.0}

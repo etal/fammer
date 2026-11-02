@@ -260,12 +260,19 @@ initially, or a larger sequence database like **refseq_proteins**, if you're
 confident in your coverage of the superfamily and want to improve the
 sensitivity of your profiles.
 
-Each hit is considered for the profile that scores it best.
-It is accepted when it passes the significance cutoff ``-E`` in the target database, when its E-value there is no worse than the worst E-value among the sequences already in the profile that the profile's own HMM hits at 0.001 or better, and when the aligned region covers at least the fraction ``-L`` of the profile length.
-Only that aligned region is added, not the full-length sequence.
+Each hit is considered for the profile whose best-matching domain gives it the smallest E-value in the target database.
+Only profiles with a FASTA file of their own receive hits, so a hit that matches a group-level profile best is not added anywhere.
+A hit is accepted when it passes the significance cutoff ``-E`` in the target database, when the bit score of its best domain is at least the threshold of the profile, and when the aligned region covers at least the fraction ``-L`` of the profile length.
+The threshold is the lowest best-domain bit score among the sequences already in the profile, as scored by the profile's own HMM, counting the sequences it hits at an E-value of 0.001 or better.
+The comparison uses bit scores because an E-value grows with the number of sequences searched, while a bit score does not, so the threshold is the same whatever the size of the target.
+Only the aligned region is added, not the full-length sequence.
 A sequence with several domains that pass these thresholds contributes its longest domain once, and a sequence whose identifier is already in the profile is not added again.
-A second run with the same target therefore adds nothing, unless the sequences added by the first run loosened a threshold: HMMER scales an E-value by the number of sequences searched, so the E-values of a profile's own sequences grow with the profile.
-If a profile has hits that it does not yet hold, but its HMM finds none of its own sequences at 0.001 or better, there is no worst E-value to compare against, and the profile is skipped with a warning.
+A second run with the same target and the same HMMs therefore adds nothing, unless a domain that the first run added scores, on its own, below the profile's weakest sequence and so lowers the threshold.
+After ``fammer build`` has rebuilt the HMMs from the enlarged sequence sets, another run may add a few more sequences.
+Repeating the two commands can take many rounds to reach a run that adds nothing: on a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the runs after each of the first nine rebuilds added sequences to the catch-all ``STE-Unclassified`` profile, the run after the first rebuild also to ``MAPK``, and the run after the tenth rebuild added none.
+Review what each round adds before rebuilding.
+A profile built from only two or three sequences may accept nothing at all: each of its sequences scores far higher against an HMM built partly from itself than an unseen member of the family does, so its weakest sequence sets a high threshold.
+If a profile has hits that it does not yet hold, but its HMM finds none of its own sequences at 0.001 or better, there is no threshold to compare against, and the profile is skipped with a warning.
 A target that is empty or holds only whitespace has no hits, which ``add`` reports as an error.
 When a profile file does not end with a line ending, as a hand edit can leave it, ``add`` writes one before the first added record.
 

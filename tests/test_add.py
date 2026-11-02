@@ -1,15 +1,17 @@
-"""Properties of fammer.add.longest_domains.
+"""Properties of fammer.add.longest_domains and fammer.add.filter_score.
 
 hmmsearch -A names each aligned domain ``<sequence name>/<start>-<end>``, so a
 sequence with several domains appears several times. longest_domains keeps,
 for each sequence, its longest domain among the domains of at least the
 minimum length, and the first of two equally long ones.
+
+filter_score keeps the hits whose bit score is at least the threshold.
 """
 
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from fammer.add import longest_domains
+from fammer.add import filter_score, longest_domains
 
 
 def domain(name, start, end):
@@ -51,3 +53,9 @@ def test_skips_domains_shorter_than_the_minimum():
 def test_sequence_names_may_contain_a_slash():
     records = [domain("sp/GK070", 5, 104), domain("sp/GK070", 201, 220)]
     assert selected(records, 10) == [("sp/GK070", "sp/GK070/5-104")]
+
+
+def test_filter_score_keeps_hits_at_or_above_the_threshold():
+    """A hit at the threshold is kept, one a tenth of a bit below it is not."""
+    hits = [("at", 100.0), ("below", 99.9), ("above", 150.0)]
+    assert list(filter_score(hits, 100.0)) == [hits[0], hits[2]]

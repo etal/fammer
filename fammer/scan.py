@@ -37,14 +37,12 @@ def cmd_scan(args):
     # Filter hits for include/exclude strings
     if args.include:
         includes = args.include.split(",")
-        for key, val in list(scanhits.items()):
-            profname, _evalue = val
+        for key, (profname, _evalue, _score) in list(scanhits.items()):
             if not any(incl in profname for incl in includes):
                 del scanhits[key]
     if args.exclude:
         excludes = args.exclude.split(",")
-        for key, val in list(scanhits.items()):
-            profname, _evalue = val
+        for key, (profname, _evalue, _score) in list(scanhits.items()):
             if any(excl in profname for excl in excludes):
                 del scanhits[key]
 
@@ -65,7 +63,9 @@ def write_summary(scanhits):
     Rows of:
     [profile name] : [#hits]
     """
-    profcounts = collections.Counter([prof for prof, _score in scanhits.values()])
+    profcounts = collections.Counter(
+        [prof for prof, _evalue, _score in scanhits.values()]
+    )
     max_width = max(map(len, profcounts.keys()))
     for profname, count in sorted(
         profcounts.items(),
@@ -83,8 +83,7 @@ def write_table(scanhits):
     """
     # ENH: include e-value cutoff, sequence description
     # [sequence id] \t [profile name] \t [e-value] \t [description...]
-    for seqname, data in sorted(scanhits.items()):
-        profname, _score = data
+    for seqname, (profname, _evalue, _score) in sorted(scanhits.items()):
         print(f"{seqname}\t{profname}")
 
 
@@ -101,11 +100,10 @@ def write_seqout(scanhits, sourcefname, outfname):
 
 def write_seqsets(scanhits, sourcefname):
     """Write FASTA files of the seqs matching each profile."""
-    # NB: scanhits looks like {seq_id: (profile_name, score)}
     # Flip to: {profile_name: [sequence ids...]}
     profiles = collections.defaultdict(list)
-    for seqname, prof_score in scanhits.items():
-        profiles[prof_score[0]].append(seqname)
+    for seqname, (profname, _evalue, _score) in scanhits.items():
+        profiles[profname].append(seqname)
     # For each entry there, fetch all seq ids from the file & write
     with closing(SeqIO.index(sourcefname, "fasta")) as seq_idx:
         for profname, seqnames in sorted(profiles.items()):

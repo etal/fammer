@@ -32,6 +32,7 @@ import io
 import itertools
 import json
 import logging
+import math
 import os
 import re
 import shutil
@@ -651,8 +652,34 @@ SHARE_TABLE = "tool-outputs/hmmsearch/twenty.fasta.SomeKinases_all.tbl"
 
 
 def hits_table(hits):
-    """{seq: (profile, evalue)} as sorted [seq, profile, evalue] rows."""
-    return [[seq, prof, evalue] for seq, (prof, evalue) in sorted(hits.items())]
+    """{seq: (profile, evalue, score)} as sorted [seq, profile, evalue] rows.
+
+    The recorded parser returned no bit score, so the rows leave it out.
+    """
+    return [[seq, prof, evalue] for seq, (prof, evalue, _score) in sorted(hits.items())]
+
+
+def hit_evalues(hits):
+    """(seq, score) hits of SHARE_TABLE as the (seq, evalue) pairs recorded for add."""
+    table = scanned_hits(SHARE_TABLE)
+    evalues = {seq: evalue for seq, (_prof, evalue, _score) in table.items()}
+    return [(seq, evalues[seq]) for seq, _score in hits]
+
+
+def mirrored_threshold(profile, evalue):
+    """The bit score that selects the hits of one profile that an e-value selects.
+
+    Within one profile a smaller e-value is never a lower bit score, so the
+    lowest score among the profile's rows of SHARE_TABLE that the e-value keeps
+    selects those rows; an e-value that keeps no row gives an infinite score,
+    which selects nothing.
+    """
+    kept = [
+        score
+        for prof, row_evalue, score in scanned_hits(SHARE_TABLE).values()
+        if prof == profile and row_evalue <= evalue
+    ]
+    return min(kept, default=math.inf)
 
 
 def table_text(name):
@@ -710,15 +737,18 @@ def share_cases():
     for profile, recorded in data["add.filter_profile"].items():
 
         def call(profile=profile):
-            return sorted(add.filter_profile(scanned_hits(SHARE_TABLE), profile))
+            return hit_evalues(
+                sorted(add.filter_profile(scanned_hits(SHARE_TABLE), profile))
+            )
 
         yield Case(file, "add.filter_profile", profile, call, recorded)
     profile = data["add.filter_evalue_profile"]
     for index, (threshold, recorded) in enumerate(data["add.filter_evalue"]):
 
-        def call(threshold=threshold):
+        def call(threshold=threshold, profile=profile):
             hits = sorted(add.filter_profile(scanned_hits(SHARE_TABLE), profile))
-            return list(add.filter_evalue(hits, threshold))
+            min_score = mirrored_threshold(profile, threshold)
+            return hit_evalues(add.filter_score(hits, min_score))
 
         yield Case(file, "add.filter_evalue", index, call, recorded)
     for name, rec in data["_share.write_fasta"].items():
