@@ -285,6 +285,7 @@ Also writes a phyloXML tree file (.xml) showing clusters as colorized clades.
 The output files are written to the current directory, not beside the input, and are named after the base name of the input file: ``cluster path/to/fam.aln`` writes ``fam.aln.0``, ``fam.aln.1`` and so on, ``fam.aln.Unique`` and ``fam.aln.xml``.
 Clusters are numbered by decreasing size, and clusters of equal size by their sorted sequence identifiers.
 Sequences read from an alignment (``.aln``) are written without gaps; an unaligned input (``.fasta``) is first aligned with MAFFT.
+``cluster`` gives FastTree only the columns in which the sequences that hold a residue carry at least 40% of the total sequence weight, where the weights count similar sequences less, and ``-`` and ``.`` both count as gaps; insert columns are left out (see `Letter case in alignments`_).
 FastTree is run as ``fasttree`` or as ``FastTree``, whichever is found on ``PATH``.
 Each sequence identifier must occur once in the input.
 
@@ -461,6 +462,8 @@ BLAST and PSI-BLAST use lowercase for masking instead: with ``-lcase_masking``, 
 MAFFT writes protein residues in uppercase, so every ``.aln`` file that ``fammer build`` creates is in uppercase, whatever the case of the input sequences.
 A family ``.aln`` file that you edit by hand is used unchanged by ``fammer build`` as long as it is newer than its ``.fasta`` file.
 In such a file, Fammer reads letter case as HMMER does: a column whose residues are all lowercase is an insert column, and the family consensus has a gap there; a column that mixes lowercase and uppercase residues is read as uppercase, with a warning.
+An alignment that holds no uppercase residue at all, such as the nucleotide alignments that MAFFT writes, marks nothing by case and is read without regard to it.
+``fammer cluster`` builds its tree only from columns that hold an aligned residue, so it leaves out the insert columns of an alignment given to it, whatever their proportion of residues.
 ``hmmbuild`` does not read letter case in the alignments that Fammer gives it, so the match states of an HMM profile are chosen by the proportion of residues in each column, whatever their case.
 When ``fammer update-fasta`` rewrites a ``.fasta`` file from its edited ``.aln`` file, it writes the sequences in uppercase, and ``fammer build`` then realigns the family with MAFFT, so lowercase in that ``.aln`` file does not survive the rebuild.
 

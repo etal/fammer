@@ -90,7 +90,7 @@ select = ["E", "F", "W", "I", "UP", "B", "LOG", "G", "C403", "C405"]
 # need a git executable to install. Delete it when the releases named in the
 # comment on [project] dependencies exist.
 [tool.uv.sources]
-biofrills = {git = "https://github.com/etal/biofrills.git", rev = "069053d6b28b08b3fcbbb95072ef723010db619d"}
+biofrills = {git = "https://github.com/etal/biofrills.git", rev = "0a3f0efeaee20caff07c955ea71ca5ea6173010f"}
 biocma = {git = "https://github.com/etal/biocma.git", rev = "307d607b1739f647610918113176bc7dcd71dbbc"}
 
 [tool.pixi.workspace]

@@ -115,7 +115,9 @@ def load_tree(seqfname):
         )
         aln = AlignIO.read(StringIO(alndata), "fasta")
 
-    # Use conserved (less-gappy) blocks to build the tree
+    # Use conserved (less-gappy) blocks to build the tree; where the alignment
+    # has an uppercase residue, blocks also drops every insert column (all
+    # lowercase), however full it is
     aln = alnutils.blocks(aln, 0.4)
     # FastTree ends a name at ':', ',', a parenthesis or whitespace, so the
     # identifiers it writes back can be truncated and no longer unique.  It

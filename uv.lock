@@ -13,7 +13,7 @@ dependencies = [
 [[package]]
 name = "biofrills"
 version = "0.4.0.dev0"
-source = { git = "https://github.com/etal/biofrills.git?rev=069053d6b28b08b3fcbbb95072ef723010db619d#069053d6b28b08b3fcbbb95072ef723010db619d" }
+source = { git = "https://github.com/etal/biofrills.git?rev=0a3f0efeaee20caff07c955ea71ca5ea6173010f#0a3f0efeaee20caff07c955ea71ca5ea6173010f" }
 dependencies = [
     { name = "biopython" },
 ]
@@ -102,7 +102,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "biocma", marker = "extra == 'mapgaps'", git = "https://github.com/etal/biocma.git?rev=307d607b1739f647610918113176bc7dcd71dbbc" },
-    { name = "biofrills", git = "https://github.com/etal/biofrills.git?rev=069053d6b28b08b3fcbbb95072ef723010db619d" },
+    { name = "biofrills", git = "https://github.com/etal/biofrills.git?rev=0a3f0efeaee20caff07c955ea71ca5ea6173010f" },
     { name = "biopython", specifier = ">=1.86" },
     { name = "networkx", specifier = ">=3.2.1" },
     { name = "numpy", specifier = ">=2.3.5" },
