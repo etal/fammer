@@ -55,15 +55,13 @@ def add_hits(fasta, hmm, dbhits, index, min_length):
         return
     # Skip the sequences the profile already holds, so that a repeated run
     # adds each sequence once
-    members = member_names(fasta)
-    hits = list(filter_present(hits, members))
+    hits = list(filter_present(hits, member_names(fasta)))
     if not hits:
         return
 
     # Score the profile's own sequences with its own HMM; the worst e-value is
-    # the acceptance threshold. hmmsearch rejects an empty file, which has no
-    # e-values anyway.
-    seq_evals = get_hmm_evalues(hmm, fasta) if members else {}
+    # the acceptance threshold.
+    seq_evals = get_hmm_evalues(hmm, fasta)
     if not seq_evals:
         logger.warning(
             "Skipping %s: its HMM profile hits none of its own sequences at "

@@ -1,4 +1,4 @@
-"""Properties of fammer._share.parse_scanned_hits and fammer._share.write_fasta.
+"""Properties of parse_scanned_hits, write_fasta and get_hmm_hits in fammer._share.
 
 For each target sequence the parser keeps the profile with the smallest
 best-1-domain E-value (column 8). When several profiles tie, the profile on the
@@ -7,6 +7,9 @@ oracle over every ordering of a small table.
 
 write_fasta writes each record as one header line and one unwrapped sequence
 line, with the record's identifier once in the header.
+
+get_hmm_hits finds no hits in a sequence file of zero bytes without running
+hmmsearch, which exits with an error on one, and runs it on any other file.
 """
 
 import io
@@ -17,7 +20,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from fammer._share import parse_scanned_hits, write_fasta
+from fammer import _share
+from fammer._share import get_hmm_evalues, get_hmm_hits, parse_scanned_hits, write_fasta
 
 HEADER = [
     "#                                  --- full sequence ---- --- best 1 dom ----\n",
@@ -205,3 +209,39 @@ def test_long_sequences_are_not_wrapped():
     """A sequence longer than the 60 columns of wrapped FASTA stays on one line."""
     record = SeqRecord(Seq("ACDEFGHIKL" * 30), id="long", description="")
     assert written([record]).splitlines() == [">long", "ACDEFGHIKL" * 30]
+
+
+@pytest.fixture
+def hmmsearch_calls(monkeypatch):
+    """The commands get_hmm_hits passes to sh, which is replaced so that none runs.
+
+    The temporary table is therefore never written, and it parses to no hits.
+    """
+    calls = []
+    monkeypatch.setattr(_share, "sh", calls.append)
+    return calls
+
+
+def test_an_empty_sequence_file_has_no_hits_and_hmmsearch_does_not_run(
+    tmp_path, hmmsearch_calls
+):
+    """Both entry points skip hmmsearch, so refine also reaches the guard."""
+    empty = tmp_path / "empty.fasta"
+    empty.write_bytes(b"")
+    assert get_hmm_hits("profiles.hmm", str(empty), 1e-4) == {}
+    assert get_hmm_evalues("profiles.hmm", str(empty)) == {}
+    assert hmmsearch_calls == []
+
+
+@pytest.mark.parametrize("content", [b" ", b"x"])
+def test_hmmsearch_runs_on_any_file_of_nonzero_size(tmp_path, hmmsearch_calls, content):
+    """Only zero bytes skips hmmsearch; a file of one byte does not.
+
+    ``tasks.is_empty`` would call a file of one byte empty, but such a file can
+    be misformatted, as ``x`` is, and hmmsearch is left to report that.
+    """
+    seqfile = tmp_path / "seqs.fasta"
+    seqfile.write_bytes(content)
+    assert get_hmm_hits("profiles.hmm", str(seqfile), 1e-4) == {}
+    assert len(hmmsearch_calls) == 1
+    assert str(seqfile) in hmmsearch_calls[0]

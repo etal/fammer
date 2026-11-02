@@ -2,6 +2,7 @@
 
 import collections
 import tempfile
+from os.path import getsize
 
 from Bio import SeqIO
 
@@ -23,10 +24,16 @@ def get_hmm_hits(hmmfname, seqfname, evalue):
     """Search a sequence database with an HMM profile database.
 
     Return a mapping of hit sequence names to the best profile and e-value.
+
+    The sequence file is read as FASTA. A file of zero bytes has no hits, and
+    hmmsearch is not run on it, since it exits with an error on one; a file of
+    only whitespace has no hits either, and a misformatted file still fails.
     """
+    if getsize(seqfname) == 0:
+        return {}
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".tbl") as tbl:
         sh(
-            "hmmsearch --noali --notextw "
+            "hmmsearch --tformat fasta --noali --notextw "
             f"-E {evalue} --domE {evalue} --tblout {tbl.name} "
             f"{hmmfname} {seqfname} > /dev/null"
         )

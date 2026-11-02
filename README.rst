@@ -242,6 +242,8 @@ simplifying the results for common use cases. The three output forms are:
 
 Note that ``--table`` and ``--seqsets`` can be combined.
 
+``scan`` reads the target as FASTA, whatever its file name, and logs a warning and succeeds when no sequence matches any profile, including when the target is empty or holds only whitespace.
+
 
 add
 ```
@@ -264,6 +266,7 @@ Only that aligned region is added, not the full-length sequence.
 A sequence with several domains that pass these thresholds contributes its longest domain once, and a sequence whose identifier is already in the profile is not added again.
 A second run with the same target therefore adds nothing, unless the sequences added by the first run loosened a threshold: HMMER scales an E-value by the number of sequences searched, so the E-values of a profile's own sequences grow with the profile.
 If a profile has hits that it does not yet hold, but its HMM finds none of its own sequences at 0.001 or better, there is no worst E-value to compare against, and the profile is skipped with a warning.
+A target that is empty or holds only whitespace has no hits, which ``add`` reports as an error.
 
 
 refine

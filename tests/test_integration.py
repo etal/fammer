@@ -331,6 +331,31 @@ def test_scan_without_hits_writes_nothing_and_succeeds(scan_workspace):
     assert "No hits in poly.fasta" in proc.stderr
 
 
+@pytest.mark.parametrize("content", [b"", b"\n"], ids=["zero-bytes", "newline"])
+@pytest.mark.parametrize(
+    "command, returncode, message",
+    [
+        ("scan", 0, "No hits in empty.fasta"),
+        ("add", 1, "fammer: error: No profile hits in empty.fasta"),
+    ],
+)
+def test_an_empty_target_takes_the_no_hits_path_of_each_command(
+    scan_workspace, command, returncode, message, content
+):
+    """A target that is empty or holds only whitespace has no hits, and no traceback.
+
+    hmmsearch exits with an error on a file of zero bytes, even when told to
+    read FASTA, and on a file of only whitespace named ``.fasta`` unless told
+    to read FASTA.
+    """
+    require("fammer", "hmmsearch")
+    (scan_workspace / "empty.fasta").write_bytes(content)
+    proc = run_fammer(scan_workspace, [command, "SomeKinases", "empty.fasta"])
+    assert proc.returncode == returncode, proc.stderr
+    assert message in proc.stderr
+    assert "Traceback" not in proc.stderr
+
+
 def alignment_pairs(root):
     """The (alignment, FASTA file) paths that share a base name under root."""
     return sorted(
@@ -483,17 +508,19 @@ def test_add_appends_one_domain_per_sequence(scan_workspace):
     assert len(added) == 179
 
 
-def test_add_skips_a_profile_that_misses_its_own_sequences(scan_workspace):
+@pytest.mark.parametrize("content", [">poly\n" + "A" * 60 + "\n", ""])
+def test_add_skips_a_profile_that_misses_its_own_sequences(scan_workspace, content):
     """A profile whose HMM hits none of its own sequences accepts no hit.
 
     Without a hit of its HMM on one of its own sequences, there is no e-value
     threshold. The ULK sequences are replaced by one that its HMM does not
-    match, while the tree's HMMs still assign a TgME49 protein to ULK; ``add``
-    warns, leaves ULK.fasta alone, and goes on to the other profiles.
+    match, or by none, while the tree's HMMs still assign a TgME49 protein to
+    ULK; ``add`` warns, leaves ULK.fasta alone, and goes on to the other
+    profiles.
     """
     require("fammer", "hmmsearch")
     ulk = scan_workspace / "SomeKinases" / "ULK.fasta"
-    ulk.write_text(">poly\n" + "A" * 60 + "\n", encoding="utf-8")
+    ulk.write_text(content, encoding="utf-8")
     unchanged = ulk.read_bytes()
     cdpk = scan_workspace / "SomeKinases" / "CAMK" / "CDPK.fasta"
     members = len(read_records(cdpk, "fasta"))
