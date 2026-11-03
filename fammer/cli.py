@@ -185,6 +185,18 @@ def main(argv=None):
         help="""Minimum length, as a proportion of the profile length, of
             hits to accept into the profiles.""",
     )
+    P_add.add_argument(
+        "--promote",
+        action="store_true",
+        help="""Also move each sequence of a catch-all set that a subfamily
+            of its group accepts into that subfamily. Run with -n first.""",
+    )
+    P_add.add_argument(
+        "-n",
+        "--dry-run",
+        action="store_true",
+        help='Do a "dry run"; don\'t modify the original sequence sets.',
+    )
     P_add.set_defaults(func=cmd_add)
 
     # Sub-command: refine

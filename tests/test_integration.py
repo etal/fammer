@@ -457,48 +457,29 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
 
 # How the first run of add differs from the recorded one, by file: the
 # identifiers of the records that it appends and the recorded run did not, and
-# of the recorded records that it does not append there. TGME49_203010 passes
-# the bit-score threshold that the recorded e-value rule failed; the others
-# follow from assigning hits only among profiles with a FASTA file, and from
-# passing a catch-all's hit to a subfamily that accepts it, or back to the
-# catch-all when the subfamily rejects it for its length, as CAMK1 rejects
-# TGME49_262540 and TGME49_306480. See "Acceptance threshold of add" and
-# "Assignment of add hits" in tests/data/README.md.
+# of the recorded records that it does not append there. The additions follow
+# from assigning hits only among profiles with a FASTA file, and from passing
+# a catch-all's hit to a subfamily of its group that accepts it; so does the
+# removal of TGME49_291050 from CAMK-Unclass, which goes to CDPK instead. The
+# other removals follow from the threshold, which a hit must reach both by the
+# weakest member of the profile and by the members of the subfamilies of other
+# groups. See "Acceptance threshold of add" and "Assignment of add hits" in
+# tests/data/README.md.
 CHANGED_RECORDS = {
-    "SomeKinases/Aurora.fasta": ({"TGME49_203010"}, set()),
     "SomeKinases/CAMK/CAMK-Unclass.fasta": (set(), {"TGME49_291050"}),
-    "SomeKinases/CAMK/CAMK1.fasta": (
-        {
-            "TGME49_226540",
-            "TGME49_239420",
-            "TGME49_254190",
-            "TGME49_266950",
-            "TGME49_268210",
-            "TGME49_275610",
-            "TGME49_281430",
-        },
-        set(),
-    ),
     "SomeKinases/CAMK/CDPK.fasta": (
-        {
-            "TGME49_228750",
-            "TGME49_233905",
-            "TGME49_243500",
-            "TGME49_291050",
-            "TGME49_295760",
-            "TGME49_315190",
-        },
+        {"TGME49_228750", "TGME49_233905", "TGME49_291050", "TGME49_315190"},
         set(),
     ),
-    "SomeKinases/CAMK/MAPKAPK.fasta": ({"TGME49_217600"}, set()),
     "SomeKinases/CMGC/CMGC-Unclass.fasta": ({"TGME49_204280"}, set()),
+    "SomeKinases/CMGC/MAPK.fasta": (set(), {"TGME49_249260", "TGME49_254630"}),
     "SomeKinases/STE/STE-Unclassified.fasta": (
-        {"TGME49_231070", "TGME49_262540", "TGME49_306480"},
-        {"TGME49_218400"},
+        set(),
+        {"TGME49_218400", "TGME49_272200"},
     ),
     "SomeKinases/STE/STE11.fasta": (
-        {"TGME49_218400", "TGME49_294260", "TGME49_307640"},
         set(),
+        {"TGME49_209050", "TGME49_239130", "TGME49_244620"},
     ),
 }
 
@@ -577,18 +558,18 @@ def test_add_appends_the_recorded_hits_once(scan_workspace):
 def test_add_appends_one_domain_per_sequence(scan_workspace):
     """A sequence with several domains that pass ``-L`` is appended once.
 
-    At ``-L 0.3`` two domains of TGME49_237210, of 96 and then 179 residues,
-    pass the length filter for STE-Unclassified; the longer one is kept.
+    At ``-L 0.2`` two domains of TGME49_237890, a CDPK, of 67 and then 188
+    residues, pass the length filter for CDPK; the longer one is kept.
     """
     require("fammer", "hmmsearch")
-    proc = run_fammer(scan_workspace, ["add", "SomeKinases", "TgME49.pep", "-L", "0.3"])
+    proc = run_fammer(scan_workspace, ["add", "SomeKinases", "TgME49.pep", "-L", "0.2"])
     assert proc.returncode == 0, proc.stderr
     for path in (scan_workspace / "SomeKinases").rglob("*.fasta"):
         names = [name for name, _seq in read_records(path, "fasta")]
         assert _share.repeated_names(names) == [], path
-    fasta = scan_workspace / "SomeKinases" / "STE" / "STE-Unclassified.fasta"
-    added = dict(read_records(fasta, "fasta"))["TGME49_237210"]
-    assert len(added) == 179
+    fasta = scan_workspace / "SomeKinases" / "CAMK" / "CDPK.fasta"
+    added = dict(read_records(fasta, "fasta"))["TGME49_237890"]
+    assert len(added) == 188
 
 
 @pytest.mark.parametrize("content", [">poly\n" + "A" * 60 + "\n", ""])
@@ -639,21 +620,21 @@ def test_add_ends_the_last_line_of_a_profile_before_appending(scan_workspace):
 def test_add_skips_a_sequence_that_another_profile_holds(scan_workspace):
     """A hit that is already in any profile of the tree is appended nowhere.
 
-    TGME49_244620 is a hit that the recorded run appended to STE11. Placed in
+    TGME49_233010 is a hit that the first run appends to MAPK. Placed in
     CDPK.fasta first, as a run before an earlier rebuild could have left it,
-    it stays the only record of that identifier in the tree, while STE11
-    still receives its other hits.
+    it stays the only record of that identifier in the tree, while MAPK still
+    receives its other hits.
     """
     require("fammer", "hmmsearch")
-    seqid = "TGME49_244620"
+    seqid = "TGME49_233010"
     with open(scan_workspace / "TgME49.pep", encoding="utf-8") as handle:
         record = next(rec for rec in SeqIO.parse(handle, "fasta") if rec.id == seqid)
     cdpk = scan_workspace / "SomeKinases" / "CAMK" / "CDPK.fasta"
     cdpk.write_text(
         cdpk.read_text(encoding="utf-8") + f">{seqid}\n{record.seq}\n", encoding="utf-8"
     )
-    ste11 = scan_workspace / "SomeKinases" / "STE" / "STE11.fasta"
-    members = len(read_records(ste11, "fasta"))
+    mapk = scan_workspace / "SomeKinases" / "CMGC" / "MAPK.fasta"
+    members = len(read_records(mapk, "fasta"))
     proc = run_fammer(scan_workspace, ["add", "SomeKinases", "TgME49.pep"])
     assert proc.returncode == 0, proc.stderr
     names = [
@@ -662,7 +643,64 @@ def test_add_skips_a_sequence_that_another_profile_holds(scan_workspace):
         for name, _seq in read_records(path, "fasta")
     ]
     assert names.count(seqid) == 1
-    assert len(read_records(ste11, "fasta")) > members
+    assert len(read_records(mapk, "fasta")) > members
+
+
+PROMOTION = re.compile(r"add: \* promote (\S+) from (\S+) to (\S+) \(.*\)")
+
+
+def test_add_promotes_catch_all_members_within_their_group(scan_workspace):
+    """``--promote`` moves the members of STE-Unclassified that STE7 and STE11
+    accept, 15 and 5, and no consensus record; ``-n`` previews it and writes
+    nothing.
+
+    Each moved record keeps its header and sequence. The tree is named
+    ``./SomeKinases``, since a directory spelled with a ``.`` component must
+    still count as lying within itself.
+    """
+    require("fammer", "hmmsearch")
+    tree = scan_workspace / "SomeKinases"
+    argv = ["add", "./SomeKinases", "TgME49.pep", "--promote"]
+    before = tree_state(scan_workspace)
+    preview = run_fammer(scan_workspace, [*argv, "-n"])
+    assert preview.returncode == 0, preview.stderr
+    assert tree_state(scan_workspace) == before
+    unclassified = tree / "STE" / "STE-Unclassified.fasta"
+    source = fasta_records(unclassified.read_text(encoding="utf-8"))
+    targets = {
+        name: (tree / "STE" / f"{name}.fasta").read_text(encoding="utf-8")
+        for name in ("STE7", "STE11")
+    }
+    proc = run_fammer(scan_workspace, argv)
+    assert proc.returncode == 0, proc.stderr
+    promotions = [
+        match.groups()
+        for line in log_messages(proc.stderr)
+        if (match := PROMOTION.fullmatch(line))
+    ]
+    assert promotions == [
+        match.groups()
+        for line in log_messages(preview.stderr)
+        if (match := PROMOTION.fullmatch(line))
+    ]
+    assert {source_name for _seq, source_name, _dest in promotions} == {
+        "STE-Unclassified"
+    }
+    moved, promoted = {}, Counter()
+    for name, text in targets.items():
+        after = (tree / "STE" / f"{name}.fasta").read_text(encoding="utf-8")
+        assert after.startswith(text), name
+        records = fasta_records(after[len(text) :])
+        assert {record_id(r) for r in records} == {
+            seq for seq, _source_name, dest in promotions if dest == name
+        }
+        moved[name] = records.total()
+        promoted += records
+    assert moved == {"STE7": 15, "STE11": 5}
+    assert len(promotions) == 20
+    assert not any(_share.is_consensus(seq) for seq, _source_name, _dest in promotions)
+    assert promoted <= source
+    assert fasta_records(unclassified.read_text(encoding="utf-8")) == source - promoted
 
 
 @pytest.mark.parametrize(
@@ -684,7 +722,7 @@ def test_a_small_profile_takes_its_threshold_from_held_out_scores(
     fasta, hmm = name + ".fasta", name + ".hmm"
     assert len(read_records(fasta, "fasta")) == (5 if leave_one_out else 11)
     own = min(_share.get_hmm_scores(hmm, fasta).values())
-    threshold = add.profile_threshold(fasta, hmm)
+    threshold = add.weakest_member_score(fasta, hmm)
     assert (threshold < own) if leave_one_out else (threshold == own)
 
 
