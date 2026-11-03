@@ -1,8 +1,11 @@
 "Helpers shared across multiple Fammer sub-commands."
 
 import collections
+import os
+import re
+import shutil
 import tempfile
-from os.path import getsize, join
+from os.path import abspath, dirname, getsize, join
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -160,6 +163,16 @@ def is_catch_all(profile_name):
     return profile_name.endswith(CATCH_ALL_SUFFIXES)
 
 
+# A record whose identifier ends with this is a consensus sequence of a family
+# rather than a member of one.
+CONSENSUS_SUFFIX = "consensus"
+
+
+def is_consensus(record_id):
+    """True if a record's identifier marks it as a consensus sequence."""
+    return record_id.endswith(CONSENSUS_SUFFIX)
+
+
 # Helpers
 
 
@@ -182,3 +195,57 @@ def as_target(record):
 def write_fasta(records, dest):
     """Write records to a path or handle as FASTA without wrapping lines."""
     SeqIO.write(records, dest, "fasta-2line")
+
+
+def move_records(fasta, dest, names):
+    """Move the FASTA records with the given identifiers from one file to another.
+
+    The records are appended to dest in the order and with the text they have
+    in fasta, and then fasta is rewritten without them, keeping its
+    permissions; every other line of either file is left as it was, with its
+    line ending. A line ending that has to be added, after the last line of
+    dest or of a moved record, is the one dest uses, or the one fasta uses
+    where dest has none; a file with any CRLF line ending counts as CRLF.
+    """
+    with open(fasta, newline="") as handle:
+        text = handle.read()
+    with open(dest, newline="") as handle:
+        dest_text = handle.read()
+    newline = line_ending(dest_text, line_ending(text, "\n"))
+    head, *records = re.split(r"(?m)^(?=>)", text)
+    moved = [rec for rec in records if record_name(rec) in names]
+    kept = [rec for rec in records if record_name(rec) not in names]
+    # Write the rewritten profile to a temporary file first, so that a failure
+    # while writing it changes neither file, and replace the profile with it
+    # only after the records are appended; on any failure the temporary file
+    # is removed
+    rewritten = tempfile.NamedTemporaryFile(
+        "w", dir=dirname(abspath(fasta)), delete=False, newline=""
+    )
+    try:
+        with rewritten:
+            rewritten.write(head + "".join(kept))
+        shutil.copymode(fasta, rewritten.name)
+        with open(dest, "a", newline="") as handle:
+            if dest_text and not dest_text.endswith("\n"):
+                handle.write(newline)
+            handle.writelines(
+                rec if rec.endswith("\n") else rec + newline for rec in moved
+            )
+        os.replace(rewritten.name, fasta)
+    except BaseException:
+        os.unlink(rewritten.name)
+        raise
+
+
+def line_ending(text, default):
+    """The line ending that text uses, CRLF or LF, or default if it has none."""
+    if "\r\n" in text:
+        return "\r\n"
+    return "\n" if "\n" in text else default
+
+
+def record_name(text):
+    """The identifier of a FASTA record's text, as Biopython reads it."""
+    words = text[1:].split("\n", 1)[0].split(None, 1)
+    return words[0] if words else ""

@@ -4,13 +4,13 @@ refine holds out each sequence of a profile in turn and scores it, and the
 unclassified sequences, against an HMM built without it. The lowest-scoring
 sequence that scores no higher than the best unclassified one is dropped and
 joins the unclassified set, and the rest are tested again, until none fails or
-two sequences remain. Without --dry-run, the dropped records move from the
-profile's FASTA file to the unclassified one, and no other line changes.
+two sequences remain. A consensus record in the unclassified set does not
+count. Without --dry-run, the dropped records move from the profile's FASTA
+file to the unclassified one, and no other line changes.
 """
 
 import argparse
 import logging
-import os
 
 import pytest
 from Bio import SeqIO
@@ -195,42 +195,12 @@ def test_a_sequence_in_both_sets_is_refused_before_any_change(tree):
     assert {path.name: path.read_text() for path in tree.iterdir()} == state
 
 
-def test_moved_records_keep_their_text(tmp_path):
-    """Text before the first record and every kept line stay as they were."""
-    source = tmp_path / "P.fasta"
-    source.write_text("\n>a first\nAC\nDE\n>b\nFF\n>c  third one\nGG")
-    dest = tmp_path / "U.fasta"
-    dest.write_text(">u\nKK")
-    refine.move_records(str(source), str(dest), {"a", "c"})
-    assert source.read_text() == "\n>b\nFF\n"
-    assert dest.read_text() == ">u\nKK\n>a first\nAC\nDE\n>c  third one\nGG\n"
-
-
-def test_moved_records_keep_line_endings_and_the_profile_its_mode(tmp_path):
-    """CRLF records move as written; an ending added to dest is the one dest
-    uses; the rewritten profile keeps its permissions."""
-    source = tmp_path / "P.fasta"
-    source.write_bytes(b">a\r\nAC\r\n>b\r\nFF\r\n>c\r\nGG")
-    source.chmod(0o640)
-    dest = tmp_path / "U.fasta"
-    dest.write_bytes(b">u\nKK")
-    refine.move_records(str(source), str(dest), {"a", "c"})
-    assert source.read_bytes() == b">b\r\nFF\r\n"
-    assert source.stat().st_mode & 0o777 == 0o640
-    assert dest.read_bytes() == b">u\nKK\n>a\r\nAC\r\n>c\r\nGG\n"
-
-
-@pytest.mark.skipif(
-    getattr(os, "geteuid", lambda: -1)() == 0, reason="root ignores file modes"
-)
-def test_a_failed_move_changes_no_file_and_leaves_no_file(tmp_path):
-    source = tmp_path / "P.fasta"
-    source.write_text(">a\nAC\n>b\nFF\n")
-    dest = tmp_path / "U.fasta"
-    dest.write_text(">u\nKK\n")
-    dest.chmod(0o444)
-    with pytest.raises(PermissionError):
-        refine.move_records(str(source), str(dest), {"a"})
-    assert source.read_text() == ">a\nAC\n>b\nFF\n"
-    assert dest.read_text() == ">u\nKK\n"
-    assert sorted(path.name for path in tmp_path.iterdir()) == ["P.fasta", "U.fasta"]
+def test_a_consensus_record_in_the_unclassified_set_is_ignored(tree, scores):
+    """P-consensus would outscore every member of P; only c and a move."""
+    with open(tree / "Fam-Unique.fasta", "a") as handle:
+        handle.write("\n>P-consensus\nACDEFG\n")
+    for name in "abcde":
+        scores[name, "P-consensus"] = 400.0
+    refine.cmd_refine(refine_args(tree))
+    assert record_names(tree / "P.fasta") == ["b", "d", "e"]
+    assert record_names(tree / "Fam-Unique.fasta") == ["u1", "P-consensus", "a", "c"]

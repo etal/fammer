@@ -14,10 +14,15 @@ get_hmm_hits and get_hmm_rows find no hits in a sequence file of zero bytes
 without running hmmsearch, which exits with an error on one, and run it on any
 other file; get_hmm_scores takes the bit score of its hits. leave_one_out_hmms
 builds each HMM from every aligned row but the one held out.
+
+move_records moves FASTA records by identifier from one file to another with
+their text unchanged. is_consensus tells a consensus record by the end of its
+identifier.
 """
 
 import io
 import itertools
+import os
 import re
 
 import pytest
@@ -334,3 +339,58 @@ def test_each_held_out_hmm_is_built_from_the_other_rows(monkeypatch, tmp_path):
         ("a", hmmfname, (hmmfname, ["seed", "b", "c"])),
         ("c", hmmfname, (hmmfname, ["a", "seed", "b"])),
     ]
+
+
+@pytest.mark.parametrize(
+    ("record_id", "expected"),
+    [
+        ("CDPK-consensus", True),
+        ("JK260758-1+consensus", True),
+        ("consensus", True),
+        ("consensus-like", False),
+        ("CDPK-Consensus", False),
+    ],
+)
+def test_a_consensus_record_is_told_by_the_end_of_its_identifier(record_id, expected):
+    assert _share.is_consensus(record_id) is expected
+
+
+def test_moved_records_keep_their_text(tmp_path):
+    """Text before the first record and every kept line stay as they were."""
+    source = tmp_path / "P.fasta"
+    source.write_text("\n>a first\nAC\nDE\n>b\nFF\n>c  third one\nGG")
+    dest = tmp_path / "U.fasta"
+    dest.write_text(">u\nKK")
+    _share.move_records(str(source), str(dest), {"a", "c"})
+    assert source.read_text() == "\n>b\nFF\n"
+    assert dest.read_text() == ">u\nKK\n>a first\nAC\nDE\n>c  third one\nGG\n"
+
+
+def test_moved_records_keep_line_endings_and_the_profile_its_mode(tmp_path):
+    """CRLF records move as written; an ending added to dest is the one dest
+    uses; the rewritten profile keeps its permissions."""
+    source = tmp_path / "P.fasta"
+    source.write_bytes(b">a\r\nAC\r\n>b\r\nFF\r\n>c\r\nGG")
+    source.chmod(0o640)
+    dest = tmp_path / "U.fasta"
+    dest.write_bytes(b">u\nKK")
+    _share.move_records(str(source), str(dest), {"a", "c"})
+    assert source.read_bytes() == b">b\r\nFF\r\n"
+    assert source.stat().st_mode & 0o777 == 0o640
+    assert dest.read_bytes() == b">u\nKK\n>a\r\nAC\r\n>c\r\nGG\n"
+
+
+@pytest.mark.skipif(
+    getattr(os, "geteuid", lambda: -1)() == 0, reason="root ignores file modes"
+)
+def test_a_failed_move_changes_no_file_and_leaves_no_file(tmp_path):
+    source = tmp_path / "P.fasta"
+    source.write_text(">a\nAC\n>b\nFF\n")
+    dest = tmp_path / "U.fasta"
+    dest.write_text(">u\nKK\n")
+    dest.chmod(0o444)
+    with pytest.raises(PermissionError):
+        _share.move_records(str(source), str(dest), {"a"})
+    assert source.read_text() == ">a\nAC\n>b\nFF\n"
+    assert dest.read_text() == ">u\nKK\n"
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["P.fasta", "U.fasta"]

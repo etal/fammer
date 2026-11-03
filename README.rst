@@ -293,7 +293,7 @@ Each round of testing builds one HMM per remaining sequence, so a profile that l
 Note that if a member of a known subfamily was mistakenly placed in the unclassified set (i.e. was missed by the initial classification), then many of the legitimate members of the subfamily profile could score worse than this high-scoring "unclassified" sequence and be erroneously marked for removal from the profile.
 This is easy to spot in the logged output, where nearly the same unclassified score recurs against many dropped sequences.
 Run with ``-n`` first, and move such a sequence into its subfamily before refining.
-A consensus sequence in the unclassified set has the same effect: in ``profiles/SomeKinases``, ``STE-Unclassified.fasta`` holds the consensus sequences of ``STE7``, ``STE11`` and ``STE20``, which outscore many members of those profiles.
+A consensus record in the unclassified set, one whose identifier ends with ``consensus``, is not an unclassified sequence and is left out of the comparison, since it would outscore many members of the subfamily it summarizes.
 
 cluster
 ```````
