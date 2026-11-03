@@ -682,6 +682,63 @@ def test_a_small_profile_takes_its_threshold_from_held_out_scores(
     assert (threshold < own) if leave_one_out else (threshold == own)
 
 
+def test_refine_dry_run_keeps_every_sequence_and_writes_nothing(built_workspace):
+    """The recorded ``refine -n`` tests ULK and Aurora, keeps all, changes no file.
+
+    The recorded run logged one kept seed per profile, chosen in dictionary
+    order; the current one logs, for each profile, the kept sequence of lowest
+    held-out score against the best score of the unclassified set.
+    """
+    require("fammer", "hmmsearch", "hmmbuild")
+    run = recorded("refine.json")
+    written = tree_state(built_workspace)
+    proc = run_fammer(built_workspace, run["argv"])
+    assert proc.returncode == run["returncode"], proc.stderr
+    messages = log_messages(proc.stderr)
+    assert [line for line in messages if ": Refining " in line] == [
+        "refine: Refining SomeKinases/Aurora.fasta ...",
+        "refine: Refining SomeKinases/ULK.fasta ...",
+    ]
+    assert sum(": * keep " in line for line in messages) == 2
+    assert not any(": * drop " in line for line in messages)
+    assert tree_state(built_workspace) == written
+
+
+def test_refine_moves_a_member_that_an_unclassified_sequence_matches(built_workspace):
+    """A copy of ULK's weakest member in the unclassified set displaces it.
+
+    13031_Tt has the lowest held-out score of ULK's sequences, and a copy of
+    it under another name scores the same, so it is dropped first; its record
+    moves to the unclassified file unchanged, and the other records of ULK stay
+    as they were. Until a build realigns ULK, refine refuses to run again.
+    """
+    require("fammer", "hmmsearch", "hmmbuild")
+    tree = built_workspace / "SomeKinases"
+    ulk, unclassified = tree / "ULK.fasta", tree / "Testfam-Unclassified.fasta"
+    weakest = dict(read_records(ulk, "fasta"))["13031_Tt"]
+    unclassified.write_text(
+        unclassified.read_text(encoding="utf-8") + f">decoy\n{weakest}\n",
+        encoding="utf-8",
+    )
+    ulk_before = fasta_records(ulk.read_text(encoding="utf-8"))
+    unclassified_before = unclassified.read_text(encoding="utf-8")
+    argv = ["refine", "SomeKinases", "-u", "SomeKinases/Testfam-Unclassified.fasta"]
+    proc = run_fammer(built_workspace, [*argv, "-x", "Aurora"])
+    assert proc.returncode == 0, proc.stderr
+    drops = [line for line in proc.stderr.splitlines() if ": * drop " in line]
+    assert drops[0].split(": * drop ")[1].startswith("13031_Tt ")
+    moved = fasta_records(
+        unclassified.read_text(encoding="utf-8")[len(unclassified_before) :]
+    )
+    assert "13031_Tt" in {record_id(record) for record in moved}
+    assert moved.total() == len(drops)
+    assert moved <= ulk_before
+    assert fasta_records(ulk.read_text(encoding="utf-8")) == ulk_before - moved
+    proc = run_fammer(built_workspace, [*argv, "-n"])
+    assert proc.returncode == 1
+    assert "ULK.aln does not hold exactly the sequences" in proc.stderr
+
+
 @pytest.mark.parametrize("name", ["DYRK.fasta", "CDK.fasta"])
 def test_cluster_partitions_the_input_sequences(tmp_path, name):
     """``cluster`` splits a sequence set into clusters and a Unique set.
@@ -732,15 +789,22 @@ HMMER_CALLS = load("library/hmmer.json")
 
 
 @pytest.mark.parametrize("hmm_name", sorted(HMMER_CALLS["get_hmm_evalues"]))
-def test_get_hmm_evalues_reproduces_recorded_values(
+def test_member_evalues_reproduce_recorded_values(
     built_workspace, monkeypatch, hmm_name
 ):
-    """The best E-value of each sequence of a family against its own profile."""
+    """The best E-value of each sequence of a family against its own profile.
+
+    The recorded function, ``_share.get_hmm_evalues``, was removed with the
+    old ``refine``, its only caller; ``get_hmm_hits`` at ``MEMBER_EVALUE``
+    returns the same E-values with the profile and the bit score.
+    """
     require("hmmsearch")
     monkeypatch.chdir(built_workspace)
-    hits = _share.get_hmm_evalues(hmm_name, hmm_name[: -len(".hmm")] + ".fasta")
+    fasta = hmm_name[: -len(".hmm")] + ".fasta"
+    hits = _share.get_hmm_hits(hmm_name, fasta, _share.MEMBER_EVALUE)
+    evalues = sorted((seq, evalue) for seq, (_prof, evalue, _score) in hits.items())
     expected = HMMER_CALLS["get_hmm_evalues"][hmm_name]["value"]
-    assert sorted(hits.items()) == [tuple(pair) for pair in expected]
+    assert evalues == [tuple(pair) for pair in expected]
 
 
 def test_get_hmm_len_reproduces_recorded_lengths(built_workspace, monkeypatch):

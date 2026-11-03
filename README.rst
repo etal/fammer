@@ -251,14 +251,9 @@ add
 Scan a target database with the given HMM profile set and add hits that meet
 a series of acceptance thresholds to the profile FASTA files.
 
-Once you've constructed profiles from a collection of carefully selected
-sequences representing each subfamily, you can use this command to scan another
-sequence set and automatically add strong hits to the corresponding profile
-sequence sets. The target database could be the ``*-Unclassified.fasta``
-sequence sets, to catch any classifiable members that were not noticed
-initially, or a larger sequence database like **refseq_proteins**, if you're
-confident in your coverage of the superfamily and want to improve the
-sensitivity of your profiles.
+Once you've constructed profiles from a collection of carefully selected sequences representing each subfamily, you can use this command to scan another sequence set and automatically add strong hits to the corresponding profile sequence sets.
+The target database could be a proteome, or a larger sequence database like **refseq_proteins**, if you're confident in your coverage of the superfamily and want to improve the sensitivity of your profiles.
+A sequence that is already in the tree is never added again, so the tree's own ``*-Unclassified.fasta`` files are of no use as a target: a sequence in a catch-all that belongs to a subfamily has to be moved there by hand.
 
 Each hit is considered for one of the profiles that have a FASTA file of their own: the one whose best-matching domain gives it the smallest E-value in the target database.
 The group-level profiles do not take part, so a hit that matches a group profile best is considered for the best-matching profile among those with a FASTA file.
@@ -283,16 +278,22 @@ When a profile file does not end with a line ending, as a hand edit can leave it
 refine
 ``````
 
-Leave-one-out validation of sequence profiles.
+Leave-one-out validation of the subfamily profiles in one directory, so that each subfamily holds only sequences that its profile separates from the unclassified ones.
 Unlike the other commands, this is non-recursive.
 
-Given a target subdirectory and its set of unclassified sequences (``-u``; by default *dirname*/*dirname*-Unique.fasta), scan each subfamily's sequence set (``.fasta``) with the corresponding HMM profile (``.hmm``), and also scan the unclassified set with all the HMMs to obtain scores for each sequence and each profile.
-Then, compare the scores of sequences in a subfamily, starting with the worst-scoring sequence, to the highest-scoring "unclassified" sequence by the same profile.
-If, for a given profile, a classified sequence scores worse than an unclassified one, mark the classified one for removal from the sequence profile.
+Given a directory and its set of unclassified sequences (``-u``; by default *dirname*/*dirname*-Unique.fasta), ``refine`` tests each subfamily profile in the directory except the unclassified set, any catch-all profile, and the profile named by ``-x``.
+Each sequence of a profile is held out in turn: an HMM is built from the profile's alignment without it, and the held-out sequence and the unclassified sequences are scored against that HMM, in bits, counting the hits at an E-value of 0.001 or better.
+A sequence fails if it scores no higher than the highest-scoring unclassified sequence, or if the HMM misses it while it hits an unclassified sequence.
+The lowest-scoring sequence that fails is dropped and joins the unclassified sequences, and the remaining ones are tested again, until none fails or two remain.
+Each dropped sequence is logged with its score and the best unclassified score, and so is the kept sequence of lowest score.
+With ``-n`` (``--dry-run``) nothing is written; otherwise the dropped records are moved, with their text unchanged, from the profile's FASTA file to the unclassified file, and ``fammer build`` then realigns both.
+``refine`` reads the alignments of the last build, so a profile whose ``.aln`` file does not hold exactly the sequences of its FASTA file is an error until the tree is rebuilt.
+Each round of testing builds one HMM per remaining sequence, so a profile that loses many sequences takes correspondingly longer.
 
 Note that if a member of a known subfamily was mistakenly placed in the unclassified set (i.e. was missed by the initial classification), then many of the legitimate members of the subfamily profile could score worse than this high-scoring "unclassified" sequence and be erroneously marked for removal from the profile.
-This is easy to spot in the logged output.
-One way to avoid it is to first use the ``add`` command with the unclassified set as the target, to catch and classify such sequences beforehand.
+This is easy to spot in the logged output, where nearly the same unclassified score recurs against many dropped sequences.
+Run with ``-n`` first, and move such a sequence into its subfamily before refining.
+A consensus sequence in the unclassified set has the same effect: in ``profiles/SomeKinases``, ``STE-Unclassified.fasta`` holds the consensus sequences of ``STE7``, ``STE11`` and ``STE20``, which outscore many members of those profiles.
 
 cluster
 ```````

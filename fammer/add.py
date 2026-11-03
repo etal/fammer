@@ -20,6 +20,7 @@ from ._share import (
     get_hmm_scores,
     is_catch_all,
     leave_one_out_hmms,
+    member_names,
     ungapped,
     write_fasta,
 )
@@ -258,12 +259,6 @@ def filter_profile(hits, profile_name):
     for seqname, (profname, _evalue, score) in hits.items():
         if profname == profile_name:
             yield (seqname, score)
-
-
-def member_names(fasta):
-    """The identifiers of the sequences in a profile's FASTA file."""
-    with SeqIO.parse(fasta, "fasta") as records:
-        return {record.id for record in records}
 
 
 def filter_present(hits, members):

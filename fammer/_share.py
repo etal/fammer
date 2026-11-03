@@ -54,16 +54,16 @@ def get_hmm_rows(hmmfname, seqfname, evalue):
         return list(parse_scanned_rows(tbl))
 
 
-def get_hmm_evalues(hmmfname, seqfname):
-    """Map each sequence that an HMM profile hits to its best-domain e-value."""
-    hits = get_hmm_hits(hmmfname, seqfname, MEMBER_EVALUE)
-    return {seqname: evalue for seqname, (_prof, evalue, _score) in hits.items()}
-
-
 def get_hmm_scores(hmmfname, seqfname):
     """Map each sequence that an HMM profile hits to its best-domain bit score."""
     hits = get_hmm_hits(hmmfname, seqfname, MEMBER_EVALUE)
     return {seqname: score for seqname, (_prof, _evalue, score) in hits.items()}
+
+
+def member_names(fasta):
+    """The identifiers of the sequences in a profile's FASTA file."""
+    with SeqIO.parse(fasta, "fasta") as records:
+        return {record.id for record in records}
 
 
 def build_hmm(records, hmmfname):

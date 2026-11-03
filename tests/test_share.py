@@ -9,11 +9,10 @@ over every ordering of a small table.
 write_fasta writes each record as one header line and one unwrapped sequence
 line, with the record's identifier once in the header.
 
-get_hmm_hits finds no hits in a sequence file of zero bytes without running
-hmmsearch, which exits with an error on one, and runs it on any other file;
-get_hmm_evalues and get_hmm_scores take the E-value and the bit score of its
-hits. leave_one_out_hmms builds each HMM from every aligned row but the one
-held out.
+get_hmm_hits and get_hmm_rows find no hits in a sequence file of zero bytes
+without running hmmsearch, which exits with an error on one, and run it on any
+other file; get_hmm_scores takes the bit score of its hits. leave_one_out_hmms
+builds each HMM from every aligned row but the one held out.
 """
 
 import io
@@ -27,8 +26,8 @@ from Bio.SeqRecord import SeqRecord
 
 from fammer import _share
 from fammer._share import (
-    get_hmm_evalues,
     get_hmm_hits,
+    get_hmm_rows,
     get_hmm_scores,
     leave_one_out_hmms,
     parse_scanned_hits,
@@ -262,7 +261,7 @@ def test_an_empty_sequence_file_has_no_hits_and_hmmsearch_does_not_run(
     empty = tmp_path / "empty.fasta"
     empty.write_bytes(b"")
     assert get_hmm_hits("profiles.hmm", str(empty), 1e-4) == {}
-    assert get_hmm_evalues("profiles.hmm", str(empty)) == {}
+    assert get_hmm_rows("profiles.hmm", str(empty), 1e-4) == []
     assert get_hmm_scores("profiles.hmm", str(empty)) == {}
     assert hmmsearch_calls == []
 
@@ -281,10 +280,8 @@ def test_hmmsearch_runs_on_any_file_of_nonzero_size(tmp_path, hmmsearch_calls, c
     assert str(seqfile) in hmmsearch_calls[0]
 
 
-def test_evalues_and_scores_are_those_of_each_sequences_best_domain(
-    monkeypatch, tmp_path
-):
-    """get_hmm_evalues and get_hmm_scores read the two columns of one row."""
+def test_scores_are_those_of_each_sequences_best_domain(monkeypatch, tmp_path):
+    """get_hmm_scores reads the bit score of the best domain, column 9."""
     rows = [
         tblout_line("s", "p", "1e-30", dom_score="120.5"),
         tblout_line("t", "p", "2e-5", dom_score="35.0"),
@@ -298,7 +295,6 @@ def test_evalues_and_scores_are_those_of_each_sequences_best_domain(
     monkeypatch.setattr(_share, "sh", hmmsearch)
     seqfile = tmp_path / "seqs.fasta"
     seqfile.write_text(">s\nACDE\n>t\nACDE\n")
-    assert get_hmm_evalues("p.hmm", str(seqfile)) == {"s": 1e-30, "t": 2e-5}
     assert get_hmm_scores("p.hmm", str(seqfile)) == {"s": 120.5, "t": 35.0}
 
 

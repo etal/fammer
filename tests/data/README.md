@@ -112,7 +112,7 @@ Pure-Python functions, called in-process.
 - `update_fasta.json`: `ungap_and_unique` on synthetic record sets and on `profiles/ROPK/PKL.aln`, and `is_same_aln_fasta` against several FASTA variants of one alignment.
 - `tmalign.json`: `read_tmalign_as_seqrec_pair` on each file in `tool-outputs/tmalign/`, as written and with its final CPU-time line removed; `tmscore_from_description`, `clean_and_dedupe_seqs`, `purge_seqs` and `mst_pairs`.
 - `cluster.json`: `geom_mean`, `cluster.write_fasta` (since removed; see "FASTA headers" under "Deliberate differences"), and `load_tree` on input that is neither `.aln` nor `.fasta`.
-- `hmmer.json`: `_share.get_hmm_evalues`, `add.get_hmm_len` and `add.walk_profiles`, which need HMMER or built profiles and so run in the end-to-end workspace after `fammer build`.
+- `hmmer.json`: `_share.get_hmm_evalues` (since removed; see "`refine`" under "Deliberate differences"), `add.get_hmm_len` and `add.walk_profiles`, which need HMMER or built profiles and so run in the end-to-end workspace after `fammer build`.
 
 ### `py27/e2e/`
 
@@ -126,8 +126,9 @@ Each run records its arguments, exit status, standard output, standard error, an
   Each run also left the hmmsearch table `<target>.tbl` in the working directory; the current code writes the table to a temporary file and removes it, so `test_scan_reproduces_recorded_run` expects every recorded file except that one.
 - `update-fasta.json`: `fammer update-fasta` on the built tree and on one alignment, each before and after the last record of an alignment (`CDK.aln`, then `DYRK.aln`) was deleted.
 - `add.json`: `fammer add SomeKinases TgME49.pep` on the built tree, with the text appended to each FASTA file.
-  `test_add_appends_the_recorded_hits_once` compares the appended records, header and sequence, as a multiset per file; see "Repeated runs of `add`" and "Acceptance threshold of `add`" under "Deliberate differences".
+  `test_add_appends_the_recorded_hits_once` compares the appended records, header and sequence, as a multiset per file; see "Repeated runs of `add`", "Acceptance threshold of `add`" and "Assignment of `add` hits" under "Deliberate differences".
 - `refine.json`: `fammer refine SomeKinases -n -u SomeKinases/Testfam-Unclassified.fasta`.
+  `test_refine_dry_run_keeps_every_sequence_and_writes_nothing` compares the profiles it tests and the files it writes; see "`refine`" under "Deliberate differences".
 - `pdb.json`: `fammer build` with structures enabled, and `tmalign.py` on two and on three structures.
   Both `tmalign.py` runs fail; the first lists `tm.out.fasta` as created because the recorded sources opened the `-o` file before aligning, and the second lists it as neither created nor modified because the first had left it empty.
   The current `fammer-tmalign` writes the file only after a successful alignment, so neither run would leave it.
@@ -290,3 +291,8 @@ The sources of the Python 3 port, commit `a0a5233`, produce an empty list.
   Judged by the product names of the target, not every new record is in its family: `STE11` also receives a second NEK kinase and a CK2-family kinase, and `MAPKAPK` receives CDPK9, since the tree has no NEK profile and the weakest sequences of `STE11` and `MAPKAPK` score 126.1 and 149.0 bits.
   Alternating `build` and `add` on that tree adds 48, 11, 2, 3 and 2 records and then none, where assigning among every profile added records in ten rounds and left TGME49_244620 in both `STE11` and `STE-Unclassified`.
   `scan` still assigns among every profile, so none of its runs moves; `parse_scanned_hits` returns what it returned, now through `parse_scanned_rows` and `best_hits`, which `add` uses to select among its own profiles.
+- **`refine`** (one run, not replayed; no replayed case moves).
+  `refine` holds out each sequence of a profile in turn, builds an HMM from the profile's alignment without its row, and compares the best-domain bit score of the held-out sequence with the best bit score of the unclassified set against the same HMM; the lowest-scoring sequence that scores no higher is dropped and joins the unclassified set, the rest are tested again, and without `-n` the dropped records move to the unclassified file.
+  The recorded code compared an e-value computed over a one-sequence file with e-values computed over the unclassified set, took the worst unclassified e-value as the threshold, tested only the seeds left after dropping two dictionary entries, stopped at the first seed it kept, raised `KeyError` when the held-out HMM missed its seed, and changed no file without `-n` while logging that it had.
+  `_share.get_hmm_evalues`, which only the recorded `refine` called, is removed; `test_member_evalues_reproduce_recorded_values` replays its `hmmer.json` cases through `_share.get_hmm_hits`, and they do not move.
+  On `refine.json` the run tests the same two profiles, `ULK` and `Aurora`, keeps every sequence and changes no file, as recorded; for each profile it logs the kept sequence of lowest held-out score, `13031_Tt` at 147.1 bits and `GK043_Gl` at 152.8, against the best unclassified score, 42.2 and 35.5 bits, where the recorded run logged one seed of each with e-values.

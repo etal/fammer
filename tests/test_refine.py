@@ -1,0 +1,183 @@
+"""Properties of fammer refine, with HMMER replaced by a table of scores.
+
+refine holds out each sequence of a profile in turn and scores it, and the
+unclassified sequences, against an HMM built without it. The lowest-scoring
+sequence that scores no higher than the best unclassified one is dropped and
+joins the unclassified set, and the rest are tested again, until none fails or
+two sequences remain. Without --dry-run, the dropped records move from the
+profile's FASTA file to the unclassified one, and no other line changes.
+"""
+
+import argparse
+import logging
+
+import pytest
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+
+from fammer import refine
+from fammer._share import UsageError
+
+# Each held-out sequence's own score, against the HMM built without it.
+OWN = {"a": 50.0, "b": 200.0, "c": 40.0, "d": 300.0, "e": 250.0}
+# The unclassified sequence u1 scores 100 bits against every held-out HMM.
+UNCLASSIFIED = {"u1": 100.0}
+
+
+@pytest.fixture
+def scores(monkeypatch):
+    """Replace hmmbuild and hmmsearch in refine by a table of scores.
+
+    The HMM built without a row is named after that row. A target scores its
+    own entry in OWN against the HMM that holds it out, its entry in
+    UNCLASSIFIED against any HMM, and the score set in the returned dict of
+    (HMM, target) pairs; any other pair is not a hit.
+    """
+    extra = {}
+
+    def leave_one_out_hmms(rows, held_out, _workdir):
+        for row in rows:
+            if row.id in held_out:
+                yield row.id, row.id
+
+    def get_hmm_scores(hmm, seqfname):
+        with open(seqfname) as handle:
+            names = [rec.id for rec in SeqIO.parse(handle, "fasta")]
+        result = {}
+        for name in names:
+            if name == hmm and name in OWN:
+                result[name] = OWN[name]
+            elif name in UNCLASSIFIED:
+                result[name] = UNCLASSIFIED[name]
+            elif (hmm, name) in extra:
+                result[name] = extra[hmm, name]
+        return result
+
+    monkeypatch.setattr(refine, "leave_one_out_hmms", leave_one_out_hmms)
+    monkeypatch.setattr(refine, "get_hmm_scores", get_hmm_scores)
+    return extra
+
+
+def write_profile(path, names):
+    """A FASTA file and the Clustal alignment that fammer build would write."""
+    path.with_suffix(".fasta").write_text(
+        "".join(f">{name} the {name} kinase\nACDEFG\n" for name in names)
+    )
+    path.with_suffix(".aln").write_text(
+        "CLUSTAL X (-like) multiple sequence alignment\n\n"
+        + "".join(f"{name} AC-DEFG\n" for name in names)
+    )
+    return str(path.with_suffix(".fasta"))
+
+
+def dropped(fasta):
+    """The identifiers that refine_profile drops, against u1 alone."""
+    unclassified = [SeqRecord(Seq("ACDEFG"), id="u1", description="")]
+    return [rec.id for rec in refine.refine_profile(fasta, unclassified)]
+
+
+def test_the_lowest_failing_sequence_goes_first_until_none_fails(tmp_path, scores):
+    """c (40) and a (50) score below u1 (100); c goes first, then a."""
+    fasta = write_profile(tmp_path / "P", ["a", "b", "c", "d", "e"])
+    assert dropped(fasta) == ["c", "a"]
+
+
+def test_a_dropped_sequence_counts_as_unclassified(tmp_path, scores):
+    """Once c is dropped, it outscores e against the HMM without e."""
+    scores["e", "c"] = 260.0
+    fasta = write_profile(tmp_path / "P", ["a", "b", "c", "d", "e"])
+    assert dropped(fasta) == ["c", "a", "e"]
+
+
+def test_two_sequences_are_always_kept(tmp_path, scores, caplog):
+    """Dropping stops at two, and a profile of two is not tested at all."""
+    fasta = write_profile(tmp_path / "P", ["a", "c", "b"])
+    with caplog.at_level(logging.WARNING):
+        assert dropped(fasta) == ["c"]
+    assert "Stopped refining" in caplog.text
+    fasta = write_profile(tmp_path / "Q", ["a", "c"])
+    assert dropped(fasta) == []
+
+
+def test_a_sequence_its_held_out_hmm_misses_fails(tmp_path, scores, monkeypatch):
+    """No hit ranks below any score, but fails only beside an unclassified hit."""
+    monkeypatch.delitem(OWN, "b")
+    fasta = write_profile(tmp_path / "P", ["b", "d", "e"])
+    assert dropped(fasta) == ["b"]
+    monkeypatch.setattr(refine, "get_hmm_scores", lambda hmm, seqfname: {})
+    fasta = write_profile(tmp_path / "Q", ["b", "d", "e"])
+    assert dropped(fasta) == []
+
+
+def refine_args(basedir, dry_run=False, exclude=None):
+    return argparse.Namespace(
+        basedir=str(basedir), dry_run=dry_run, unclassified=None, exclude=exclude
+    )
+
+
+@pytest.fixture
+def tree(tmp_path, scores, monkeypatch):
+    """A directory with two profiles, a catch-all, and its -Unique set.
+
+    The catch-all has no alignment, so refine would fail if it tested it.
+    The -Unique file lacks a final line ending.
+    """
+    basedir = tmp_path / "Fam"
+    basedir.mkdir()
+    write_profile(basedir / "P", ["a", "b", "c", "d", "e"])
+    write_profile(basedir / "Q", ["x", "y", "z"])
+    (basedir / "Fam-Unclassified.fasta").write_text(">w\nACDE\n")
+    (basedir / "Fam-Unique.fasta").write_text(">u1 something\nACDEFG")
+    # x, y and z score like the strongest of P
+    for name in "xyz":
+        monkeypatch.setitem(OWN, name, 300.0)
+    return basedir
+
+
+def test_refine_moves_the_dropped_records_and_nothing_else(tree):
+    before = (tree / "P.fasta").read_text()
+    refine.cmd_refine(refine_args(tree))
+    by_name = {rec.split()[0]: ">" + rec for rec in before.split(">")[1:]}
+    assert (tree / "P.fasta").read_text() == "".join(
+        by_name[name] for name in ["b", "d", "e"]
+    )
+    assert (tree / "Fam-Unique.fasta").read_text() == (
+        ">u1 something\nACDEFG\n" + by_name["a"] + by_name["c"]
+    )
+    assert (tree / "Q.fasta").read_text().count(">") == 3
+
+
+def test_a_dry_run_and_an_excluded_profile_change_nothing(tree):
+    state = {path.name: path.read_text() for path in tree.iterdir()}
+    refine.cmd_refine(refine_args(tree, dry_run=True))
+    refine.cmd_refine(refine_args(tree, exclude="P"))
+    assert {path.name: path.read_text() for path in tree.iterdir()} == state
+
+
+def test_a_profile_changed_since_the_build_is_refused(tree):
+    with open(tree / "Q.fasta", "a") as handle:
+        handle.write(">new\nACDEFG\n")
+    with pytest.raises(UsageError, match="run fammer build first"):
+        refine.cmd_refine(refine_args(tree, dry_run=True))
+
+
+def test_a_sequence_in_both_sets_is_refused_before_any_change(tree):
+    """P sorts first and would lose c and a, but Q shares x with -Unique."""
+    with open(tree / "Fam-Unique.fasta", "a") as handle:
+        handle.write("\n>x\nACDEFG\n")
+    state = {path.name: path.read_text() for path in tree.iterdir()}
+    with pytest.raises(UsageError, match="Sequences in both .*Q.fasta"):
+        refine.cmd_refine(refine_args(tree))
+    assert {path.name: path.read_text() for path in tree.iterdir()} == state
+
+
+def test_moved_records_keep_their_text(tmp_path):
+    """Text before the first record and every kept line stay as they were."""
+    source = tmp_path / "P.fasta"
+    source.write_text("\n>a first\nAC\nDE\n>b\nFF\n>c  third one\nGG")
+    dest = tmp_path / "U.fasta"
+    dest.write_text(">u\nKK")
+    refine.move_records(str(source), str(dest), {"a", "c"})
+    assert source.read_text() == "\n>b\nFF\n"
+    assert dest.read_text() == ">u\nKK\n>a first\nAC\nDE\n>c  third one\nGG\n"
