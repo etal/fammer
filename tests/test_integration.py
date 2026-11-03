@@ -460,8 +460,10 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
 # of the recorded records that it does not append there. TGME49_203010 passes
 # the bit-score threshold that the recorded e-value rule failed; the others
 # follow from assigning hits only among profiles with a FASTA file, and from
-# passing a catch-all's hit to a subfamily that accepts it. See "Acceptance
-# threshold of add" and "Assignment of add hits" in tests/data/README.md.
+# passing a catch-all's hit to a subfamily that accepts it, or back to the
+# catch-all when the subfamily rejects it for its length, as CAMK1 rejects
+# TGME49_262540 and TGME49_306480. See "Acceptance threshold of add" and
+# "Assignment of add hits" in tests/data/README.md.
 CHANGED_RECORDS = {
     "SomeKinases/Aurora.fasta": ({"TGME49_203010"}, set()),
     "SomeKinases/CAMK/CAMK-Unclass.fasta": (set(), {"TGME49_291050"}),
@@ -490,7 +492,10 @@ CHANGED_RECORDS = {
     ),
     "SomeKinases/CAMK/MAPKAPK.fasta": ({"TGME49_217600"}, set()),
     "SomeKinases/CMGC/CMGC-Unclass.fasta": ({"TGME49_204280"}, set()),
-    "SomeKinases/STE/STE-Unclassified.fasta": ({"TGME49_231070"}, {"TGME49_218400"}),
+    "SomeKinases/STE/STE-Unclassified.fasta": (
+        {"TGME49_231070", "TGME49_262540", "TGME49_306480"},
+        {"TGME49_218400"},
+    ),
     "SomeKinases/STE/STE11.fasta": (
         {"TGME49_218400", "TGME49_294260", "TGME49_307640"},
         set(),
@@ -504,7 +509,8 @@ def record_id(record):
 
 
 def test_add_appends_the_recorded_hits_once(scan_workspace):
-    """``add`` appends the recorded hits as changed, and a second run changes nothing.
+    """``add`` appends the recorded hits, changed as listed, and a second run
+    changes nothing.
 
     The first run appends to each FASTA file the records that the Python 2
     code base appended, each on two lines where the recorded run wrapped the
@@ -699,7 +705,12 @@ def test_refine_dry_run_keeps_every_sequence_and_writes_nothing(built_workspace)
         "refine: Refining SomeKinases/Aurora.fasta ...",
         "refine: Refining SomeKinases/ULK.fasta ...",
     ]
-    assert sum(": * keep " in line for line in messages) == 2
+    kept = [
+        line.split(": * keep ")[1].split()[0]
+        for line in messages
+        if ": * keep " in line
+    ]
+    assert sorted(kept) == ["13031_Tt", "GK043_Gl"]
     assert not any(": * drop " in line for line in messages)
     assert tree_state(built_workspace) == written
 

@@ -1,10 +1,11 @@
-"""Properties of parse_scanned_hits, write_fasta and the hmmsearch helpers in _share.
+"""Properties of the table parser, write_fasta and the hmmsearch helpers in _share.
 
-For each target sequence the parser keeps the profile with the smallest
-best-1-domain E-value (column 8). When several profiles tie, the profile on the
-first such row is kept. The E-value and the bit score (column 9) it returns
-are those of that row. The tests compare the parser with an independent oracle
-over every ordering of a small table.
+For each target sequence, best_hits over the rows that parse_scanned_rows reads
+keeps the profile with the smallest best-1-domain E-value (column 8). When
+several profiles tie, the profile on the first such row is kept. The E-value
+and the bit score (column 9) it returns are those of that row. The tests
+compare the two with an independent oracle over every ordering of a small
+table.
 
 write_fasta writes each record as one header line and one unwrapped sequence
 line, with the record's identifier once in the header.
@@ -26,11 +27,12 @@ from Bio.SeqRecord import SeqRecord
 
 from fammer import _share
 from fammer._share import (
+    best_hits,
     get_hmm_hits,
     get_hmm_rows,
     get_hmm_scores,
     leave_one_out_hmms,
-    parse_scanned_hits,
+    parse_scanned_rows,
     write_fasta,
 )
 
@@ -75,7 +77,7 @@ def oracle(rows):
 
 
 def parse(lines):
-    return parse_scanned_hits(io.StringIO("".join(lines)))
+    return best_hits(parse_scanned_rows(io.StringIO("".join(lines))))
 
 
 # Two sequences, one tie within each sequence and one clear minimum, written in

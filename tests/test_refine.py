@@ -10,6 +10,7 @@ profile's FASTA file to the unclassified one, and no other line changes.
 
 import argparse
 import logging
+import os
 
 import pytest
 from Bio import SeqIO
@@ -110,6 +111,15 @@ def test_a_sequence_its_held_out_hmm_misses_fails(tmp_path, scores, monkeypatch)
     assert dropped(fasta) == []
 
 
+def test_a_score_equal_to_the_best_unclassified_one_fails(
+    tmp_path, scores, monkeypatch
+):
+    """A sequence must score higher than u1 (100), not merely as high."""
+    monkeypatch.setitem(OWN, "a", 100.0)
+    fasta = write_profile(tmp_path / "P", ["a", "b", "d", "e"])
+    assert dropped(fasta) == ["a"]
+
+
 def refine_args(basedir, dry_run=False, exclude=None):
     return argparse.Namespace(
         basedir=str(basedir), dry_run=dry_run, unclassified=None, exclude=exclude
@@ -133,6 +143,19 @@ def tree(tmp_path, scores, monkeypatch):
     for name in "xyz":
         monkeypatch.setitem(OWN, name, 300.0)
     return basedir
+
+
+def test_a_sequence_dropped_from_one_profile_counts_against_the_next(tree, scores):
+    """c, dropped from P, outscores x against the HMM of Q without x."""
+    scores["x", "c"] = 400.0
+    refine.cmd_refine(refine_args(tree))
+    assert record_names(tree / "Q.fasta") == ["y", "z"]
+    assert record_names(tree / "Fam-Unique.fasta") == ["u1", "a", "c", "x"]
+
+
+def record_names(path):
+    with SeqIO.parse(path, "fasta") as records:
+        return [rec.id for rec in records]
 
 
 def test_refine_moves_the_dropped_records_and_nothing_else(tree):
@@ -181,3 +204,33 @@ def test_moved_records_keep_their_text(tmp_path):
     refine.move_records(str(source), str(dest), {"a", "c"})
     assert source.read_text() == "\n>b\nFF\n"
     assert dest.read_text() == ">u\nKK\n>a first\nAC\nDE\n>c  third one\nGG\n"
+
+
+def test_moved_records_keep_line_endings_and_the_profile_its_mode(tmp_path):
+    """CRLF records move as written; an ending added to dest is the one dest
+    uses; the rewritten profile keeps its permissions."""
+    source = tmp_path / "P.fasta"
+    source.write_bytes(b">a\r\nAC\r\n>b\r\nFF\r\n>c\r\nGG")
+    source.chmod(0o640)
+    dest = tmp_path / "U.fasta"
+    dest.write_bytes(b">u\nKK")
+    refine.move_records(str(source), str(dest), {"a", "c"})
+    assert source.read_bytes() == b">b\r\nFF\r\n"
+    assert source.stat().st_mode & 0o777 == 0o640
+    assert dest.read_bytes() == b">u\nKK\n>a\r\nAC\r\n>c\r\nGG\n"
+
+
+@pytest.mark.skipif(
+    getattr(os, "geteuid", lambda: -1)() == 0, reason="root ignores file modes"
+)
+def test_a_failed_move_changes_no_file_and_leaves_no_file(tmp_path):
+    source = tmp_path / "P.fasta"
+    source.write_text(">a\nAC\n>b\nFF\n")
+    dest = tmp_path / "U.fasta"
+    dest.write_text(">u\nKK\n")
+    dest.chmod(0o444)
+    with pytest.raises(PermissionError):
+        refine.move_records(str(source), str(dest), {"a"})
+    assert source.read_text() == ">a\nAC\n>b\nFF\n"
+    assert dest.read_text() == ">u\nKK\n"
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["P.fasta", "U.fasta"]

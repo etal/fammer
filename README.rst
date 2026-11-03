@@ -248,8 +248,7 @@ Note that ``--table`` and ``--seqsets`` can be combined.
 add
 ```
 
-Scan a target database with the given HMM profile set and add hits that meet
-a series of acceptance thresholds to the profile FASTA files.
+Scan a target database with the given HMM profile set and add hits that meet a series of acceptance thresholds to the profile FASTA files.
 
 Once you've constructed profiles from a collection of carefully selected sequences representing each subfamily, you can use this command to scan another sequence set and automatically add strong hits to the corresponding profile sequence sets.
 The target database could be a proteome, or a larger sequence database like **refseq_proteins**, if you're confident in your coverage of the superfamily and want to improve the sensitivity of your profiles.
@@ -257,7 +256,8 @@ A sequence that is already in the tree is never added again, so the tree's own `
 
 Each hit is considered for one of the profiles that have a FASTA file of their own: the one whose best-matching domain gives it the smallest E-value in the target database.
 The group-level profiles do not take part, so a hit that matches a group profile best is considered for the best-matching profile among those with a FASTA file.
-A catch-all profile (see `Directory tree is the superfamily hierarchy`_) does not compete with the subfamilies: a hit that matches a catch-all best is considered instead for the subfamily profile with the smallest E-value among those whose threshold its bit score reaches, and stays with the catch-all only if there is none.
+Hits are assigned to profiles by name, so two profiles of the tree cannot share a name.
+A catch-all profile (see `Directory tree is the superfamily hierarchy`_) does not compete with the subfamilies: a hit that matches a catch-all best is considered instead for the subfamily profile with the smallest E-value among those whose threshold its bit score reaches, and stays with the catch-all if there is none, or if that subfamily rejects it for its length.
 A hit is accepted when it passes the significance cutoff ``-E`` in the target database, when the bit score of its best domain is at least the threshold of the profile, and when the aligned region covers at least the fraction ``-L`` of the profile length.
 The threshold is the lowest best-domain bit score among the profile's own sequences, counting those that its HMM hits at an E-value of 0.001 or better.
 The comparison uses bit scores because an E-value grows with the number of sequences searched, while a bit score does not, so the threshold is the same whatever the size of the target.
@@ -267,7 +267,7 @@ Only the aligned region is added, not the full-length sequence.
 A sequence with several domains that pass these thresholds contributes its longest domain once, and a sequence whose identifier is already in any profile of the tree is not added again.
 A second run with the same target and the same HMMs therefore adds nothing.
 After ``fammer build`` has rebuilt the HMMs from the enlarged sequence sets, another run may add a few more sequences.
-Repeating the two commands takes several rounds to reach a run that adds nothing: on a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the first run added 48 sequences, the runs after the first four rebuilds added 11, 2, 3 and 2 more, mostly to ``CAMK1`` and ``STE-Unclassified``, and the run after the fifth rebuild added none.
+Repeating the two commands takes several rounds to reach a run that adds nothing: on a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the first run added 50 sequences, the runs after the first three rebuilds added 10, 1 and 2 more, mostly to ``CAMK1``, and the run after the fourth rebuild added none.
 Review what each round adds before rebuilding: a profile whose weakest sequence scores low, such as ``STE11`` or ``CAMK1`` in that tree, can accept a kinase of a family that the tree has no profile for.
 Holding each sequence out does not help a small profile whose sequences are nearly identical: each still scores far higher against the others than an unseen member of the family does, so the profile may accept nothing at all.
 If a profile has hits that it does not yet hold, but its HMM finds none of its own sequences at 0.001 or better, there is no threshold to compare against, and the profile is skipped with a warning.
@@ -287,7 +287,7 @@ A sequence fails if it scores no higher than the highest-scoring unclassified se
 The lowest-scoring sequence that fails is dropped and joins the unclassified sequences, and the remaining ones are tested again, until none fails or two remain.
 Each dropped sequence is logged with its score and the best unclassified score, and so is the kept sequence of lowest score.
 With ``-n`` (``--dry-run``) nothing is written; otherwise the dropped records are moved, with their text unchanged, from the profile's FASTA file to the unclassified file, and ``fammer build`` then realigns both.
-``refine`` reads the alignments of the last build, so a profile whose ``.aln`` file does not hold exactly the sequences of its FASTA file is an error until the tree is rebuilt.
+``refine`` reads the alignments of the last build, so a profile whose ``.aln`` file does not hold exactly the sequences of its FASTA file is an error until the tree is rebuilt, as is a sequence that is both in a profile and in the unclassified set; both are checked before any file changes.
 Each round of testing builds one HMM per remaining sequence, so a profile that loses many sequences takes correspondingly longer.
 
 Note that if a member of a known subfamily was mistakenly placed in the unclassified set (i.e. was missed by the initial classification), then many of the legitimate members of the subfamily profile could score worse than this high-scoring "unclassified" sequence and be erroneously marked for removal from the profile.

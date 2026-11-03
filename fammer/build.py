@@ -14,7 +14,7 @@ from Bio.SeqRecord import SeqRecord
 from biofrills import alnutils, consensus
 
 from . import tmalign
-from ._share import UsageError, write_fasta
+from ._share import UsageError, build_hmm, write_fasta
 from .tasks import Task, ext, is_empty, noext, sh, which
 
 logger = logging.getLogger(__name__)
@@ -394,10 +394,8 @@ def aln2hmm(task):
 
     Cleans: .stk
     """
-    stk = ext(task.depends[0], "stk")
     with open(str(task.depends[0])) as aln:
-        SeqIO.convert(aln, "clustal", stk, "stockholm")
-    sh(f"hmmbuild {task.target} {stk}")
+        build_hmm(list(SeqIO.parse(aln, "clustal")), task.target)
 
 
 def all_hmm(task):

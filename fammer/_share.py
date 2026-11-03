@@ -5,6 +5,8 @@ import tempfile
 from os.path import getsize, join
 
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 from .tasks import ext, sh
 
@@ -28,7 +30,7 @@ def get_hmm_hits(hmmfname, seqfname, evalue):
     """Search a sequence database with an HMM profile database.
 
     Return a mapping of hit sequence names to the best profile, with the
-    e-value and bit score of its best domain, as parse_scanned_hits does.
+    e-value and bit score of its best domain, as best_hits selects them.
     """
     return best_hits(get_hmm_rows(hmmfname, seqfname, evalue))
 
@@ -94,11 +96,12 @@ def leave_one_out_hmms(rows, held_out, workdir):
         yield row.id, hmmfname
 
 
-def parse_scanned_hits(tblfile):
-    """Parse a file stream from hmmsearch --tblout.
+def parse_scanned_rows(tblfile):
+    """Read the rows of a file stream from hmmsearch --tblout.
 
-    Returns a dict of {target_seq_name: (best_profile_name, e-value, bit score)}
-    of the rows that parse_scanned_rows reads, as best_hits selects them.
+    Generates tuples of (target_seq_name, profile_name, e-value, bit score) in
+    file order, one per row, with the e-value and bit score of the best single
+    domain.
 
     Example contents::
 
@@ -109,16 +112,6 @@ def parse_scanned_hits(tblfile):
         gi|254575025|pdb|3HX4|A -          Testfam              -           1.4e-150  498.9   5.7  1.6e-150  498.7   4.0   1.0   1   0   0   1   1   1   1 {<Apicomplexa(e)>}Chain A, Crystal Structure Of Cdpk1 Of Toxoplasma Gondii, Tgme49_1014 Presence Of Calcium
         TAIR|locus:2011201      -          Testfam              -           2.4e-137  455.2   0.0  2.7e-137  455.1   0.0   1.0   1   0   0   1   1   1   1 symbol:CDPK1 species:3702 "Arabidopsis thaliana"  AT1G18890
     """  # noqa: E501
-    return best_hits(parse_scanned_rows(tblfile))
-
-
-def parse_scanned_rows(tblfile):
-    """Read the rows of a file stream from hmmsearch --tblout.
-
-    Generates tuples of (target_seq_name, profile_name, e-value, bit score) in
-    file order, one per row, with the e-value and bit score of the best single
-    domain.
-    """
     for line in tblfile:
         if line.startswith("#"):
             continue
@@ -179,6 +172,11 @@ def repeated_names(names):
 def ungapped(seq):
     """The sequence as a string without gap characters, in upper case."""
     return str(seq).replace("-", "").replace(".", "").upper()
+
+
+def as_target(record):
+    """A record of the ungapped sequence under its identifier alone, to search."""
+    return SeqRecord(Seq(ungapped(record.seq)), id=record.id, description="")
 
 
 def write_fasta(records, dest):

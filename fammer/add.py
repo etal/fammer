@@ -10,11 +10,11 @@ from os.path import basename, isdir, isfile, join
 
 from Bio import SeqIO
 from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 
 from ._share import (
     MEMBER_EVALUE,
     UsageError,
+    as_target,
     best_hits,
     get_hmm_rows,
     get_hmm_scores,
@@ -65,15 +65,37 @@ def cmd_add(args):
     rows = get_hmm_rows(hmmdb, args.sequence_db, args.evalue)
     if not rows:
         raise UsageError(f"No profile hits in {args.sequence_db}")
-    rows = [row for row in filter_present(rows, present) if row[1] in profiles]
+    rows = [row for row in rows if row[0] not in present and row[1] in profiles]
     threshold = functools.cache(lambda name: profile_threshold(*profiles[name]))
-    dbhits = assign_hits(rows, threshold)
+    dbhits, passed_on = assign_hits(rows, threshold)
+    appended = set()
     with closing(SeqIO.index(args.sequence_db, "fasta")) as index:
-        for name, (fasta, hmm) in profiles.items():
+        # The subfamilies come first, so that a catch-all receives back each
+        # hit that it passed to a subfamily and the subfamily did not append,
+        # having rejected it for its length
+        for name in sorted(profiles, key=is_catch_all):
+            fasta, hmm = profiles[name]
             logger.info("Processing %s ...", noext(fasta))
             hits = list(filter_profile(dbhits, name))
-            if hits:
-                add_hits(fasta, hmm, hits, threshold(name), index, args.min_length)
+            if is_catch_all(name):
+                hits += [
+                    hit
+                    for hit in filter_profile(passed_on, name)
+                    if hit[0] not in appended
+                ]
+            if not hits:
+                continue
+            min_score = threshold(name)
+            if min_score is None:
+                logger.warning(
+                    "Skipping %s: its HMM profile hits none of its own sequences "
+                    "at e-value %s or better, so there is no threshold to accept "
+                    "a hit; run fammer build if its alignment is out of date",
+                    fasta,
+                    MEMBER_EVALUE,
+                )
+                continue
+            appended |= add_hits(fasta, hmm, hits, min_score, index, args.min_length)
 
 
 def assign_hits(rows, threshold):
@@ -87,12 +109,15 @@ def assign_hits(rows, threshold):
     e-value among those whose threshold its bit score reaches, if there is
     one, since a catch-all holds only the sequences that fit no subfamily.
 
-    Returns a dict of {sequence name: (profile name, e-value, bit score)}.
+    Returns a tuple of two dicts, each of {sequence name: (profile name,
+    e-value, bit score)}: the assignment of every sequence, and the sequences
+    passed from a catch-all to a subfamily, with the catch-all's row.
     """
     rows_of = defaultdict(list)
     for row in rows:
         rows_of[row[0]].append(row)
     best = best_hits(rows)
+    passed_on = {}
     for seqname, (profname, _evalue, _score) in best.items():
         if not is_catch_all(profname):
             continue
@@ -100,35 +125,26 @@ def assign_hits(rows, threshold):
             row
             for row in rows_of[seqname]
             if not is_catch_all(row[1])
-            and threshold(row[1]) is not None
-            and row[3] >= threshold(row[1])
+            and (min_score := threshold(row[1])) is not None
+            and row[3] >= min_score
         ]
         if accepted:
+            passed_on[seqname] = best[seqname]
             best[seqname] = best_hits(accepted)[seqname]
-    return best
+    return best, passed_on
 
 
 def add_hits(fasta, hmm, hits, min_score, index, min_length):
     """Append the hits that a profile accepts to its FASTA file.
 
     The hits are tuples of (sequence name, bit score), and min_score is the
-    profile's acceptance threshold (see profile_threshold), or None.
+    profile's acceptance threshold in bits (see profile_threshold).
+
+    Returns the names of the sequences appended.
     """
-    # The weakest of the profile's own sequences sets the acceptance
-    # threshold, in bits. A bit score, unlike an e-value, does not depend on
-    # the number of sequences searched, so the profile's own scores and the
-    # target's are comparable.
-    if min_score is None:
-        logger.warning(
-            "Skipping %s: its HMM profile hits none of its own sequences at "
-            "e-value %s or better, so there is no threshold to accept a hit",
-            fasta,
-            MEMBER_EVALUE,
-        )
-        return
     hits = list(filter_score(hits, min_score))
     if not hits:
-        return
+        return set()
 
     # Align the hit sequences (retrieved from the target DB)
     aln = get_hmm_alignment(hmm, hits, index)
@@ -148,7 +164,7 @@ def add_hits(fasta, hmm, hits, min_score, index, min_length):
         record.seq = Seq(ungapped(record.seq))
         hit_seqs.append(record)
     if not hit_seqs:
-        return
+        return set()
 
     # ENH: extend hits that are close to the edge of the profile (e.g. 5aa) to
     # fill sequence to the edges (no gaps)
@@ -164,6 +180,7 @@ def add_hits(fasta, hmm, hits, min_score, index, min_length):
         if needs_newline:
             fafile.write("\n")
         write_fasta(hit_seqs, fafile)
+    return {record.id for record in hit_seqs}
 
 
 def walk_profiles(topdir):
@@ -193,7 +210,9 @@ def profile_threshold(fasta, hmm):
     partly from itself a sequence of a small profile scores far higher than an
     unseen member of the family does. A larger profile scores them against its
     own HMM. Only the sequences hit at MEMBER_EVALUE or better count; without
-    any, the result is None.
+    any, the result is None. The scores are bit scores, since a bit score,
+    unlike an e-value, does not depend on the number of sequences searched, so
+    the profile's own scores and those of a target are comparable.
     """
     alnfname = ext(fasta, "aln")
     if not isfile(alnfname):
@@ -201,11 +220,7 @@ def profile_threshold(fasta, hmm):
     names = member_names(fasta)
     with SeqIO.parse(alnfname, "clustal") as parsed:
         rows = list(parsed)
-    members = [
-        SeqRecord(Seq(ungapped(row.seq)), id=row.id, description="")
-        for row in rows
-        if row.id in names
-    ]
+    members = [as_target(row) for row in rows if row.id in names]
     with tempfile.TemporaryDirectory(prefix="fammer-") as workdir:
         seqfname = join(workdir, "members.fasta")
         write_fasta(members, seqfname)
@@ -259,13 +274,6 @@ def filter_profile(hits, profile_name):
     for seqname, (profname, _evalue, score) in hits.items():
         if profname == profile_name:
             yield (seqname, score)
-
-
-def filter_present(hits, members):
-    """Skip the hits whose sequence name is among the given members."""
-    for hit in hits:
-        if hit[0] not in members:
-            yield hit
 
 
 def longest_domains(records, min_len_aa):

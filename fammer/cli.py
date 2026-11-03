@@ -189,10 +189,15 @@ def main(argv=None):
 
     # Sub-command: refine
     P_refine = AP_subparsers.add_parser(
-        "refine", help="Leave-one-out validation of HMM profiles."
+        "refine",
+        help="""Leave-one-out validation of the subfamily profiles in one
+            directory. Move the sequences that score no higher than an
+            unclassified sequence into the unclassified set.""",
     )
     P_refine.add_argument(
-        "basedir", help="Top of the directory tree where the sequences sets are."
+        "basedir",
+        help="""The directory of the subfamily sequence sets; its
+            subdirectories are not visited.""",
     )
     P_refine.add_argument(
         "-n",

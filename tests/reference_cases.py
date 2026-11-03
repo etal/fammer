@@ -690,7 +690,10 @@ def table_text(name):
 
 
 def scanned_hits(name):
-    return _share.parse_scanned_hits(table_text(name).splitlines(True))
+    """The recorded parse_scanned_hits, since removed: the best profile of each
+    target sequence."""
+    rows = _share.parse_scanned_rows(table_text(name).splitlines(True))
+    return _share.best_hits(rows)
 
 
 def write_fasta_text(records):

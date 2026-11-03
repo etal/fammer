@@ -3,25 +3,24 @@
 import logging
 import os
 import re
+import shutil
 import tempfile
 from glob import glob
 from os.path import abspath, basename, isdir, isfile, join, samefile
 
 from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 
 from ._share import (
     MEMBER_EVALUE,
     UsageError,
+    as_target,
     get_hmm_scores,
     is_catch_all,
     leave_one_out_hmms,
     member_names,
-    ungapped,
     write_fasta,
 )
-from .tasks import ends_with_newline, ext, noext
+from .tasks import ext, noext
 
 logger = logging.getLogger(__name__)
 
@@ -67,12 +66,13 @@ def cmd_refine(args):
     unclassified_names = {rec.id for rec in unclassified}
     for fasta in profiles:
         aln = ext(fasta, "aln")
-        if not isfile(aln) or aligned_names(aln) != member_names(fasta):
+        names = member_names(fasta)
+        if not isfile(aln) or aligned_names(aln) != names:
             raise UsageError(
                 f"{aln} does not hold exactly the sequences of {fasta}; "
                 "run fammer build first"
             )
-        both = member_names(fasta) & unclassified_names
+        both = names & unclassified_names
         if both:
             raise UsageError(
                 f"Sequences in both {fasta} and {unclass_fa}: {', '.join(sorted(both))}"
@@ -128,10 +128,9 @@ def refine_profile(fasta, unclassified):
         seqfname = join(workdir, "targets.fasta")
         while True:
             scores = {}
-            names = {row.id for row in rows}
-            for name, hmm in leave_one_out_hmms(rows, names, workdir):
-                held_out = next(as_target(row) for row in rows if row.id == name)
-                write_fasta([held_out, *targets], seqfname)
+            by_name = {row.id: row for row in rows}
+            for name, hmm in leave_one_out_hmms(rows, by_name.keys(), workdir):
+                write_fasta([as_target(by_name[name]), *targets], seqfname)
                 hits = get_hmm_scores(hmm, seqfname)
                 own = hits.pop(name, None)
                 scores[name] = (own, max(hits.values(), default=None))
@@ -146,10 +145,10 @@ def refine_profile(fasta, unclassified):
             worst = min(failing, key=lambda name: own_score(scores[name][0]))
             own, best_out = scores[worst]
             logger.info("* drop %s (%s vs. %.1f bits)", worst, describe(own), best_out)
-            row = next(row for row in rows if row.id == worst)
-            rows = [other for other in rows if other.id != worst]
-            dropped.append(as_target(row))
-            targets.append(as_target(row))
+            record = as_target(by_name[worst])
+            rows = [row for row in rows if row.id != worst]
+            dropped.append(record)
+            targets.append(record)
             if len(rows) <= MIN_MEMBERS:
                 logger.warning(
                     "Stopped refining %s at %d sequences", fasta, MIN_MEMBERS
@@ -183,11 +182,6 @@ def describe(score):
     return "no hit" if score is None else f"{score:.1f}"
 
 
-def as_target(record):
-    """A record with the ungapped sequence and identifier alone, to search."""
-    return SeqRecord(Seq(ungapped(record.seq)), id=record.id, description="")
-
-
 def aligned_names(aln):
     """The identifiers of the rows of a Clustal alignment."""
     with SeqIO.parse(aln, "clustal") as parsed:
@@ -198,23 +192,48 @@ def move_records(fasta, dest, names):
     """Move the FASTA records with the given identifiers from one file to another.
 
     The records are appended to dest in the order and with the text they have
-    in fasta, after a line ending if dest lacks one, and then fasta is
-    rewritten without them; every other line of either file is left as it was.
+    in fasta, and then fasta is rewritten without them, keeping its
+    permissions; every other line of either file is left as it was, with its
+    line ending. A line ending that has to be added, after the last line of
+    dest or of a moved record, is the one dest uses, or the one fasta uses
+    where dest has none; a file with any CRLF line ending counts as CRLF.
     """
-    with open(fasta) as handle:
-        head, *records = re.split(r"(?m)^(?=>)", handle.read())
+    with open(fasta, newline="") as handle:
+        text = handle.read()
+    with open(dest, newline="") as handle:
+        dest_text = handle.read()
+    newline = line_ending(dest_text, line_ending(text, "\n"))
+    head, *records = re.split(r"(?m)^(?=>)", text)
     moved = [rec for rec in records if record_name(rec) in names]
     kept = [rec for rec in records if record_name(rec) not in names]
-    needs_newline = not ends_with_newline(dest)
-    with open(dest, "a") as handle:
-        if needs_newline:
-            handle.write("\n")
-        handle.writelines(rec if rec.endswith("\n") else rec + "\n" for rec in moved)
-    with tempfile.NamedTemporaryFile(
-        "w", dir=os.path.dirname(abspath(fasta)), delete=False
-    ) as handle:
-        handle.write(head + "".join(kept))
-    os.replace(handle.name, fasta)
+    # Write the rewritten profile to a temporary file first, so that a failure
+    # while writing it changes neither file, and replace the profile with it
+    # only after the records are appended; on any failure the temporary file
+    # is removed
+    rewritten = tempfile.NamedTemporaryFile(
+        "w", dir=os.path.dirname(abspath(fasta)), delete=False, newline=""
+    )
+    try:
+        with rewritten:
+            rewritten.write(head + "".join(kept))
+        shutil.copymode(fasta, rewritten.name)
+        with open(dest, "a", newline="") as handle:
+            if dest_text and not dest_text.endswith("\n"):
+                handle.write(newline)
+            handle.writelines(
+                rec if rec.endswith("\n") else rec + newline for rec in moved
+            )
+        os.replace(rewritten.name, fasta)
+    except BaseException:
+        os.unlink(rewritten.name)
+        raise
+
+
+def line_ending(text, default):
+    """The line ending that text uses, CRLF or LF, or default if it has none."""
+    if "\r\n" in text:
+        return "\r\n"
+    return "\n" if "\n" in text else default
 
 
 def record_name(text):
