@@ -17,6 +17,51 @@ it:
 
 Freely distributed under the permissive BSD 2-clause license (see LICENSE).
 
+Purpose and design
+------------------
+
+Fammer builds and curates a hierarchical set of sequence profiles for one protein superfamily: a profile for each family or subfamily, and above them a profile for each group and one for the superfamily, arranged as a directory tree.
+The profile set has three uses.
+It detects members of the superfamily in large sequence databases, such as the proteome of a newly sequenced genome.
+It classifies each member into the most specific level of the hierarchy that fits it.
+It aligns all members to one another through a template alignment of the consensus sequences of the profiles, as MAPGAPS does [Neuwald2009]_.
+Such alignments are the input to comparative analyses of the sequence patterns that distinguish one subfamily from its relatives, such as CHAIN analysis and CladeCompare.
+
+Fammer was written to partially automate the construction and curation of such profile sets, and was used to classify the rhoptry kinases of coccidian parasites into 42 subfamilies [Talevich2013]_.
+Its design follows the iterative, partly manual procedure of [Kannan2007]_, and Fammer automates the repetitive steps of that procedure.
+The procedures of these papers, and the rules below that follow from them, define what Fammer is meant to do.
+
+- **A profile models closely related sequences.**
+  Each family or subfamily set holds sequences that standard methods align accurately; the relationships between distant subfamilies are represented by the hierarchy and the alignments of consensus sequences above it, not by any one alignment.
+- **A sequence belongs to the profile that scores it highest.**
+  Related subfamilies are not separated by an absolute score; they are told apart by which profile scores a sequence highest.
+  MAPGAPS classifies a sequence whose best match is a group profile, or the superfamily profile, at that level, as a member of a subgroup that no profile models yet, and a set of such sequences is a candidate for a new profile [Neuwald2009]_.
+  ``add`` does not: it considers such a sequence for the best-matching profile among those that have a FASTA file (see `add`_).
+- **A catch-all set is a profile of its group.**
+  A file named ``*-Unclassified``, ``*-Unclass`` or ``*-Unique`` holds the members of a group that fit none of its subfamilies, together with any consensus records that make up its generic profile (see `Directory tree is the superfamily hierarchy`_).
+  These members include orphan sequences and members of lineage-specific subfamilies too sparsely populated to have their own profile, which the curator collapsed into the catch-all.
+  A sequence in a catch-all has a classification at the level of its group; it is not necessarily waiting for a subfamily.
+  A catch-all corresponds to the "unique" set of [Talevich2013]_.
+- **Related but irrelevant sequences are excluded by competing profiles.**
+  A profile of the sequences to be excluded, such as the profile of other protein kinases that [Talevich2013]_ included beside the rhoptry kinase profiles, or the excluded profiles of MAPGAPS, takes those sequences as its best match.
+  A score threshold alone cannot tell a member of a missing family from a divergent member of a present one.
+- **The curator decides; Fammer proposes.**
+  In [Talevich2013]_, subfamilies were defined from clusters of orthologs and trees of consensus sequences, outliers were moved to the "unique" set by inspection of conserved motifs, the "unique" set was reclassified with ``scan``, and each subfamily was validated against the "unique" set by ``refine``.
+  The leave-one-out validation of ``refine`` follows [Hedlund2010]_.
+  [Kannan2007]_ examined by hand every sequence with a borderline score, that is, a weak best match or a small difference between its best two models.
+  A missed member costs one more round of curation; a wrong member changes the profile, and with it every later search.
+  ``add`` and ``refine`` can show their changes without making them (``-n``).
+- **Iteration converges.**
+  Alternating ``build`` and ``add`` repeats the build, search and refine cycle of [Kannan2007]_; as a requirement of Fammer's own, the rounds should reach one that adds nothing, rather than grow without end.
+
+.. [Talevich2013] Talevich E, Kannan N (2013) Structural and evolutionary adaptation of rhoptry kinases and pseudokinases, a family of coccidian virulence factors. *BMC Evolutionary Biology* 13:117.
+   The procedure is in Methods, "Subfamily classification" (https://link.springer.com/article/10.1186/1471-2148-13-117#Sec17).
+   The resulting HMM profile database, with the profile of other protein kinases, is Additional file 3 (https://link.springer.com/article/10.1186/1471-2148-13-117#Sec23).
+.. [Neuwald2009] Neuwald AF (2009) Rapid detection, classification and accurate alignment of up to a million or more related protein sequences. *Bioinformatics* 25(15):1869–1875. https://doi.org/10.1093/bioinformatics/btp342
+.. [Kannan2007] Kannan N, Taylor SS, Zhai Y, Venter JC, Manning G (2007) Structural and functional diversity of the microbial kinome. *PLoS Biology* 5(3):e17. https://doi.org/10.1371/journal.pbio.0050017
+.. [Hedlund2010] Hedlund J, Jörnvall H, Persson B (2010) Subdivision of the MDR superfamily of medium-chain dehydrogenases/reductases through iterative hidden Markov model refinement. *BMC Bioinformatics* 11:534. https://doi.org/10.1186/1471-2105-11-534
+
+
 Installation
 ------------
 
@@ -407,13 +452,18 @@ A simple un-nested layout looks like::
         Superfamily-Unclassified.fasta
 
 Typically, a protein superfamily will have some members that cannot be cleanly classified into subfamilies.
-Put them in a catch-all file whose name ends with ``-Unclassified``, ``-Unclass`` or ``-Unique``; ``add`` and ``refine`` treat such a file as a set of leftovers rather than as a subfamily.
+Put them in a catch-all file whose name ends with ``-Unclassified``, ``-Unclass`` or ``-Unique``; ``add`` and ``refine`` treat such a file as the members of a group that fit none of its subfamilies, rather than as a subfamily; it may also hold consensus records (below).
 
 A catch-all's profile matches its group as a whole, without matching any one subfamily specifically.
 Unclassified sequences from annotated genomes are scarce, sometimes unreliable, and sometimes incomplete, so the catch-all sets of the ``CAMK``, ``CMGC`` and ``STE`` groups in ``profiles/SomeKinases`` are supplemented with a consensus sequence of each known subfamily of the group, which together make a generic profile of the group: the consensus sequences of different subfamilies are intended to dilute each other, so that a sequence of a real subfamily still matches that subfamily more strongly.
 A record whose identifier ends with ``consensus`` is such a consensus sequence.
 ``add --promote`` never moves one into a subfamily, ``refine`` leaves it out of the unclassified set, and the threshold of ``add`` does not count it as a sequence of another group.
 It does count toward the weakest-sequence score of the catch-all that holds it: ``CAMK-Unclass`` and ``CMGC-Unclass`` hold nothing else, so that score comes from their consensus records alone.
+
+A catch-all can also hold the members of lineage-specific subfamilies that are too sparsely populated to support a profile of their own.
+In ``profiles/SomeKinases``, ``STE-Unclassified.fasta`` holds plant and *Dictyostelium* STE kinases, represented by the records ``STE-plant1-consensus``, ``Dicty2-consensus`` and ``Dicty3-consensus``; these lineages are distinct from the ``STE7`` and ``STE11`` subfamilies.
+``CAMK-Unclass.fasta`` also holds consensus records of CAMK families that have no profile in that tree, such as CAMKL, the family of the SNF1/AMPK kinases.
+Whether a catch-all member belongs to one of its group's subfamilies is a question for phylogenetic analysis, not for a score threshold.
 
 Recursive nesting is also allowed (in fact, that's the point of this project).
 It looks like this::

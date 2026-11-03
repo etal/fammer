@@ -12,6 +12,20 @@ The 2013 Python 2 code base has been ported to Python 3.12+ and current Biopytho
 - `.github/workflows/ci.yml`: CI; its Python matrix follows the classifiers in `pyproject.toml`.
 - `.github/dependabot.yml`: monthly version updates of the actions in `ci.yml`; it does not update the `pixi-version` pin and is not configured for the Python dependencies.
 
+## Design intent
+
+"Purpose and design" in `README.rst` states what fammer is meant to do, with its sources (Talevich & Kannan 2013, MAPGAPS, Kannan et al. 2007).
+Check a change to what a command classifies or writes against it before designing.
+
+- Membership is relative: a sequence belongs to the profile that scores it highest, and an absolute score rule cannot separate related subfamilies.
+  MAPGAPS classifies a best match to a group or superfamily profile at that level, while `add` assigns it among the profiles that have a FASTA file; the README states both.
+- Catch-all sets (`*-Unclassified`, `*-Unclass`, `*-Unique`) are curated group-level profiles.
+  They hold orphans, sparsely populated lineage-specific subfamilies that the curator collapsed into them, and consensus records of the group's subfamilies.
+  They are not a queue to be emptied into subfamilies by score; moving a member into a subfamily is a curation decision.
+- `add` and `refine` offer a dry run (`-n`); keep that true of any command that writes to curated FASTA files.
+- The trees under `profiles/` are curated data as well as test fixtures, and their classifications encode decisions the code cannot see.
+  Whether a sequence or lineage belongs to a subfamily is a phylogenetic question for the maintainer, not one to settle with a new threshold.
+
 ## Commands
 
 Use pixi; it also installs the external programs fammer runs (MAFFT, HMMER, TM-align, MUSTANG, FastTree).
