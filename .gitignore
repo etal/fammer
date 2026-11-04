@@ -1,6 +1,7 @@
 *.pyc
 *.h3?
 *.hmm
+*.ssi
 *.mpa
 *.tpl
 !tests/data/py27/library/mapgaps/**/*.tpl
