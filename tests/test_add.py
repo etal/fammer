@@ -1,4 +1,4 @@
-"""Properties of the selection, assignment, thresholds and promotion of add.
+"""Properties of the selection, assignment, thresholds and reports of add.
 
 hmmsearch -A names each aligned domain ``<sequence name>/<start>-<end>``, so a
 sequence with several domains appears several times. longest_domains keeps,
@@ -18,8 +18,13 @@ in its FASTA file, held out one at a time when there are at most ten of them.
 acceptance_thresholds raises it to the best score of a member of a subfamily
 in another directory.
 
-promote_members moves a catch-all member, other than a consensus record, to
-the subfamily of its group that it is assigned to and that accepts it.
+borderline_hits picks the assigned hits that clear their threshold by less
+than BORDERLINE_MARGIN bits, or that do not lead the closest other profile by
+that much.
+
+report_promotions reports, and does not move, each catch-all member other
+than a consensus record that a subfamily of its group would accept, with its
+score against the catch-all built without it (held_out_scores).
 """
 
 import argparse
@@ -120,6 +125,98 @@ def test_a_catch_all_hit_goes_to_the_accepting_subfamily_of_least_evalue(catch_a
     hits, passed_on = assign(rows)
     assert hits == {"s": ("Sub2", 1e-45, 150.0)}
     assert passed_on == {"s": (catch_all, 1e-60, 200.0)}
+
+
+def borderline(hits, rows, passed_on=None):
+    """{sequence: description} as borderline_hits gives it with THRESHOLDS."""
+    return add.borderline_hits(
+        hits, rows, passed_on or {}, lambda name: THRESHOLDS.get(name, 0.0)
+    )
+
+
+def add_args(basedir, sequence_db):
+    """The arguments of cmd_add, with the defaults of its command line."""
+    return argparse.Namespace(
+        basedir=str(basedir),
+        sequence_db=str(sequence_db),
+        evalue=1e-20,
+        min_length=0.8,
+        report_promotions=False,
+        dry_run=False,
+    )
+
+
+def test_a_hit_near_its_threshold_or_a_rival_is_borderline():
+    """Sub1's threshold is 100 bits and the margin 10: t clears it by 5, u
+    leads Sub2 by 5, and s clears both by 10 or more."""
+    rows = [
+        ("s", "Sub1", 1e-50, 150.0),
+        ("s", "Sub2", 1e-40, 140.0),
+        ("t", "Sub1", 1e-50, 105.0),
+        ("u", "Sub1", 1e-50, 150.0),
+        ("u", "Sub2", 1e-49, 145.0),
+    ]
+    hits = {seq: (prof, ev, score) for seq, prof, ev, score in rows if prof == "Sub1"}
+    found = borderline(hits, rows)
+    assert sorted(found) == ["t", "u"]
+    assert found["t"] == "t for Sub1 (105.0 vs. 100.0 bits)"
+    assert found["u"] == "u for Sub1 (150.0 vs. 100.0 bits; Sub2 145.0)"
+
+
+def test_the_catch_all_that_passed_a_hit_on_is_not_a_rival():
+    """The catch-all scored s higher, but assign_hits passed it on; Sub1's
+    rejection of t below its threshold and Weak's lack of one are not
+    borderline either."""
+    rows = [
+        ("s", "G-Unclassified", 1e-60, 200.0),
+        ("s", "Sub1", 1e-40, 150.0),
+        ("t", "Sub1", 1e-40, 95.0),
+        ("w", "Weak", 1e-40, 95.0),
+    ]
+    hits = {seq: (prof, ev, score) for seq, prof, ev, score in rows[1:]}
+    passed_on = {"s": ("G-Unclassified", 1e-60, 200.0)}
+    assert borderline(hits, rows, passed_on) == {}
+
+
+def test_a_hit_returned_to_its_catch_all_is_tested_as_a_hit_of_it(
+    tmp_path, monkeypatch, caplog
+):
+    """G-Unclassified passed t and u on to Sub, which accepts both by score and
+    rejects both for their length. Returned to G-Unclassified, u is appended to
+    it; Sub scores t within 10 bits of G-Unclassified, so t is reported as
+    borderline and not written."""
+    group = tmp_path / "T" / "G"
+    group.mkdir(parents=True)
+    for name in ("Sub", "G-Unclassified"):
+        (group / f"{name}.fasta").write_text(f">{name}-m\nACDEFG\n")
+        (group / f"{name}.hmm").write_text("")
+    (tmp_path / "T_all.hmm").write_text("")
+    (tmp_path / "target.fasta").write_text(">t\nKLMNPQ\n>u\nRSTVWY\n")
+    rows = [
+        ("t", "G-Unclassified", 1e-60, 155.0),
+        ("t", "Sub", 1e-50, 150.0),
+        ("u", "G-Unclassified", 1e-60, 200.0),
+        ("u", "Sub", 1e-50, 150.0),
+    ]
+
+    def accepted_hits(hmm, hits, min_score, index, _min_length):
+        if hmm.endswith("Sub.hmm"):
+            return []
+        return [index[name] for name, score in hits if score >= min_score]
+
+    monkeypatch.setattr(add, "get_hmm_rows", lambda *_args: rows)
+    monkeypatch.setattr(add, "acceptance_thresholds", lambda *_args: lambda _: 100.0)
+    monkeypatch.setattr(add, "accepted_hits", accepted_hits)
+    args = add_args(tmp_path / "T", tmp_path / "target.fasta")
+    with caplog.at_level("WARNING"):
+        add.cmd_add(args)
+    assert [r.getMessage() for r in caplog.records] == [
+        "* borderline t for G-Unclassified (155.0 vs. 100.0 bits; Sub 150.0)"
+    ]
+    assert (group / "G-Unclassified.fasta").read_text() == (
+        ">G-Unclassified-m\nACDEFG\n>u\nRSTVWY\n"
+    )
+    assert (group / "Sub.fasta").read_text() == ">Sub-m\nACDEFG\n"
 
 
 def test_a_score_equal_to_the_threshold_is_accepted():
@@ -340,32 +437,56 @@ def promotion_tree(tmp_path, monkeypatch):
     return profiles
 
 
-def promote(profiles, workdir, dry_run=False):
-    add.promote_members(
-        profiles,
-        "T_all.hmm",
-        lambda name: 100.0,
-        argparse.Namespace(evalue=1e-20, min_length=0.8, dry_run=dry_run),
-        skip={"s"},
-        workdir=str(workdir),
-    )
-
-
-def test_promotion_moves_only_a_member_that_a_subfamily_of_its_group_accepts(
-    tmp_path, promotion_tree
+def test_promotions_are_reported_for_members_of_the_group_and_nothing_moves(
+    tmp_path, promotion_tree, caplog
 ):
-    unclassified = tmp_path / "G" / "G-Unclassified.fasta"
-    before = unclassified.read_text()
+    """Only x is reported: y-consensus is a consensus record, z is assigned to
+    a subfamily of another group, w reaches no subfamily's threshold, and s is
+    skipped. The catch-all has no alignment, so x has no held-out score."""
+    tree = [tmp_path / "G", tmp_path / "H"]
+    before = {path: path.read_text() for top in tree for path in top.iterdir()}
     work = tmp_path / "work"
     work.mkdir()
-    promote(promotion_tree, work, dry_run=True)
-    assert unclassified.read_text() == before
-    promote(promotion_tree, work)
-    assert (tmp_path / "G" / "Sub.fasta").read_text() == (
-        ">m\nACDEFG\n>x the x kinase\nACD\nEFG\n"
-    )
-    assert unclassified.read_text() == before.replace(">x the x kinase\nACD\nEFG\n", "")
-    assert (tmp_path / "H" / "Other.fasta").read_text() == ">o\nACDEFG\n"
+    with caplog.at_level("INFO"):
+        add.report_promotions(
+            promotion_tree,
+            "T_all.hmm",
+            lambda name: 100.0,
+            1e-20,
+            0.8,
+            skip={"s"},
+            workdir=str(work),
+        )
+    assert [r.getMessage() for r in caplog.records] == [
+        "* candidate x in G-Unclassified for Sub "
+        "(150.0 vs. 100.0 bits; G-Unclassified without it not scored)"
+    ]
+    assert {path: path.read_text() for top in tree for path in top.iterdir()} == before
+
+
+def test_a_member_is_scored_without_its_row_or_against_the_built_hmm(tmp_path, hmmer):
+    """m0 is a row of the alignment, so it is scored against the HMM built
+    without it (200 bits, not 500); "new" was added since the build, so it is
+    scored against the profile's own HMM."""
+    fasta = write_profile(tmp_path, 3, extra=["new"])
+    records = [SeqRecord(Seq("ACDEFG"), id=name) for name in ("m0", "new")]
+    work = tmp_path / "work"
+    work.mkdir()
+    scores = add.held_out_scores(fasta, "P.hmm", records, str(work))
+    assert scores == {"m0": 200.0, "new": 10.0}
+
+
+@pytest.mark.parametrize(("count", "aligned"), [(1, True), (3, False)])
+def test_a_member_without_an_hmm_built_without_it_is_not_scored(
+    tmp_path, hmmer, count, aligned
+):
+    """The only row of an alignment, and a member of a profile without one,
+    have no HMM built without them; their own HMM was built from them."""
+    fasta = write_profile(tmp_path, count, aligned=aligned)
+    records = [SeqRecord(Seq("ACDEFG"), id="m0")]
+    work = tmp_path / "work"
+    work.mkdir()
+    assert add.held_out_scores(fasta, "P.hmm", records, str(work)) == {}
 
 
 @pytest.mark.parametrize(
@@ -396,13 +517,6 @@ def test_two_profiles_of_one_name_are_refused(tmp_path):
             (tmp_path / "T" / group / f"X.{suffix}").write_text("")
     (tmp_path / "T_all.hmm").write_text("")
     (tmp_path / "seqs.fasta").write_text(">s\nACDEFG\n")
-    args = argparse.Namespace(
-        basedir=str(tmp_path / "T"),
-        sequence_db=str(tmp_path / "seqs.fasta"),
-        evalue=1e-20,
-        min_length=0.8,
-        promote=False,
-        dry_run=False,
-    )
+    args = add_args(tmp_path / "T", tmp_path / "seqs.fasta")
     with pytest.raises(UsageError, match="Two profiles are named X"):
         add.cmd_add(args)

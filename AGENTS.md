@@ -22,7 +22,8 @@ Check a change to what a command classifies or writes against it before designin
 - Catch-all sets (`*-Unclassified`, `*-Unclass`, `*-Unique`) are curated group-level profiles.
   They hold orphans, sparsely populated lineage-specific subfamilies that the curator collapsed into them, and consensus records of the group's subfamilies.
   They are not a queue to be emptied into subfamilies by score; moving a member into a subfamily is a curation decision.
-- A command that writes to curated FASTA files should report borderline cases for the curator instead of writing them, and should offer a dry run (`-n`, as `add` and `refine` do).
+- A command that writes to curated FASTA files should report borderline cases for the curator instead of writing them, and should offer a dry run (`-n`).
+  `add` withholds and reports borderline hits (`_share.BORDERLINE_MARGIN`); `refine` marks borderline drops but still makes them.
 - The trees under `profiles/` are curated data as well as test fixtures, and their classifications encode decisions the code cannot see.
   Whether a sequence or lineage belongs to a subfamily is a phylogenetic question for the maintainer, not one to settle with a new threshold.
 - `profiles/SomeKinases` is a deliberately incomplete subset of the kinase superfamily, which breaks the method's assumption that the widespread subfamilies have profiles.

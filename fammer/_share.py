@@ -28,6 +28,13 @@ class UsageError(ValueError):
 # when a set of sequences is scored against one profile.
 MEMBER_EVALUE = 0.001
 
+# Two bit scores that differ by less than this many bits are not taken to
+# separate a sequence: add reports a hit that clears its threshold by less than
+# this, or that does not lead the closest other profile by this much, instead
+# of writing it, and refine labels a drop whose held-out score is this close to
+# the best unclassified score.
+BORDERLINE_MARGIN = 10.0
+
 
 def get_hmm_hits(hmmfname, seqfname, evalue):
     """Search a sequence database with an HMM profile database.

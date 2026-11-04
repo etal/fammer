@@ -159,7 +159,8 @@ def main(argv=None):
     P_add = AP_subparsers.add_parser(
         "add",
         help="""Scan a target database with the given HMM profile set. Add
-            hits that meet acceptance thresholds to the profile FASTA files.""",
+            hits that meet acceptance thresholds to the profile FASTA files,
+            and report borderline hits instead of adding them.""",
     )
     P_add.add_argument(
         "basedir",
@@ -186,10 +187,10 @@ def main(argv=None):
             hits to accept into the profiles.""",
     )
     P_add.add_argument(
-        "--promote",
+        "--report-promotions",
         action="store_true",
-        help="""Also move each sequence of a catch-all set that a subfamily
-            of its group accepts into that subfamily. Run with -n first.""",
+        help="""Also report each sequence of a catch-all set that a subfamily
+            of its group would accept, for review. Nothing is moved.""",
     )
     P_add.add_argument(
         "-n",

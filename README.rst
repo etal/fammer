@@ -54,7 +54,8 @@ The procedures of these papers, and the rules below that follow from them, defin
   The leave-one-out validation of ``refine`` follows [Hedlund2010]_.
   [Kannan2007]_ examined by hand every sequence with a borderline score, that is, a weak best match or a small difference between its best two models.
   A missed member costs one more round of curation; a wrong member changes the profile, and with it every later search.
-  A command that writes to curated sequence sets should therefore report a borderline case for the curator to examine instead of writing it, and should be able to show its changes without making them; ``add`` and ``refine`` do the latter with ``-n``.
+  A command that writes to curated sequence sets should therefore report a borderline case for the curator to examine instead of writing it, and should be able to show its changes without making them.
+  ``add`` reports borderline hits instead of adding them, ``refine`` marks its borderline drops in the log but still makes them, and both show their changes without making them with ``-n``.
 - **Iteration converges.**
   Alternating ``build`` and ``add`` repeats the build, search and refine cycle of [Kannan2007]_; as a requirement of Fammer's own, the rounds should reach one that adds nothing, rather than grow without end.
 
@@ -301,7 +302,7 @@ Scan a target database with the given HMM profile set and add hits that meet a s
 
 Once you've constructed profiles from a collection of carefully selected sequences representing each subfamily, you can use this command to scan another sequence set and automatically add strong hits to the corresponding profile sequence sets.
 The target database could be a proteome, or a larger sequence database like **refseq_proteins**, if you're confident in your coverage of the superfamily and want to improve the sensitivity of your profiles.
-A sequence that is already in the tree is never added again, so the tree's own ``*-Unclassified.fasta`` files are of no use as a target; ``--promote``, described below, moves a catch-all member that a subfamily accepts instead.
+A sequence that is already in the tree is never added again, so the tree's own ``*-Unclassified.fasta`` files are of no use as a target; ``--report-promotions``, described below, lists the catch-all members that a subfamily would accept instead.
 
 Each hit is considered for one of the profiles that have a FASTA file of their own: the one whose best-matching domain gives it the smallest E-value in the target database.
 The group-level profiles do not take part, so a hit that matches a group profile best is considered for the best-matching profile among those with a FASTA file.
@@ -320,11 +321,21 @@ For example, the weakest sequence of ``CAMK1`` scores 101.2 bits against it, a m
 The threshold uses bit scores because an E-value grows with the number of sequences searched, while a bit score does not, so the threshold is the same whatever the size of the target.
 The second score takes one more search of the tree's subfamily sequences for each profile whose threshold is needed: one that a hit is assigned to, or one that competes for a hit that matches a catch-all best.
 
+A hit is borderline when it clears its profile's threshold by less than 10 bits, or when it does not lead the closest other profile with a FASTA file by 10 bits, not counting a catch-all that passed it on; the other profile may even score it higher, since a hit is assigned by its E-value.
+A near tie between a subfamily and the catch-all of its group is therefore borderline when the subfamily matches the hit best, and not when the catch-all matches it best and passes it to the subfamily.
+A hit that a catch-all passed on and receives back, because the subfamily rejected it for its length, is tested again as a hit of the catch-all.
+The borderline rule follows the manual examination of borderline scores in [Kannan2007]_.
+``add`` does not write a borderline hit; it reports it as a warning, which ``--quiet`` does not hide, with its score, the threshold, and the closest other profile and its score, for example (without the log prefix)::
+
+    * borderline TGME49_291050 for CDPK (262.8 vs. 242.8 bits; TSSK 253.2)
+
+A borderline hit is reported again by every run until a rebuild separates it or the curator places it by hand.
+
 Only the aligned region is added, not the full-length sequence.
 A sequence with several domains that pass these thresholds contributes its longest domain once, and a sequence whose identifier is already in any profile of the tree is not added again.
 A second run with the same target and the same HMMs therefore adds nothing.
 After ``fammer build`` has rebuilt the HMMs from the enlarged sequence sets, another run may add a few more sequences.
-On a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the first run adds 27 sequences to ten profiles, the run after the first rebuild adds one more, and the run after the second rebuild adds none.
+On a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the first run adds 21 sequences to nine profiles and reports 7 as borderline, the run after the first rebuild adds 4 more, and the run after the second rebuild adds none and still reports 4; on a copy of ``profiles/ROPK``, the first run adds 15 sequences to ten profiles and reports none.
 A family with no profile in the tree and no member in another group can still be taken in, so review what each round adds before rebuilding.
 The second score also rejects some true members that score low: in that run, the Aurora kinase TGME49_203010 scores 254.0 bits against ``Aurora``, above its weakest sequence (250.6) but below a member of ``CAMK1`` (259.9).
 Holding each sequence out does not help a small profile whose sequences are nearly identical: each still scores far higher against the others than an unseen member of the family does, so the profile may accept nothing at all.
@@ -332,13 +343,18 @@ If a profile has hits that it does not yet hold, but its HMM finds none of its o
 A target that is empty or holds only whitespace has no hits, which ``add`` reports as an error.
 When a profile file does not end with a line ending, as a hand edit can leave it, ``add`` writes one before the first added record.
 
-With ``--promote``, ``add`` then also moves the members of each catch-all that now belong to a subfamily of its group.
-The members of every catch-all are scanned with the tree's profiles and assigned as a hit of the target is, by the same thresholds and the same ``-L``; a member assigned to a subfamily in its catch-all's directory or below it is moved there, with its text unchanged, and every other member stays.
-Consensus records are never moved, nor are the sequences that this run appended or that a subfamily also holds.
-Each move is logged with the member's score and the subfamily's threshold, and ``fammer build`` then realigns both files.
-On the same copy of ``profiles/SomeKinases``, ``--promote`` moves 20 sequences out of ``STE-Unclassified``: 15 plant sequences into ``STE7`` and 5 *Dictyostelium* sequences into ``STE11``.
-Review such moves: a catch-all can hold a sub-cluster that its curator kept apart deliberately.
-With ``-n`` (``--dry-run``) ``add`` writes nothing and logs what it would add and move.
+With ``--report-promotions``, ``add`` also reports the members of each catch-all that a subfamily of its group would accept, and moves nothing; whether such a member belongs in the subfamily is the curator's decision.
+The members of every catch-all are scanned with the tree's profiles and assigned as a hit of the target is, by the same thresholds and the same ``-L``; a member assigned to a subfamily in its catch-all's directory or below it is reported.
+Consensus records are never reported, nor are the sequences that this run appended or that a subfamily also holds.
+Each report gives the member's score against the subfamily, the subfamily's threshold, and the member's score against an HMM of the catch-all built without it, since against the catch-all's own HMM, built partly from it, a member scores higher than an unseen sequence would; a member that is the catch-all's only aligned row, or that belongs to a catch-all without an alignment, is not scored that way.
+The report is logged at the same level as the progress messages, so ``--quiet`` hides it::
+
+    * candidate tr|B9N382|B9N382_POPTR in STE-Unclassified for STE7 (256.3 vs. 208.1 bits; STE-Unclassified without it 352.0)
+
+On the same copy of ``profiles/SomeKinases``, 20 members of ``STE-Unclassified`` are reported: 15 plant sequences for ``STE7``, each of which still scores 41 to 101 bits higher against ``STE-Unclassified`` held out, and 5 *Dictyostelium* sequences for ``STE11``, which score 5 to 29 bits higher against ``STE11``.
+The curator keeps both in the catch-all, as lineages distinct from those subfamilies.
+On ``profiles/ROPK``, 7 members of ``ROPK-Unique`` are reported, 5 of them for ``PKL``, the profile of protein kinases other than rhoptry kinases.
+With ``-n`` (``--dry-run``) ``add`` writes nothing and logs what it would add.
 
 
 refine
@@ -351,14 +367,14 @@ Given a directory and its set of unclassified sequences (``-u``; by default *dir
 Each sequence of a profile is held out in turn: an HMM is built from the profile's alignment without it, and the held-out sequence and the unclassified sequences are scored against that HMM, in bits, counting the hits at an E-value of 0.001 or better.
 A sequence fails if it scores no higher than the highest-scoring unclassified sequence, or if the HMM misses it while it hits an unclassified sequence.
 The lowest-scoring sequence that fails is dropped and joins the unclassified sequences, and the remaining ones are tested again, until none fails or two remain.
-Each dropped sequence is logged with its score and the best unclassified score, and so is the kept sequence of lowest score.
+Each dropped sequence is logged with its score and the best unclassified score, and so is the kept sequence of lowest score; a drop whose score is within 10 bits of the best unclassified score is marked ``-- borderline``, but still made.
 With ``-n`` (``--dry-run``) nothing is written; otherwise the dropped records are moved, with their text unchanged, from the profile's FASTA file to the unclassified file, and ``fammer build`` then realigns both.
 ``refine`` reads the alignments of the last build, so a profile whose ``.aln`` file does not hold exactly the sequences of its FASTA file is an error until the tree is rebuilt, as is a sequence that is both in a profile and in the unclassified set; both are checked before any file changes.
 Each round of testing builds one HMM per remaining sequence, so a profile that loses many sequences takes correspondingly longer.
 
 Note that if a member of a known subfamily was mistakenly placed in the unclassified set (i.e. was missed by the initial classification), then many of the legitimate members of the subfamily profile could score worse than this high-scoring "unclassified" sequence and be erroneously marked for removal from the profile.
 This is easy to spot in the logged output, where nearly the same unclassified score recurs against many dropped sequences.
-Run with ``-n`` first, and move such a sequence into its subfamily before refining; ``fammer add --promote`` finds and moves the members of a catch-all that a subfamily of its group accepts.
+Run with ``-n`` first, and move such a sequence into its subfamily before refining; ``fammer add --report-promotions`` lists the members of a catch-all that a subfamily of its group would accept.
 A consensus record in the unclassified set, one whose identifier ends with ``consensus``, is not an unclassified sequence and is left out of the comparison, since it would outscore many members of the subfamily it summarizes.
 
 cluster
@@ -461,7 +477,7 @@ Put them in a catch-all file whose name ends with ``-Unclassified``, ``-Unclass`
 A catch-all's profile matches its group as a whole, without matching any one subfamily specifically.
 Unclassified sequences from annotated genomes are scarce, sometimes unreliable, and sometimes incomplete, so the catch-all sets of the ``CAMK``, ``CMGC`` and ``STE`` groups in ``profiles/SomeKinases`` are supplemented with a consensus sequence of each known subfamily of the group, which together make a generic profile of the group: the consensus sequences of different subfamilies are intended to dilute each other, so that a sequence of a real subfamily still matches that subfamily more strongly.
 A record whose identifier ends with ``consensus`` is such a consensus sequence.
-``add --promote`` never moves one into a subfamily, ``refine`` leaves it out of the unclassified set, and the threshold of ``add`` does not count it as a sequence of another group.
+``add --report-promotions`` never reports one, ``refine`` leaves it out of the unclassified set, and the threshold of ``add`` does not count it as a sequence of another group.
 It does count toward the weakest-sequence score of the catch-all that holds it: ``CAMK-Unclass`` and ``CMGC-Unclass`` hold nothing else, so that score comes from their consensus records alone.
 
 A catch-all can also hold the members of lineage-specific subfamilies that are too sparsely populated to support a profile of their own.

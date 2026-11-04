@@ -4,9 +4,11 @@ refine holds out each sequence of a profile in turn and scores it, and the
 unclassified sequences, against an HMM built without it. The lowest-scoring
 sequence that scores no higher than the best unclassified one is dropped and
 joins the unclassified set, and the rest are tested again, until none fails or
-two sequences remain. A consensus record in the unclassified set does not
-count. Without --dry-run, the dropped records move from the profile's FASTA
-file to the unclassified one, and no other line changes.
+two sequences remain. A drop within BORDERLINE_MARGIN bits of the best
+unclassified score is labeled borderline and still made. A consensus record
+in the unclassified set does not count. Without --dry-run, the dropped
+records move from the profile's FASTA file to the unclassified one, and no
+other line changes.
 """
 
 import argparse
@@ -118,6 +120,23 @@ def test_a_score_equal_to_the_best_unclassified_one_fails(
     monkeypatch.setitem(OWN, "a", 100.0)
     fasta = write_profile(tmp_path / "P", ["a", "b", "d", "e"])
     assert dropped(fasta) == ["a"]
+
+
+def test_a_drop_within_the_margin_of_the_best_unclassified_is_labeled(
+    tmp_path, scores, monkeypatch, caplog
+):
+    """a (95) is within 10 bits of u1 (100) and is labeled borderline, but
+    still dropped; c (40) and b, which its held-out HMM misses, are not."""
+    monkeypatch.setitem(OWN, "a", 95.0)
+    monkeypatch.delitem(OWN, "b")
+    fasta = write_profile(tmp_path / "P", ["a", "b", "c", "d", "e"])
+    with caplog.at_level(logging.INFO):
+        assert dropped(fasta) == ["b", "c", "a"]
+    assert [r.getMessage() for r in caplog.records if "* drop" in r.getMessage()] == [
+        "* drop b (no hit vs. 100.0 bits)",
+        "* drop c (40.0 vs. 100.0 bits)",
+        "* drop a (95.0 vs. 100.0 bits) -- borderline",
+    ]
 
 
 def refine_args(basedir, dry_run=False, exclude=None):

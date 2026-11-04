@@ -8,6 +8,7 @@ from os.path import abspath, basename, isdir, isfile, join, samefile
 from Bio import SeqIO
 
 from ._share import (
+    BORDERLINE_MARGIN,
     MEMBER_EVALUE,
     UsageError,
     as_target,
@@ -152,7 +153,14 @@ def refine_profile(fasta, unclassified):
                 break
             worst = min(failing, key=lambda name: own_score(scores[name][0]))
             own, best_out = scores[worst]
-            logger.info("* drop %s (%s vs. %.1f bits)", worst, describe(own), best_out)
+            borderline = own is not None and best_out - own < BORDERLINE_MARGIN
+            logger.info(
+                "* drop %s (%s vs. %.1f bits)%s",
+                worst,
+                describe(own),
+                best_out,
+                " -- borderline" if borderline else "",
+            )
             record = as_target(by_name[worst])
             rows = [row for row in rows if row.id != worst]
             dropped.append(record)

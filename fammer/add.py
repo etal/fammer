@@ -12,6 +12,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 
 from ._share import (
+    BORDERLINE_MARGIN,
     MEMBER_EVALUE,
     UsageError,
     as_target,
@@ -22,7 +23,6 @@ from ._share import (
     is_consensus,
     leave_one_out_hmms,
     member_names,
-    move_records,
     ungapped,
     write_fasta,
 )
@@ -73,6 +73,13 @@ def cmd_add(args):
     with tempfile.TemporaryDirectory(prefix="fammer-") as workdir:
         threshold = acceptance_thresholds(profiles, workdir)
         dbhits, passed_on = assign_hits(rows, threshold, directories)
+        # A hit that its profile does not clearly separate is reported for the
+        # curator to examine, and not written; so is a hit that a catch-all
+        # passed on and receives back, if the catch-all does not separate it
+        borderline = borderline_hits(dbhits, rows, passed_on, threshold)
+        report_borderline(borderline)
+        dbhits = {s: hit for s, hit in dbhits.items() if s not in borderline}
+        passed_on = {s: hit for s, hit in passed_on.items() if s not in borderline}
         appended = set()
         with closing(SeqIO.index(args.sequence_db, "fasta")) as index:
             # The subfamilies come first, so that a catch-all receives back
@@ -83,10 +90,17 @@ def cmd_add(args):
                 logger.info("Processing %s ...", noext(fasta))
                 hits = list(filter_profile(dbhits, name))
                 if is_catch_all(name):
+                    back = {
+                        seqname: passed_on[seqname]
+                        for seqname, _score in filter_profile(passed_on, name)
+                        if seqname not in appended
+                    }
+                    borderline_back = borderline_hits(back, rows, {}, threshold)
+                    report_borderline(borderline_back)
                     hits += [
-                        hit
-                        for hit in filter_profile(passed_on, name)
-                        if hit[0] not in appended
+                        (seqname, score)
+                        for seqname, (_profname, _evalue, score) in back.items()
+                        if seqname not in borderline_back
                     ]
                 if not hits:
                     continue
@@ -97,18 +111,19 @@ def cmd_add(args):
                 appended |= add_hits(
                     fasta, hmm, hits, min_score, index, args.min_length, args.dry_run
                 )
-        if args.promote:
-            # A record that this run appended stays where it is, since in a dry
-            # run it is not in the files, and so does a record that a
-            # subfamily also holds
+        if args.report_promotions:
+            # A record that this run appended is left out, since in a dry run
+            # it is not in the files, and so is a record that a subfamily also
+            # holds
             in_subfamilies = set().union(
                 *(names for name, names in names_of.items() if not is_catch_all(name))
             )
-            promote_members(
+            report_promotions(
                 profiles,
                 hmmdb,
                 threshold,
-                args,
+                args.evalue,
+                args.min_length,
                 skip=appended | in_subfamilies,
                 workdir=workdir,
             )
@@ -152,9 +167,7 @@ def assign_hits(rows, threshold, directories):
     e-value, bit score)}: the assignment of every sequence, and the sequences
     passed from a catch-all to a subfamily, with the catch-all's row.
     """
-    rows_of = defaultdict(list)
-    for row in rows:
-        rows_of[row[0]].append(row)
+    rows_of = rows_by_sequence(rows)
     best = best_hits(rows)
     passed_on = {}
     for seqname, (profname, _evalue, _score) in best.items():
@@ -172,6 +185,68 @@ def assign_hits(rows, threshold, directories):
             passed_on[seqname] = best[seqname]
             best[seqname] = best_hits(accepted)[seqname]
     return best, passed_on
+
+
+def rows_by_sequence(rows):
+    """Group hmmsearch table rows by their sequence name, the first field."""
+    rows_of = defaultdict(list)
+    for row in rows:
+        rows_of[row[0]].append(row)
+    return rows_of
+
+
+def borderline_hits(hits, rows, passed_on, threshold):
+    """The assigned hits that their profile does not clearly separate.
+
+    The hits are {sequence name: (profile name, e-value, bit score)}, as
+    assign_hits assigns them, and passed_on its record of the hits that a
+    catch-all passed on; cmd_add also tests a catch-all's returned hits with
+    an empty passed_on, so that the subfamily that rejected a hit for its
+    length counts as a rival. threshold maps a profile name to its acceptance
+    threshold in bits, or to None. A hit that reaches its profile's threshold
+    is borderline when it reaches it by less than BORDERLINE_MARGIN bits, or
+    when it does not lead the closest other profile among the rows by
+    BORDERLINE_MARGIN bits: a weak best match, or two profiles that do not
+    separate it. The other profile may score the hit higher, since
+    assign_hits assigns by e-value. The catch-all that passed a hit on is not
+    counted, since assign_hits has already decided against it; a near tie
+    between a subfamily and the catch-all of its group is therefore borderline
+    when the subfamily has the smaller e-value, and not when the catch-all has
+    it and passes the hit on. A hit below its threshold is not borderline; its
+    profile rejects it.
+
+    Returns {sequence name: description for the report}.
+    """
+    rows_of = rows_by_sequence(rows)
+    borderline = {}
+    for seqname, (profname, _evalue, score) in hits.items():
+        min_score = threshold(profname)
+        if min_score is None or score < min_score:
+            continue
+        decided = {profname}
+        if seqname in passed_on:
+            decided.add(passed_on[seqname][0])
+        rival = max(
+            (row for row in rows_of[seqname] if row[1] not in decided),
+            key=lambda row: row[3],
+            default=None,
+        )
+        if score - min_score < BORDERLINE_MARGIN or (
+            rival is not None and score - rival[3] < BORDERLINE_MARGIN
+        ):
+            description = (
+                f"{seqname} for {profname} ({score:.1f} vs. {min_score:.1f} bits"
+            )
+            if rival is not None:
+                description += f"; {rival[1]} {rival[3]:.1f}"
+            borderline[seqname] = description + ")"
+    return borderline
+
+
+def report_borderline(borderline):
+    """Log each borderline hit as a warning, which --quiet does not hide."""
+    for seqname in sorted(borderline):
+        logger.warning("* borderline %s", borderline[seqname])
 
 
 def add_hits(fasta, hmm, hits, min_score, index, min_length, dry_run):
@@ -243,18 +318,19 @@ def accepted_hits(hmm, hits, min_score, index, min_length):
     return accepted
 
 
-def promote_members(profiles, hmmdb, threshold, args, skip, workdir):
-    """Move each catch-all member that a subfamily of its group accepts into it.
+def report_promotions(profiles, hmmdb, threshold, evalue, min_length, skip, workdir):
+    """Report each catch-all member that a subfamily of its group would accept.
 
-    A catch-all holds only the sequences of its group that fit none of the
-    group's subfamilies, so a member that a subfamily accepts belongs there.
     The members of every catch-all, except the consensus records and the
     names in skip, are scanned with the profile database hmmdb and assigned
-    as assign_hits assigns a sequence of the target; a member assigned to a
+    as assign_hits assigns a sequence of the target. A member assigned to a
     subfamily in its catch-all's directory or below it, which accepts it by
-    threshold and by args.min_length as add_hits does, is moved there with its
-    text unchanged, unless args.dry_run is set. A member assigned to any other
-    profile stays where it is. A member that two catch-alls hold is considered
+    threshold and by min_length as add_hits does, is reported with its score
+    against that subfamily, the subfamily's threshold, and its score against
+    the catch-all's HMM built without it, since against the catch-all's own
+    HMM, built partly from it, it scores higher than it would as an unseen
+    sequence. Nothing is moved: whether a member belongs to the subfamily is
+    the curator's decision. A member that two catch-alls hold is considered
     only as a member of the first of them in the order of their names.
     """
     directories = profile_directories(profiles)
@@ -272,9 +348,7 @@ def promote_members(profiles, hmmdb, threshold, args, skip, workdir):
         return
     seqfname = join(workdir, "catch-all-members.fasta")
     write_fasta(records.values(), seqfname)
-    rows = [
-        row for row in get_hmm_rows(hmmdb, seqfname, args.evalue) if row[1] in profiles
-    ]
+    rows = [row for row in get_hmm_rows(hmmdb, seqfname, evalue) if row[1] in profiles]
     assigned, _passed_on = assign_hits(rows, threshold, directories)
     hits_of = defaultdict(dict)
     for seqname, (profname, _evalue, score) in assigned.items():
@@ -282,37 +356,74 @@ def promote_members(profiles, hmmdb, threshold, args, skip, workdir):
             directories[profname], directories[source_of[seqname]]
         ):
             hits_of[profname][seqname] = score
+    candidates = defaultdict(list)
     for dest in sorted(hits_of):
         fasta, hmm = profiles[dest]
         min_score = threshold(dest)
         if min_score is None:
             warn_without_threshold(fasta)
             continue
-        moved = defaultdict(set)
         hits = hits_of[dest]
-        for record in accepted_hits(
-            hmm, hits.items(), min_score, records, args.min_length
-        ):
-            source = source_of[record.id]
+        for record in accepted_hits(hmm, hits.items(), min_score, records, min_length):
+            candidates[source_of[record.id]].append(
+                (record.id, dest, hits[record.id], min_score)
+            )
+    for source in sorted(candidates):
+        held_out = held_out_scores(
+            *profiles[source],
+            [records[seqname] for seqname, *_rest in candidates[source]],
+            workdir,
+        )
+        for seqname, dest, score, min_score in candidates[source]:
+            if seqname not in held_out:
+                own = "not scored"
+            elif held_out[seqname] is None:
+                own = "no hit"
+            else:
+                own = f"{held_out[seqname]:.1f}"
             logger.info(
-                "* promote %s from %s to %s (%.1f vs. %.1f bits)",
-                record.id,
+                "* candidate %s in %s for %s (%.1f vs. %.1f bits; %s without it %s)",
+                seqname,
                 source,
                 dest,
-                hits[record.id],
+                score,
                 min_score,
+                source,
+                own,
             )
-            moved[source].add(record.id)
-        if args.dry_run:
-            continue
-        for source in sorted(moved):
-            move_records(profiles[source][0], fasta, moved[source])
-            logger.info(
-                "Moved %d sequences from %s into %s; run fammer build to realign them",
-                len(moved[source]),
-                profiles[source][0],
-                fasta,
-            )
+
+
+def held_out_scores(fasta, hmm, records, workdir):
+    """Score each record against its profile's HMM built without it.
+
+    The records are sequences of the profile; each that is a row of the
+    profile's alignment is scored against an HMM built from the other rows,
+    and each that is not, having been added since the last build, against the
+    profile's own HMM, which was not built from it. A record is not scored
+    when there is no such HMM: the profile has no alignment, or the record is
+    its only row. Unlike weakest_member_score, every row is held out, however
+    many the profile has. The scores are best-domain bit scores at
+    MEMBER_EVALUE or better.
+
+    Returns {record identifier: bit score, or None for no hit}, without the
+    records that are not scored.
+    """
+    rows, _members = aligned_members(fasta)
+    if not rows:
+        return {}
+    row_ids = {row.id for row in rows}
+    seqfname = join(workdir, "held-out.fasta")
+    write_fasta(records, seqfname)
+    scores = {}
+    if len(rows) > 1:
+        held = {record.id for record in records} & row_ids
+        for name, lean in leave_one_out_hmms(rows, held, workdir):
+            scores[name] = get_hmm_scores(lean, seqfname).get(name)
+    added = [record.id for record in records if record.id not in row_ids]
+    if added:
+        own = get_hmm_scores(hmm, seqfname)
+        scores.update((name, own.get(name)) for name in added)
+    return scores
 
 
 def walk_profiles(topdir):

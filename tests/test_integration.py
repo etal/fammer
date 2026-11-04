@@ -455,33 +455,37 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
     assert tree_state(built_workspace) == written
 
 
-# How the first run of add differs from the recorded one, by file: the
-# identifiers of the records that it appends and the recorded run did not, and
-# of the recorded records that it does not append there. The additions follow
-# from assigning hits only among profiles with a FASTA file, and from passing
-# a catch-all's hit to a subfamily of its group that accepts it; so does the
-# removal of TGME49_291050 from CAMK-Unclass, which goes to CDPK instead. The
-# other removals follow from the threshold, which a hit must reach both by the
-# weakest member of the profile and by the members of the subfamilies of other
-# groups. See "Acceptance threshold of add" and "Assignment of add hits" in
-# tests/data/README.md.
-CHANGED_RECORDS = {
-    "SomeKinases/CAMK/CAMK-Unclass.fasta": (set(), {"TGME49_291050"}),
-    "SomeKinases/CAMK/CDPK.fasta": (
-        {"TGME49_228750", "TGME49_233905", "TGME49_291050", "TGME49_315190"},
-        set(),
-    ),
-    "SomeKinases/CMGC/CMGC-Unclass.fasta": ({"TGME49_204280"}, set()),
-    "SomeKinases/CMGC/MAPK.fasta": (set(), {"TGME49_249260", "TGME49_254630"}),
-    "SomeKinases/STE/STE-Unclassified.fasta": (
-        set(),
-        {"TGME49_218400", "TGME49_272200"},
-    ),
-    "SomeKinases/STE/STE11.fasta": (
-        set(),
-        {"TGME49_209050", "TGME49_239130", "TGME49_244620"},
-    ),
+# The records that the recorded run of add appended and the first run of the
+# current code does not, by file. Most are rejected by the threshold, which a
+# hit must reach both by the weakest member of the profile and by the members
+# of the subfamilies of other groups; TGME49_291050, which the recorded run
+# appended to CAMK-Unclass, and TGME49_255710, which it appended to CDPK, are
+# reported as borderline instead. The current code appends no record that the
+# recorded run did not. See "Acceptance threshold of add", "Assignment of add
+# hits" and "Borderline hits of add" in tests/data/README.md.
+REMOVED_RECORDS = {
+    "SomeKinases/CAMK/CAMK-Unclass.fasta": {"TGME49_291050"},
+    "SomeKinases/CAMK/CDPK.fasta": {"TGME49_255710"},
+    "SomeKinases/CMGC/MAPK.fasta": {"TGME49_249260", "TGME49_254630"},
+    "SomeKinases/STE/STE-Unclassified.fasta": {"TGME49_218400", "TGME49_272200"},
+    "SomeKinases/STE/STE11.fasta": {"TGME49_209050", "TGME49_239130", "TGME49_244620"},
 }
+
+# The hits of the first run of add that clear their threshold by less than
+# _share.BORDERLINE_MARGIN bits, or that do not lead the closest other profile
+# by that much.
+BORDERLINE_HITS = {
+    "TGME49_204280",
+    "TGME49_228750",
+    "TGME49_233905",
+    "TGME49_237890",
+    "TGME49_255710",
+    "TGME49_291050",
+    "TGME49_315190",
+}
+BORDERLINE = re.compile(
+    r"add: \* borderline (\S+) for \S+ \([\d.]+ vs\. [\d.]+ bits.*\)"
+)
 
 
 def record_id(record):
@@ -490,15 +494,14 @@ def record_id(record):
 
 
 def test_add_appends_the_recorded_hits_once(scan_workspace):
-    """``add`` appends the recorded hits, changed as listed, and a second run
+    """``add`` appends the recorded hits, less those listed, and a second run
     changes nothing.
 
     The first run appends to each FASTA file the records that the Python 2
-    code base appended, each on two lines where the recorded run wrapped the
-    sequence, except for the records in CHANGED_RECORDS; each record that it
-    appends instead is a part of the sequence of that identifier in the
-    target. The log lines are compared as a multiset, since the tree is
-    walked in file-system order. The second run finds each accepted hit
+    code base appended, except those in REMOVED_RECORDS, each on two lines
+    where the recorded run wrapped the sequence. The log lines are compared as
+    a multiset, since the tree is walked in file-system order; the borderline
+    hits are reported and not written. The second run finds each accepted hit
     already in the tree, so it writes to no file.
     """
     require("fammer", "hmmsearch")
@@ -516,32 +519,27 @@ def test_add_appends_the_recorded_hits_once(scan_workspace):
         if after != text:
             appended[name] = after[len(text) :]
 
-    with open(scan_workspace / "TgME49.pep", encoding="utf-8") as handle:
-        target = {rec.id: str(rec.seq) for rec in SeqIO.parse(handle, "fasta")}
     expected_files = set()
-    for name in {*run["appended"], *CHANGED_RECORDS}:
-        added, removed = CHANGED_RECORDS.get(name, (set(), set()))
+    for name, text in run["appended"].items():
+        removed = REMOVED_RECORDS.get(name, set())
         kept = Counter(
             {
                 record: count
-                for record, count in fasta_records(
-                    run["appended"].get(name, "")
-                ).items()
+                for record, count in fasta_records(text).items()
                 if record_id(record) not in removed
             }
         )
-        if not kept and not added:
+        if not kept:
             continue
         expected_files.add(name)
         records = fasta_records(appended.get(name, ""))
-        assert kept <= records, name
-        new = records - kept
-        assert sorted(map(record_id, new.elements())) == sorted(added), name
-        for record in new:
-            assert record[1] in target[record_id(record)], name
+        assert records == kept, name
         assert len(appended[name].splitlines()) == 2 * records.total(), name
     assert appended.keys() == expected_files
-    assert log_messages(proc.stderr) == sorted(
+    messages = log_messages(proc.stderr)
+    reported = [match[1] for line in messages if (match := BORDERLINE.fullmatch(line))]
+    assert set(reported) == BORDERLINE_HITS
+    assert [line for line in messages if not BORDERLINE.fullmatch(line)] == sorted(
         [line for line in log_messages(run["stderr"]) if ": Processing " in line]
         + [
             f"add: Adding {fasta_records(text).total()} hits to profile {name}"
@@ -558,7 +556,7 @@ def test_add_appends_the_recorded_hits_once(scan_workspace):
 def test_add_appends_one_domain_per_sequence(scan_workspace):
     """A sequence with several domains that pass ``-L`` is appended once.
 
-    At ``-L 0.2`` two domains of TGME49_237890, a CDPK, of 67 and then 188
+    At ``-L 0.2`` two domains of TGME49_301440, a CDPK, of 196 and 62
     residues, pass the length filter for CDPK; the longer one is kept.
     """
     require("fammer", "hmmsearch")
@@ -568,8 +566,8 @@ def test_add_appends_one_domain_per_sequence(scan_workspace):
         names = [name for name, _seq in read_records(path, "fasta")]
         assert _share.repeated_names(names) == [], path
     fasta = scan_workspace / "SomeKinases" / "CAMK" / "CDPK.fasta"
-    added = dict(read_records(fasta, "fasta"))["TGME49_237890"]
-    assert len(added) == 188
+    added = dict(read_records(fasta, "fasta"))["TGME49_301440"]
+    assert len(added) == 196
 
 
 @pytest.mark.parametrize("content", [">poly\n" + "A" * 60 + "\n", ""])
@@ -613,7 +611,11 @@ def test_add_ends_the_last_line_of_a_profile_before_appending(scan_workspace):
     assert proc.returncode == 0, proc.stderr
     appended = cdpk.read_text(encoding="utf-8")[len(text) :]
     assert appended.startswith("\n>")
-    assert fasta_records(run["appended"][name]) <= fasta_records(appended)
+    removed = REMOVED_RECORDS[name]
+    recorded_records = fasta_records(run["appended"][name])
+    assert Counter(
+        {r: n for r, n in recorded_records.items() if record_id(r) not in removed}
+    ) <= fasta_records(appended)
     assert read_records(cdpk, "fasta")[: len(members)] == members
 
 
@@ -646,61 +648,56 @@ def test_add_skips_a_sequence_that_another_profile_holds(scan_workspace):
     assert len(read_records(mapk, "fasta")) > members
 
 
-PROMOTION = re.compile(r"add: \* promote (\S+) from (\S+) to (\S+) \(.*\)")
+CANDIDATE = re.compile(
+    r"add: \* candidate (\S+) in (\S+) for (\S+) "
+    r"\(([\d.]+) vs\. [\d.]+ bits; \S+ without it ([\d.]+)\)"
+)
 
 
-def test_add_promotes_catch_all_members_within_their_group(scan_workspace):
-    """``--promote`` moves the members of STE-Unclassified that STE7 and STE11
-    accept, 15 and 5, and no consensus record; ``-n`` previews it and writes
-    nothing.
+def test_add_reports_promotions_and_moves_nothing(scan_workspace):
+    """``--report-promotions`` lists the members of STE-Unclassified that STE7
+    and STE11 would accept, 15 and 5, and no consensus record, the same with
+    and without ``-n``, and moves none of them.
 
-    Each moved record keeps its header and sequence. The tree is named
-    ``./SomeKinases``, since a directory spelled with a ``.`` component must
-    still count as lying within itself.
+    Held out of the catch-all's HMM, each STE7 candidate still scores higher
+    against STE-Unclassified than against STE7, and each STE11 candidate lower
+    than against STE11. The tree is named ``./SomeKinases``, since a directory
+    spelled with a ``.`` component must still count as lying within itself.
     """
-    require("fammer", "hmmsearch")
+    require("fammer", "hmmsearch", "hmmbuild")
     tree = scan_workspace / "SomeKinases"
-    argv = ["add", "./SomeKinases", "TgME49.pep", "--promote"]
-    before = tree_state(scan_workspace)
+    argv = ["add", "./SomeKinases", "TgME49.pep", "--report-promotions"]
+    unclassified = tree / "STE" / "STE-Unclassified.fasta"
+    source = unclassified.read_bytes()
     preview = run_fammer(scan_workspace, [*argv, "-n"])
     assert preview.returncode == 0, preview.stderr
-    assert tree_state(scan_workspace) == before
-    unclassified = tree / "STE" / "STE-Unclassified.fasta"
-    source = fasta_records(unclassified.read_text(encoding="utf-8"))
-    targets = {
-        name: (tree / "STE" / f"{name}.fasta").read_text(encoding="utf-8")
-        for name in ("STE7", "STE11")
-    }
     proc = run_fammer(scan_workspace, argv)
     assert proc.returncode == 0, proc.stderr
-    promotions = [
+    candidates = [
         match.groups()
         for line in log_messages(proc.stderr)
-        if (match := PROMOTION.fullmatch(line))
+        if (match := CANDIDATE.fullmatch(line))
     ]
-    assert promotions == [
+    assert candidates == [
         match.groups()
         for line in log_messages(preview.stderr)
-        if (match := PROMOTION.fullmatch(line))
+        if (match := CANDIDATE.fullmatch(line))
     ]
-    assert {source_name for _seq, source_name, _dest in promotions} == {
-        "STE-Unclassified"
+    assert Counter(dest for _seq, _source, dest, *_scores in candidates) == {
+        "STE7": 15,
+        "STE11": 5,
     }
-    moved, promoted = {}, Counter()
-    for name, text in targets.items():
-        after = (tree / "STE" / f"{name}.fasta").read_text(encoding="utf-8")
-        assert after.startswith(text), name
-        records = fasta_records(after[len(text) :])
-        assert {record_id(r) for r in records} == {
-            seq for seq, _source_name, dest in promotions if dest == name
+    assert {source for _seq, source, *_rest in candidates} == {"STE-Unclassified"}
+    assert not any(_share.is_consensus(seq) for seq, *_rest in candidates)
+    for _seq, _source, dest, score, held_out in candidates:
+        assert (float(held_out) > float(score)) == (dest == "STE7")
+    assert unclassified.read_bytes() == source
+    names = {seq for seq, *_rest in candidates}
+    for dest in ("STE7", "STE11"):
+        held = {
+            name for name, _seq in read_records(tree / "STE" / f"{dest}.fasta", "fasta")
         }
-        moved[name] = records.total()
-        promoted += records
-    assert moved == {"STE7": 15, "STE11": 5}
-    assert len(promotions) == 20
-    assert not any(_share.is_consensus(seq) for seq, _source_name, _dest in promotions)
-    assert promoted <= source
-    assert fasta_records(unclassified.read_text(encoding="utf-8")) == source - promoted
+        assert not names & held, dest
 
 
 @pytest.mark.parametrize(
