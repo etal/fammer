@@ -60,6 +60,7 @@ pixi run fmt-check           # ruff format --check
 - Several code paths visit files in file-system order (an unsorted `glob`, `os.walk`); sort where output depends on the order, and in tests compare such outputs as sets, or as multisets where duplicates matter (see "File-system enumeration order" in `tests/data/README.md`).
 - Do not name a console script `tmalign`: on case-insensitive APFS it collides with the `TMalign` binary in the same environment.
 - biofrills and biocma are pinned to git commits in `[tool.uv.sources]`; after changing a pin or a dependency, update both `uv.lock` and `pixi.lock`.
+  The pip commands under "Installation" in `README.rst` repeat the two commits, so change them with the pin.
 - The flat layout needs `packages = ["fammer"]` in `pyproject.toml`; setuptools discovery would otherwise find the example data under `profiles/` and refuse to build.
 
 ## Conventions

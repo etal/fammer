@@ -5,15 +5,12 @@ Fammer
 Utilities for curating a hierarchical set of sequence profiles representing a
 protein superfamily.
 
-If you use this software in a publication, please cite our paper that describes
-it:
+If you use this software in a publication, please cite the paper that describes it:
 
     Talevich, E. & Kannan, N. (2013) Structural and evolutionary adaptation of
     rhoptry kinases and pseudokinases, a family of coccidian virulence factors.
-    *BMC Evolutionary Biology* 13:117
-    doi:10.1186/1471-2148-13-117
-
-    Available at: http://www.biomedcentral.com/1471-2148/13/117
+    *BMC Evolutionary Biology* 13:117.
+    https://doi.org/10.1186/1471-2148-13-117
 
 Freely distributed under the permissive BSD 2-clause license (see LICENSE).
 
@@ -70,62 +67,87 @@ The procedures of these papers, and the rules below that follow from them, defin
 Installation
 ------------
 
-The installation provides a Python library, ``fammer``, and two commands,
-``fammer`` and ``fammer-tmalign``.
+The installation provides a Python library, ``fammer``, and two commands, ``fammer`` and ``fammer-tmalign``.
+Fammer requires Python 3.12 or later.
+This Python 3 version of Fammer is not yet released on PyPI, where the package named ``fammer`` is the earlier Python 2 release, 0.2, so install it from the source code::
 
-Download the .zip file and unpack it, or clone this Git repository, to get the
-source code.
+    git clone https://github.com/etal/fammer.git
+    cd fammer
 
-To use all the features of Fammer, you'll need the following third-party
-programs installed:
+Fammer runs the following programs, which must be on ``PATH`` under the names given:
 
-- Python_ 3.12 or later
-- MAFFT_
-- HMMer_ 3.0
-- MAPGAPS_ (optional) -- for MAPGAPS profiles; also needs the Python library
-  biocma_
-- TMalign_ (optional) -- for structural alignments
-- FastTree_ (optional) -- for clustering
+- MAFFT_ (``mafft``), for ``build``, ``fammer-tmalign``, and ``cluster`` with an unaligned sequence file.
+- HMMER_ 3 (``hmmbuild``, ``hmmpress`` and ``hmmsearch``), for ``build --hmmer``, ``scan``, ``add`` and ``refine``.
+- TM-align_ (``TMalign``), for ``fammer-tmalign``, and for ``build`` of a tree that holds PDB files unless ``build`` is given ``--no-pdb``.
+- MUSTANG_ (``mustang``), optional: where it is installed, ``build`` also aligns the structures of a tree with it (see `build`_).
+- FastTree_ (``fasttree`` or ``FastTree``), for ``cluster``, unless ``cluster`` is given a tree with ``--tree``.
+- MAPGAPS_ (``run_map``), optional, for ``build --mapgaps``.
 
-.. _Python: http://www.python.org/download/
-.. _MAFFT: http://mafft.cbrc.jp/alignment/software/
-.. _HMMer: http://hmmer.janelia.org/
-.. _MAPGAPS: http://mapgaps.igs.umaryland.edu/
-.. _TMalign: http://cssb.biology.gatech.edu/skolnick/webservice/TM-align/index.shtml
-.. _FastTree: http://www.microbesonline.org/fasttree/
+With pixi
+`````````
 
-If you're on a Debian-based Linux system, check your package manager for these
-first to save yourself some time::
+pixi_ installs Python, Fammer, its Python dependencies and all of these programs except MAPGAPS into an environment inside the source directory, at the versions recorded in ``pixi.lock``.
+The lock file covers Linux (x86-64) and macOS (Apple silicon); on other systems, install with pip.
+From the source directory::
 
-    sudo apt-get install mafft hmmer tm-align fasttree python3-pip
+    pixi install
+    pixi run fammer --help
 
-Then install Fammer and its Python dependencies (Biopython_, biofrills_, networkx_ and NumPy_) with pip.
-Fammer requires biofrills 0.4, which is not yet released on PyPI, so install biofrills from its repository first; then, from the Fammer source directory::
+``pixi run`` runs one command in the environment, and ``pixi shell`` starts a shell in which ``fammer`` and the programs it runs are on ``PATH``.
+The environment also holds the development tools (see `Development`_).
 
-    pip install git+https://github.com/etal/biofrills
+With pip
+````````
+
+Install Fammer and its Python dependencies, Biopython_, biofrills_, networkx_ and NumPy_, with pip into a virtual environment or a conda environment of Python 3.12 or later; the system Python of Debian and Ubuntu refuses ``pip install`` outside a virtual environment.
+Fammer requires biofrills 0.4, which is not yet released on PyPI, so first install biofrills from its Git repository, at the commit that ``[tool.uv.sources]`` in ``pyproject.toml`` names; this needs a ``git`` executable.
+Then, from the source directory::
+
+    pip install git+https://github.com/etal/biofrills@0a3f0efeaee20caff07c955ea71ca5ea6173010f
     pip install .
 
-The ``--mapgaps`` option also needs biocma_ 0.3, which is not installed by
-default and is likewise not yet on PyPI. To include it, run
-``pip install git+https://github.com/etal/biocma`` and then install Fammer with
-``pip install '.[mapgaps]'``.
+Then install the external programs.
+conda-forge and bioconda provide all of them except MAPGAPS; in a conda environment::
 
-.. _Biopython: http://biopython.org/wiki/Download
+    conda install -c conda-forge -c bioconda mafft hmmer tmalign mustang fasttree
+
+On Debian or Ubuntu, the system packages provide them::
+
+    sudo apt-get install mafft hmmer tm-align mustang fasttree
+
+MAPGAPS support
+```````````````
+
+The ``--mapgaps`` option of ``build`` also needs biocma_ 0.3, which is likewise not yet on PyPI and is not installed by default.
+The pixi environment includes it; with pip, install it from its repository at the pinned commit, and then install Fammer with its ``mapgaps`` extra::
+
+    pip install git+https://github.com/etal/biocma@307d607b1739f647610918113176bc7dcd71dbbc
+    pip install '.[mapgaps]'
+
+No package manager provides MAPGAPS itself.
+Version 1.0.1 is distributed from the MAPGAPS_ site as a tarball of programs compiled for Linux x86-64; unpack it and put its ``bin`` directory on ``PATH``.
+
+.. _MAFFT: https://mafft.cbrc.jp/alignment/software/
+.. _HMMER: https://hmmer.org/
+.. _TM-align: https://zhanggroup.org/TM-align/
+.. _MUSTANG: https://lcb.infotech.monash.edu/mustang/
+.. _FastTree: https://morgannprice.github.io/fasttree/
+.. _MAPGAPS: https://mapgaps.igs.umaryland.edu/
+.. _Biopython: https://biopython.org/
 .. _biofrills: https://github.com/etal/biofrills
 .. _biocma: https://github.com/etal/biocma
-.. _networkx: http://networkx.lanl.gov/
+.. _networkx: https://networkx.org/
 .. _NumPy: https://numpy.org/
-
 
 
 Basic usage
 -----------
 
-Global options:
+Global options of ``fammer``:
 
   ``-h``, ``--help``
       Show a help message and basic usage.
-  ``--quiet``
+  ``-q``, ``--quiet``
       Don't print status messages, only warnings and errors.
 
 Sub-commands:
@@ -139,11 +161,25 @@ Sub-commands:
         Scan and classify input sequences using a set of profiles.
     `add`_
         Scan a target database with the given HMM profile set.  Add hits that
-        meet acceptance thresholds to the profile FASTA files.
+        meet acceptance thresholds to the profile FASTA files, and report
+        borderline hits instead of adding them.
     `refine`_
-        Leave-one-out validation of HMM profiles.
+        Leave-one-out validation of the subfamily profiles in one directory.
+        Move the sequences that score no higher than an unclassified sequence
+        into the unclassified set.
     `cluster`_
         Split a sequence set into clusters (based on phylogeny).
+
+Each sub-command takes ``-h`` for its own options.
+The separate command `fammer-tmalign`_ aligns protein structures.
+
+To try Fammer on the example data, build the alignments and HMM profiles of a copy of the example tree ``profiles/SomeKinases``, then classify the predicted proteome of *Toxoplasma gondii* ME49 in ``test/TgME49.pep`` with them::
+
+    cp -R profiles/SomeKinases /tmp/
+    fammer build --hmmer /tmp/SomeKinases
+    fammer scan /tmp/SomeKinases test/TgME49.pep
+
+In the pixi environment, run each command as ``pixi run fammer ...``, or in ``pixi shell``.
 
 
 Commands
@@ -154,10 +190,7 @@ build
 
 Construct a profile database from a directory tree of family profile alignments.
 
-Assume we have a directory tree set up under ``Superfamily/`` as above.
-Next, run ``fammer build Superfamily`` to align all sequence files with
-MAFFT, and (recursively up) align the consensus sequences of each subfamily
-together::
+Given a directory tree under ``Superfamily/`` laid out as in `Directory tree is the superfamily hierarchy`_, run ``fammer build Superfamily`` to align each sequence file with MAFFT and then, recursively upward, the consensus sequences of the subfamilies in each directory::
 
     Superfamily/
         Group1/
@@ -166,7 +199,7 @@ together::
             subfam2_Group1.fasta
             subfam2_Group1.aln
             subfam3_Group1.fasta
-            subfam2_Group1.aln
+            subfam3_Group1.aln
             ...
             Group1-Unclassified.fasta
             Group1-Unclassified.aln
@@ -201,13 +234,12 @@ Finally, use the option ``--hmmer`` to build profiles::
     Superfamily_all.hmm     # concatenated profiles
     Superfamily_all.hmm.{h3f,h3i,h3m,h3p}   # indexes from hmmpress
 
-The ``--mapgaps`` option works similarly, if you have MAPGAPS and the Python
-library biocma_ installed.
+The ``--mapgaps`` option works similarly, if MAPGAPS and the Python library biocma_ are installed (see `MAPGAPS support`_).
 
 The ``--clean`` option can be included with any of the above commands to remove
 intermediate files.
 
-If you have included PDB structures in your directory tree and have TMalign_ installed, ``fammer build`` uses them unless given the ``--no-pdb`` option.
+If the directory tree holds PDB files, ``fammer build`` aligns them with TM-align_, which must then be installed, unless given the ``--no-pdb`` option.
 It first creates a structural alignment of the PDBs in each directory, then uses that alignment as the seed for higher-up alignments::
 
     Superfamily/
@@ -229,6 +261,10 @@ unaligned consensus sequences of each subfamily of Group1 (subfam1, subfam2,
 ...). The seed sequences are removed from Group1.aln after the alignment of
 consensus sequences is completed. This can help correctly align the more
 divergent families and groups to each other.
+
+The structures of each directory are aligned as `fammer-tmalign`_ aligns them, from the pairwise alignments of TM-align.
+Where MUSTANG_ is installed, ``build`` also aligns the structures of each directory that has at least two with MUSTANG, and passes that multiple alignment to MAFFT as one more seed beside the pairwise alignments.
+A directory with exactly two structures to align uses no seed, so its structural alignment is the TM-align alignment of the pair (see `fammer-tmalign`_).
 
 A directory with fewer than two structures to align leaves its ``.pdb.seq`` file empty, and the parent directory then aligns the structure files found directly in that directory with its own.
 Structures further down are not passed on: if the parent directory has no other structure either, a single structure is not used at any level.
@@ -273,6 +309,9 @@ scan
 Scan/search a set of sequences (FASTA) with the HMM profile database and assign a
 classification to each hit.
 
+The profile database is either the ``_all.hmm`` file that ``build --hmmer`` writes, or the top directory of the tree, in which case ``scan`` reads the ``_all.hmm`` file beside it: ``fammer scan Superfamily seqs.fasta`` reads ``Superfamily_all.hmm``.
+A sequence is a hit when ``hmmsearch`` reports it at an E-value of at most ``-E``, by default 0.0001, and it is classified by the profile whose best domain gives it the smallest E-value.
+
 This is essentially a set of wrappers to process the output of ``hmmsearch``,
 simplifying the results for common use cases. The three output forms are:
 
@@ -287,10 +326,15 @@ simplifying the results for common use cases. The three output forms are:
     **sequence sets** (``--seqsets``):
         For each profile and matching sequence set (as they'd appear in summary
         output), write a file containing the matching sequences. The output
-        filenames indicate the name of the source sequence file name and the
-        matching HMM profile names.
+        files, written to the current directory, are named after the sequence
+        file and the profile: ``twenty.fasta.CDPK.fasta`` for the sequences of
+        ``twenty.fasta`` that match ``CDPK`` best.
 
 Note that ``--table`` and ``--seqsets`` can be combined.
+``-o FILE`` (``--seqout``) also writes every matching sequence to one FASTA file.
+``-n`` (``--include``) keeps only the sequences whose best-matching profile has a name containing one of the given strings, separated by commas.
+``-x`` (``--exclude``) leaves out the sequences whose best-matching profile has a name containing one of them.
+A sequence left out is not reassigned to its next best profile.
 
 ``scan`` reads the target as FASTA, whatever its file name, and logs a warning and succeeds when no sequence matches any profile, including when the target is empty or holds only whitespace.
 
@@ -299,6 +343,7 @@ add
 ```
 
 Scan a target database with the given HMM profile set and add hits that meet a series of acceptance thresholds to the profile FASTA files.
+``add`` reads the HMM profile database ``Superfamily_all.hmm`` beside the tree ``Superfamily``, which ``build --hmmer`` writes.
 
 Once you've constructed profiles from a collection of carefully selected sequences representing each subfamily, you can use this command to scan another sequence set and automatically add strong hits to the corresponding profile sequence sets.
 The target database could be a proteome, or a larger sequence database like **refseq_proteins**, if you're confident in your coverage of the superfamily and want to improve the sensitivity of your profiles.
@@ -308,7 +353,7 @@ Each hit is considered for one of the profiles that have a FASTA file of their o
 The group-level profiles do not take part, so a hit that matches a group profile best is considered for the best-matching profile among those with a FASTA file.
 Hits are assigned to profiles by name, so two profiles of the tree cannot share a name.
 A catch-all profile (see `Directory tree is the superfamily hierarchy`_) does not compete with the subfamilies of its group: a hit that matches a catch-all best is considered instead for the subfamily profile with the smallest E-value among those in the catch-all's directory or below it whose threshold its bit score reaches, and stays with the catch-all if there is none, or if that subfamily rejects it for its length.
-A hit is accepted when it passes the significance cutoff ``-E`` in the target database, when the bit score of its best domain is at least the threshold of the profile, and when the aligned region covers at least the fraction ``-L`` of the profile length.
+A hit is accepted when it passes the significance cutoff ``-E`` (by default 1e-20) in the target database, when the bit score of its best domain is at least the threshold of the profile, and when the aligned region covers at least the fraction ``-L`` (by default 0.8) of the profile length.
 
 The threshold of a profile is the higher of two scores, both counting only the sequences that its HMM hits at an E-value of 0.001 or better.
 The first is the lowest best-domain bit score among the profile's own sequences.
@@ -428,6 +473,28 @@ With fewer than two clusters the silhouette is undefined, and a line saying so i
 A larger ``--size`` or ``--confidence`` moves sequences to the Unique file, and leaving out the sequences that fit no cluster tends to raise the score, so compare settings by the score together with the number of sequences it covers.
 
 
+fammer-tmalign
+``````````````
+
+Align protein structures, given as PDB files, into a multiple sequence alignment in FASTA format::
+
+    fammer-tmalign [-s SEED.fasta]... [-o OUTPUT.fasta] STRUCTURE.pdb...
+
+``fammer build`` aligns the structures of each directory of a tree in the same way, and also with MUSTANG where it is installed (see `build`_).
+Every pair of structures is aligned with TM-align_.
+The pairwise alignments that form the spanning tree of maximum total TM-score are passed to MAFFT as seed alignments, which MAFFT combines into a multiple sequence alignment.
+A spanning tree over N structures has N-1 edges, so this passes N-1 seeds rather than one for every pair of structures.
+``-s`` (``--seed``) passes an existing FASTA alignment to MAFFT as one more seed and includes its rows in the output; it can be given more than once.
+With exactly two structures, the output is the TM-align alignment of the pair: MAFFT is not run, and the rows of a seed alignment are not included.
+A structure that occurs in two of the seed alignments can occur in the output more than once, as differently gapped rows, because MAFFT does not keep a sequence that recurs across seed alignments fixed.
+The alignment is written to standard output, or with ``-o`` (``--output``) to a file.
+
+Each structure's file name becomes the identifier of its sequence in the alignment, and a FASTA identifier ends at the first whitespace, so structure file names must not contain whitespace.
+Seed file names must not contain whitespace either, because MAFFT splits seed file paths at whitespace.
+Each structure must be listed only once, because a structure listed twice would be aligned to itself.
+TM-align reports no error for a missing, empty or malformed structure file, so ``fammer-tmalign`` and ``fammer build`` check that the structure and seed files exist before aligning any pair, and report TM-align output without a TM-score or alignment as an input error.
+
+
 Bundled modules
 ---------------
 
@@ -440,17 +507,6 @@ rebuild the outputs that are out of date. Also track intermediate files to clean
 up after the process successfully completes. See `this blog post about it
 <http://etalog.blogspot.com/2012/01/building-analysis-how-to-avoid.html>`_.
 
-tmalign
-```````
-
-Every pair of structures is aligned with TMalign_.
-The pairwise alignments that form the spanning tree of maximum total TM-score are passed to MAFFT as seed alignments, which MAFFT combines into a multiple sequence alignment.
-A spanning tree over N structures has N-1 edges, so this passes N-1 seeds rather than one for every pair of structures.
-Each structure's file name becomes the identifier of its sequence in the alignment, and a FASTA identifier ends at the first whitespace, so structure file names must not contain whitespace.
-Seed file names must not contain whitespace either, because MAFFT splits seed file paths at whitespace.
-Each structure must be listed only once, because a structure listed twice would be aligned to itself.
-TMalign reports no error for a missing, empty or malformed structure file, so ``fammer-tmalign`` and ``fammer build`` check that the structure and seed files exist before aligning any pair, and report TMalign output without a TM-score or alignment as an input error.
-The ``fammer-tmalign`` command runs it from the shell.
 
 How to curate profiles
 ----------------------
@@ -513,7 +569,7 @@ It looks like this::
 
 At least 2 sequences are needed to define each subfamily.  The sequences are
 initially retrieved and organized manually. External databases can help; for
-example, KinBase provides a classification scheme and representative sequences
+example, KinBase_ provides a classification scheme and representative sequences
 for the protein kinase superfamily.  The directory hierarchy defines the higher
 levels of organization of the superfamily.
 
@@ -536,7 +592,7 @@ boundaries for the whole set.
 
 Edit the subfamily-level alignments (.aln) to trim the sequences to the domain
 boundaries. I use Vim's block-selection mode (Ctrl-v); you might prefer
-JalView. Do not edit higher-level .aln files; just look at them to see which
+Jalview_. Do not edit higher-level .aln files; just look at them to see which
 subfamily-level alignments have extended tails, then edit those .aln files.
 
 When you think you've trimmed all the .aln files to the conserved domain
@@ -620,7 +676,7 @@ Save the edited .pdb file, and rebuild the higher-level profiles::
 
     fammer build --clean Superfamily/
 
-Now that PDB files are present in the directory tree, Fammer will writes
+Now that PDB files are present in the directory tree, Fammer writes
 structural alignments in FASTA format to the .pdb.seq files.
 
 Once complete, examine the top-level alignment (e.g. Superfamily.aln) for
@@ -644,11 +700,8 @@ uv_ takes the other Python packages from PyPI, at the versions recorded in ``uv.
     uv run ruff check
     uv run ruff format
 
-pixi_ takes Python and the other Python packages from conda-forge, and also
-installs the programs that Fammer runs: MAFFT from conda-forge, and HMMer,
-TMalign, MUSTANG and FastTree from bioconda, at the versions recorded in
-``pixi.lock``. The ``default`` environment uses the latest Python that
-conda-forge provides, and ``py312`` the oldest supported one::
+pixi_ takes Python and the other Python packages from conda-forge, and also installs the programs that Fammer runs: MAFFT from conda-forge, and HMMER, TM-align, MUSTANG and FastTree from bioconda, at the versions recorded in ``pixi.lock``.
+The ``default`` environment uses the latest Python that conda-forge provides, and ``py312`` the oldest supported one::
 
     pixi run test
     pixi run -e py312 test
@@ -674,4 +727,6 @@ To skip them in ``git blame``::
 
 .. _uv: https://docs.astral.sh/uv/
 .. _pixi: https://pixi.sh/
+.. _KinBase: http://kinase.com/web/current/kinbase/
+.. _Jalview: https://www.jalview.org/
 
