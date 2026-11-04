@@ -33,6 +33,10 @@ The procedures of these papers, and the rules below that follow from them, defin
 
 - **A profile models closely related sequences.**
   Each family or subfamily set holds sequences that standard methods align accurately; the relationships between distant subfamilies are represented by the hierarchy and the alignments of consensus sequences above it, not by any one alignment.
+- **The profile set covers the widespread subfamilies.**
+  The method assumes that most of the phylogenetically widespread families and subfamilies of the superfamily have a profile, so that a sequence that fits none of them is unusual: a member of a sparsely populated, lineage-specific subgroup, or a divergent outlier.
+  Where widespread subfamilies are missing, their members fall to the nearest profile or catch-all that the tree does hold, and classifications and acceptance rules can be judged only weakly on such a tree.
+  The example tree ``profiles/SomeKinases`` is such a tree: it is a deliberately incomplete subset of a few groups of non-tyrosine kinases, which omits many of the families of the KinBase classification and possibly some subfamilies of the families it holds, so it serves as test data rather than as a benchmark.
 - **A sequence belongs to the profile that scores it highest.**
   Related subfamilies are not separated by an absolute score; they are told apart by which profile scores a sequence highest.
   MAPGAPS classifies a sequence whose best match is a group profile, or the superfamily profile, at that level, as a member of a subgroup that no profile models yet, and a set of such sequences is a candidate for a new profile [Neuwald2009]_.
@@ -50,7 +54,7 @@ The procedures of these papers, and the rules below that follow from them, defin
   The leave-one-out validation of ``refine`` follows [Hedlund2010]_.
   [Kannan2007]_ examined by hand every sequence with a borderline score, that is, a weak best match or a small difference between its best two models.
   A missed member costs one more round of curation; a wrong member changes the profile, and with it every later search.
-  ``add`` and ``refine`` can show their changes without making them (``-n``).
+  A command that writes to curated sequence sets should therefore report a borderline case for the curator to examine instead of writing it, and should be able to show its changes without making them; ``add`` and ``refine`` do the latter with ``-n``.
 - **Iteration converges.**
   Alternating ``build`` and ``add`` repeats the build, search and refine cycle of [Kannan2007]_; as a requirement of Fammer's own, the rounds should reach one that adds nothing, rather than grow without end.
 
