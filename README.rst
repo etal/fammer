@@ -42,6 +42,7 @@ The procedures of these papers, and the rules below that follow from them, defin
   A file named ``*-Unclassified``, ``*-Unclass`` or ``*-Unique`` holds the members of a group that fit none of its subfamilies, together with any consensus records that make up its generic profile (see `Directory tree is the superfamily hierarchy`_).
   These members include orphan sequences and members of lineage-specific subfamilies too sparsely populated to have their own profile, which the curator collapsed into the catch-all.
   A sequence in a catch-all has a classification at the level of its group; it is not necessarily waiting for a subfamily.
+  ``add`` therefore considers a hit that matches a catch-all best for that catch-all, and not for a subfamily of the group that would also accept it.
   A catch-all corresponds to the "unique" set of [Talevich2013]_.
 - **Related but irrelevant sequences are excluded by competing profiles.**
   A profile of the sequences to be excluded, such as the profile of other protein kinases that [Talevich2013]_ included beside the rhoptry kinase profiles, or the excluded profiles of MAPGAPS, takes those sequences as its best match.
@@ -352,7 +353,7 @@ A sequence that is already in the tree is never added again, so the tree's own `
 Each hit is considered for one of the profiles that have a FASTA file of their own: the one whose best-matching domain gives it the smallest E-value in the target database.
 The group-level profiles do not take part, so a hit that matches a group profile best is considered for the best-matching profile among those with a FASTA file.
 Hits are assigned to profiles by name, so two profiles of the tree cannot share a name.
-A catch-all profile (see `Directory tree is the superfamily hierarchy`_) does not compete with the subfamilies of its group: a hit that matches a catch-all best is considered instead for the subfamily profile with the smallest E-value among those in the catch-all's directory or below it whose threshold its bit score reaches, and stays with the catch-all if there is none, or if that subfamily rejects it for its length.
+A catch-all profile (see `Directory tree is the superfamily hierarchy`_) competes with the subfamilies of its group as any other profile does: a hit that matches a catch-all best is considered for the catch-all, even when a subfamily of the group would also accept it, since a catch-all holds members of the group that the curator has classified at the level of the group (see `Purpose and design`_).
 A hit is accepted when it passes the significance cutoff ``-E`` (by default 1e-20) in the target database, when the bit score of its best domain is at least the threshold of the profile, and when the aligned region covers at least the fraction ``-L`` (by default 0.8) of the profile length.
 
 The threshold of a profile is the higher of two scores, both counting only the sequences that its HMM hits at an E-value of 0.001 or better.
@@ -364,15 +365,14 @@ Without it, a profile whose weakest sequence scores low accepts kinases of famil
 The subfamilies of the profile's own directory are left out, because related subfamilies are not separated by a single score: in the built ``profiles/SomeKinases``, a member of a sister subfamily outscores the weakest sequence of 20 of the 32 subfamilies.
 For example, the weakest sequence of ``CAMK1`` scores 101.2 bits against it, a member of a sister subfamily 310.1, and a member of ``Aurora``, in another directory, 242.9, which is ``CAMK1``'s threshold.
 The threshold uses bit scores because an E-value grows with the number of sequences searched, while a bit score does not, so the threshold is the same whatever the size of the target.
-The second score takes one more search of the tree's subfamily sequences for each profile whose threshold is needed: one that a hit is assigned to, or one that competes for a hit that matches a catch-all best.
+The second score takes one more search of the tree's subfamily sequences for each profile whose threshold is needed: one that a hit is assigned to, or, with ``--report-promotions``, a subfamily that competes for a member of a catch-all.
 
-A hit is borderline when it clears its profile's threshold by less than 10 bits, or when it does not lead the closest other profile with a FASTA file by 10 bits, not counting a catch-all that passed it on; the other profile may even score it higher, since a hit is assigned by its E-value.
-A near tie between a subfamily and the catch-all of its group is therefore borderline when the subfamily matches the hit best, and not when the catch-all matches it best and passes it to the subfamily.
-A hit that a catch-all passed on and receives back, because the subfamily rejected it for its length, is tested again as a hit of the catch-all.
+A hit is borderline when it clears its profile's threshold by less than 10 bits, or when it does not lead the closest other profile with a FASTA file by 10 bits; the other profile may even score it higher, since a hit is assigned by its E-value.
+A catch-all and a subfamily of its group are rivals as any two profiles are, so a hit that they do not separate is reported instead of being written to either.
 The borderline rule follows the manual examination of borderline scores in [Kannan2007]_.
 ``add`` does not write a borderline hit; it reports it as a warning, which ``--quiet`` does not hide, with its score, the threshold, and the closest other profile and its score, for example (without the log prefix)::
 
-    * borderline TGME49_291050 for CDPK (262.8 vs. 242.8 bits; TSSK 253.2)
+    * borderline TGME49_228750 for CAMK-Unclass (274.4 vs. 260.3 bits; CDPK 273.5)
 
 A borderline hit is reported again by every run until a rebuild separates it or the curator places it by hand.
 
@@ -380,7 +380,7 @@ Only the aligned region is added, not the full-length sequence.
 A sequence with several domains that pass these thresholds contributes its longest domain once, and a sequence whose identifier is already in any profile of the tree is not added again.
 A second run with the same target and the same HMMs therefore adds nothing.
 After ``fammer build`` has rebuilt the HMMs from the enlarged sequence sets, another run may add a few more sequences.
-On a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the first run adds 21 sequences to nine profiles and reports 7 as borderline, the run after the first rebuild adds 4 more, and the run after the second rebuild adds none and still reports 4; on a copy of ``profiles/ROPK``, the first run adds 15 sequences to ten profiles and reports none.
+On a copy of ``profiles/SomeKinases`` with ``test/TgME49.pep`` as the target, the first run adds 23 sequences to ten profiles and reports 4 as borderline, the run after the first rebuild adds 2 more, and the run after the second rebuild adds none and still reports 3; on a copy of ``profiles/ROPK``, the first run adds 15 sequences to ten profiles and reports none.
 A family with no profile in the tree and no member in another group can still be taken in, so review what each round adds before rebuilding.
 The second score also rejects some true members that score low: in that run, the Aurora kinase TGME49_203010 scores 254.0 bits against ``Aurora``, above its weakest sequence (250.6) but below a member of ``CAMK1`` (259.9).
 Holding each sequence out does not help a small profile whose sequences are nearly identical: each still scores far higher against the others than an unseen member of the family does, so the profile may accept nothing at all.
@@ -389,7 +389,9 @@ A target that is empty or holds only whitespace has no hits, which ``add`` repor
 When a profile file does not end with a line ending, as a hand edit can leave it, ``add`` writes one before the first added record.
 
 With ``--report-promotions``, ``add`` also reports the members of each catch-all that a subfamily of its group would accept, and moves nothing; whether such a member belongs in the subfamily is the curator's decision.
-The members of every catch-all are scanned with the tree's profiles and assigned as a hit of the target is, by the same thresholds and the same ``-L``; a member assigned to a subfamily in its catch-all's directory or below it is reported.
+The members of every catch-all are scanned with the tree's profiles, by the same thresholds and the same ``-L`` as a hit of the target.
+A member whose best match is a subfamily is considered for that subfamily, and a member whose best match is a catch-all, usually its own, is considered for the subfamily profile with the smallest E-value, among those in that catch-all's directory or below it, whose threshold its bit score reaches.
+A member considered for a subfamily in its own catch-all's directory or below it, which accepts it, is reported.
 Consensus records are never reported, nor are the sequences that this run appended or that a subfamily also holds.
 Each report gives the member's score against the subfamily, the subfamily's threshold, and the member's score against an HMM of the catch-all built without it, since against the catch-all's own HMM, built partly from it, a member scores higher than an unseen sequence would; a member that is the catch-all's only aligned row, or that belongs to a catch-all without an alignment, is not scored that way.
 The report is logged at the same level as the progress messages, so ``--quiet`` hides it::

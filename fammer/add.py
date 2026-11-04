@@ -58,7 +58,6 @@ def cmd_add(args):
                 f"Two profiles are named {name}: {profiles[name][0]} and {fasta}"
             )
         profiles[name] = (fasta, hmm)
-    directories = profile_directories(profiles)
     names_of = {name: member_names(fasta) for name, (fasta, _hmm) in profiles.items()}
     # A sequence already in any profile is not added again, to that profile or
     # to another, so a repeated run adds each sequence once
@@ -72,36 +71,17 @@ def cmd_add(args):
     rows = [row for row in rows if row[0] not in present and row[1] in profiles]
     with tempfile.TemporaryDirectory(prefix="fammer-") as workdir:
         threshold = acceptance_thresholds(profiles, workdir)
-        dbhits, passed_on = assign_hits(rows, threshold, directories)
+        dbhits = best_hits(rows)
         # A hit that its profile does not clearly separate is reported for the
-        # curator to examine, and not written; so is a hit that a catch-all
-        # passed on and receives back, if the catch-all does not separate it
-        borderline = borderline_hits(dbhits, rows, passed_on, threshold)
+        # curator to examine, and not written
+        borderline = borderline_hits(dbhits, rows, threshold)
         report_borderline(borderline)
         dbhits = {s: hit for s, hit in dbhits.items() if s not in borderline}
-        passed_on = {s: hit for s, hit in passed_on.items() if s not in borderline}
         appended = set()
         with closing(SeqIO.index(args.sequence_db, "fasta")) as index:
-            # The subfamilies come first, so that a catch-all receives back
-            # each hit that it passed to a subfamily and the subfamily did not
-            # append, having rejected it for its length
-            for name in sorted(profiles, key=is_catch_all):
-                fasta, hmm = profiles[name]
+            for name, (fasta, hmm) in profiles.items():
                 logger.info("Processing %s ...", noext(fasta))
                 hits = list(filter_profile(dbhits, name))
-                if is_catch_all(name):
-                    back = {
-                        seqname: passed_on[seqname]
-                        for seqname, _score in filter_profile(passed_on, name)
-                        if seqname not in appended
-                    }
-                    borderline_back = borderline_hits(back, rows, {}, threshold)
-                    report_borderline(borderline_back)
-                    hits += [
-                        (seqname, score)
-                        for seqname, (_profname, _evalue, score) in back.items()
-                        if seqname not in borderline_back
-                    ]
                 if not hits:
                     continue
                 min_score = threshold(name)
@@ -150,41 +130,29 @@ def inside(directory, top):
     return commonpath([directory, top]) == commonpath([top])
 
 
-def assign_hits(rows, threshold, directories):
-    """Assign each sequence of hmmsearch table rows to one profile.
+def accepting_subfamily(rows, top, threshold, directories):
+    """The subfamily profile at or below a directory that accepts a sequence.
 
-    The rows are tuples of (sequence name, profile name, e-value, bit score),
-    threshold maps a profile name to its acceptance threshold in bits, or to
-    None if it has none, and directories maps a profile name to the directory
-    of its FASTA file. A sequence goes to the profile whose best domain has
-    the smallest e-value, as best_hits selects it, unless that profile is a
-    catch-all: then it goes to the subfamily profile with the smallest e-value
-    among those in the catch-all's directory or below it whose threshold its
-    bit score reaches, if there is one, since a catch-all holds only the
-    sequences of its group that fit none of the group's subfamilies.
+    The rows are the hmmsearch table rows of one sequence, tuples of (sequence
+    name, profile name, e-value, bit score); threshold maps a profile name to
+    its acceptance threshold in bits, or to None if it has none, and
+    directories maps a profile name to the directory of its FASTA file. Of the
+    profiles that are not catch-alls, lie in the directory top or below it,
+    and have a threshold that the sequence's bit score reaches, the one whose
+    best domain has the smallest e-value is selected, as best_hits selects it.
 
-    Returns a tuple of two dicts, each of {sequence name: (profile name,
-    e-value, bit score)}: the assignment of every sequence, and the sequences
-    passed from a catch-all to a subfamily, with the catch-all's row.
+    Returns (profile name, e-value, bit score), or None if no profile accepts
+    the sequence.
     """
-    rows_of = rows_by_sequence(rows)
-    best = best_hits(rows)
-    passed_on = {}
-    for seqname, (profname, _evalue, _score) in best.items():
-        if not is_catch_all(profname):
-            continue
-        accepted = [
-            row
-            for row in rows_of[seqname]
-            if not is_catch_all(row[1])
-            and inside(directories[row[1]], directories[profname])
-            and (min_score := threshold(row[1])) is not None
-            and row[3] >= min_score
-        ]
-        if accepted:
-            passed_on[seqname] = best[seqname]
-            best[seqname] = best_hits(accepted)[seqname]
-    return best, passed_on
+    accepted = [
+        row
+        for row in rows
+        if not is_catch_all(row[1])
+        and inside(directories[row[1]], top)
+        and (min_score := threshold(row[1])) is not None
+        and row[3] >= min_score
+    ]
+    return next(iter(best_hits(accepted).values()), None)
 
 
 def rows_by_sequence(rows):
@@ -195,25 +163,19 @@ def rows_by_sequence(rows):
     return rows_of
 
 
-def borderline_hits(hits, rows, passed_on, threshold):
+def borderline_hits(hits, rows, threshold):
     """The assigned hits that their profile does not clearly separate.
 
     The hits are {sequence name: (profile name, e-value, bit score)}, as
-    assign_hits assigns them, and passed_on its record of the hits that a
-    catch-all passed on; cmd_add also tests a catch-all's returned hits with
-    an empty passed_on, so that the subfamily that rejected a hit for its
-    length counts as a rival. threshold maps a profile name to its acceptance
-    threshold in bits, or to None. A hit that reaches its profile's threshold
-    is borderline when it reaches it by less than BORDERLINE_MARGIN bits, or
-    when it does not lead the closest other profile among the rows by
-    BORDERLINE_MARGIN bits: a weak best match, or two profiles that do not
-    separate it. The other profile may score the hit higher, since
-    assign_hits assigns by e-value. The catch-all that passed a hit on is not
-    counted, since assign_hits has already decided against it; a near tie
-    between a subfamily and the catch-all of its group is therefore borderline
-    when the subfamily has the smaller e-value, and not when the catch-all has
-    it and passes the hit on. A hit below its threshold is not borderline; its
-    profile rejects it.
+    best_hits assigns them from the rows, and threshold maps a profile name to
+    its acceptance threshold in bits, or to None. A hit that reaches its
+    profile's threshold is borderline when it reaches it by less than
+    BORDERLINE_MARGIN bits, or when it does not lead the closest other profile
+    among the rows by BORDERLINE_MARGIN bits: a weak best match, or two
+    profiles that do not separate it. The other profile may score the hit
+    higher, since best_hits assigns by e-value. A catch-all and a subfamily of
+    its group are rivals like any two profiles. A hit below its threshold is
+    not borderline; its profile rejects it.
 
     Returns {sequence name: description for the report}.
     """
@@ -223,11 +185,8 @@ def borderline_hits(hits, rows, passed_on, threshold):
         min_score = threshold(profname)
         if min_score is None or score < min_score:
             continue
-        decided = {profname}
-        if seqname in passed_on:
-            decided.add(passed_on[seqname][0])
         rival = max(
-            (row for row in rows_of[seqname] if row[1] not in decided),
+            (row for row in rows_of[seqname] if row[1] != profname),
             key=lambda row: row[3],
             default=None,
         )
@@ -322,16 +281,20 @@ def report_promotions(profiles, hmmdb, threshold, evalue, min_length, skip, work
     """Report each catch-all member that a subfamily of its group would accept.
 
     The members of every catch-all, except the consensus records and the
-    names in skip, are scanned with the profile database hmmdb and assigned
-    as assign_hits assigns a sequence of the target. A member assigned to a
-    subfamily in its catch-all's directory or below it, which accepts it by
-    threshold and by min_length as add_hits does, is reported with its score
-    against that subfamily, the subfamily's threshold, and its score against
-    the catch-all's HMM built without it, since against the catch-all's own
-    HMM, built partly from it, it scores higher than it would as an unseen
-    sequence. Nothing is moved: whether a member belongs to the subfamily is
-    the curator's decision. A member that two catch-alls hold is considered
-    only as a member of the first of them in the order of their names.
+    names in skip, are scanned with the profile database hmmdb, and each is
+    assigned to the profile whose best domain has the smallest e-value, as
+    best_hits selects it; a member whose best profile is a catch-all, as a
+    member's own catch-all usually is, is assigned instead to the subfamily
+    that accepting_subfamily selects at or below that catch-all's directory,
+    if there is one. A member assigned to a subfamily in its own catch-all's
+    directory or below it, which accepts it by threshold and by min_length as
+    add_hits does, is reported with its score against that subfamily, the
+    subfamily's threshold, and its score against the catch-all's HMM built
+    without it, since against the catch-all's own HMM, built partly from it,
+    it scores higher than it would as an unseen sequence. Nothing is moved:
+    whether a member belongs to the subfamily is the curator's decision. A
+    member that two catch-alls hold is considered only as a member of the
+    first of them in the order of their names.
     """
     directories = profile_directories(profiles)
     source_of, records = {}, {}
@@ -349,12 +312,17 @@ def report_promotions(profiles, hmmdb, threshold, evalue, min_length, skip, work
     seqfname = join(workdir, "catch-all-members.fasta")
     write_fasta(records.values(), seqfname)
     rows = [row for row in get_hmm_rows(hmmdb, seqfname, evalue) if row[1] in profiles]
-    assigned, _passed_on = assign_hits(rows, threshold, directories)
+    rows_of = rows_by_sequence(rows)
     hits_of = defaultdict(dict)
-    for seqname, (profname, _evalue, score) in assigned.items():
-        if not is_catch_all(profname) and inside(
-            directories[profname], directories[source_of[seqname]]
-        ):
+    for seqname, (profname, _evalue, score) in best_hits(rows).items():
+        if is_catch_all(profname):
+            selected = accepting_subfamily(
+                rows_of[seqname], directories[profname], threshold, directories
+            )
+            if selected is None:
+                continue
+            profname, _evalue, score = selected
+        if inside(directories[profname], directories[source_of[seqname]]):
             hits_of[profname][seqname] = score
     candidates = defaultdict(list)
     for dest in sorted(hits_of):

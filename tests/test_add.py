@@ -7,11 +7,11 @@ minimum length, and the first of two equally long ones.
 
 filter_score keeps the hits whose bit score is at least the threshold.
 
-assign_hits gives each sequence the profile with the smallest e-value, unless
-that profile is a catch-all and a subfamily profile in the catch-all's
-directory or below it accepts the sequence. It also returns the hits it
-passed on, each with the catch-all's row. inside tells whether one directory
-lies at or below another, however either is spelled.
+cmd_add gives each sequence the profile with the smallest e-value among those
+with a FASTA file, a catch-all as readily as a subfamily. accepting_subfamily
+selects, for report_promotions, the subfamily profile of smallest e-value at
+or below a directory whose threshold a sequence reaches. inside tells whether
+one directory lies at or below another, however either is spelled.
 
 weakest_member_score scores the sequences of a profile's alignment that are
 in its FASTA file, held out one at a time when there are at most ten of them.
@@ -37,7 +37,7 @@ from Bio.SeqRecord import SeqRecord
 
 from fammer import add
 from fammer._share import UsageError
-from fammer.add import assign_hits, filter_score, longest_domains
+from fammer.add import filter_score, longest_domains
 
 
 def domain(name, start, end):
@@ -96,42 +96,57 @@ DIRECTORIES = defaultdict(
 )
 
 
-def assign(rows):
-    """assign_hits with THRESHOLDS and DIRECTORIES."""
-    return assign_hits(rows, lambda name: THRESHOLDS.get(name, 0.0), DIRECTORIES)
-
-
-def assigned(rows):
-    """{sequence: profile} as assign_hits gives it with THRESHOLDS."""
-    hits, _passed_on = assign(rows)
-    return {seq: prof for seq, (prof, _evalue, _score) in hits.items()}
-
-
-def test_a_subfamily_keeps_its_hit_whatever_other_profiles_accept():
-    rows = [("s", "Sub3", 1e-50, 150.0), ("s", "Sub1", 1e-40, 400.0)]
-    assert assigned(rows) == {"s": "Sub3"}
+def accepting(rows):
+    """What accepting_subfamily selects below T/G with THRESHOLDS and DIRECTORIES."""
+    return add.accepting_subfamily(
+        rows, "T/G", lambda name: THRESHOLDS.get(name, 0.0), DIRECTORIES
+    )
 
 
 @pytest.mark.parametrize("catch_all", ["G-Unclassified", "G-Unclass", "G-Unique"])
-def test_a_catch_all_hit_goes_to_the_accepting_subfamily_of_least_evalue(catch_all):
+def test_the_accepting_subfamily_of_least_evalue_is_selected(catch_all):
     """Of two accepting subfamilies, the smaller e-value wins over the higher
-    score and the earlier row; the subfamily below its threshold is passed by."""
+    score and the earlier row; the subfamily below its threshold and the
+    catch-all are not selected."""
     rows = [
         ("s", catch_all, 1e-60, 200.0),
         ("s", "Sub3", 1e-55, 250.0),
         ("s", "Sub1", 1e-40, 180.0),
         ("s", "Sub2", 1e-45, 150.0),
     ]
-    hits, passed_on = assign(rows)
-    assert hits == {"s": ("Sub2", 1e-45, 150.0)}
-    assert passed_on == {"s": (catch_all, 1e-60, 200.0)}
+    assert accepting(rows) == ("Sub2", 1e-45, 150.0)
 
 
-def borderline(hits, rows, passed_on=None):
+def test_a_score_equal_to_the_threshold_is_accepted():
+    assert accepting([("s", "Sub1", 1e-40, 100.0)]) == ("Sub1", 1e-40, 100.0)
+
+
+def test_no_subfamily_is_selected_unless_one_of_the_group_accepts():
+    """Below a threshold, without a threshold, a catch-all of another group,
+    and a subfamily of another group are not selected."""
+    rows = [
+        ("s", "Sub1", 1e-40, 99.9),
+        ("s", "Weak", 1e-50, 190.0),
+        ("s", "H-Unique", 1e-55, 195.0),
+        ("s", "Other", 1e-58, 199.0),
+    ]
+    assert accepting(rows) is None
+
+
+def test_a_subfamily_below_the_directory_is_selected():
+    assert accepting([("s", "Nested", 1e-40, 150.0)]) == ("Nested", 1e-40, 150.0)
+
+
+def test_a_name_that_only_contains_a_catch_all_suffix_is_a_subfamily():
+    """A name that merely contains a catch-all suffix, such as ROPK-Unclass-like,
+    is a subfamily."""
+    rows = [("s", "G-Unclass", 1e-70, 300.0), ("s", "ROPK-Unclass-like", 1e-60, 200.0)]
+    assert accepting(rows) == ("ROPK-Unclass-like", 1e-60, 200.0)
+
+
+def borderline(hits, rows):
     """{sequence: description} as borderline_hits gives it with THRESHOLDS."""
-    return add.borderline_hits(
-        hits, rows, passed_on or {}, lambda name: THRESHOLDS.get(name, 0.0)
-    )
+    return add.borderline_hits(hits, rows, lambda name: THRESHOLDS.get(name, 0.0))
 
 
 def add_args(basedir, sequence_db):
@@ -163,28 +178,30 @@ def test_a_hit_near_its_threshold_or_a_rival_is_borderline():
     assert found["u"] == "u for Sub1 (150.0 vs. 100.0 bits; Sub2 145.0)"
 
 
-def test_the_catch_all_that_passed_a_hit_on_is_not_a_rival():
-    """The catch-all scored s higher, but assign_hits passed it on; Sub1's
+def test_a_catch_all_and_a_subfamily_of_its_group_are_rivals():
+    """The catch-all leads Sub1 by 5 bits for s, so s is borderline; Sub1's
     rejection of t below its threshold and Weak's lack of one are not
-    borderline either."""
+    borderline."""
     rows = [
         ("s", "G-Unclassified", 1e-60, 200.0),
-        ("s", "Sub1", 1e-40, 150.0),
+        ("s", "Sub1", 1e-50, 195.0),
         ("t", "Sub1", 1e-40, 95.0),
         ("w", "Weak", 1e-40, 95.0),
     ]
-    hits = {seq: (prof, ev, score) for seq, prof, ev, score in rows[1:]}
-    passed_on = {"s": ("G-Unclassified", 1e-60, 200.0)}
-    assert borderline(hits, rows, passed_on) == {}
+    hits = {
+        seq: (prof, ev, score)
+        for seq, prof, ev, score in rows
+        if (seq, prof) != ("s", "Sub1")
+    }
+    assert borderline(hits, rows) == {
+        "s": "s for G-Unclassified (200.0 vs. 0.0 bits; Sub1 195.0)"
+    }
 
 
-def test_a_hit_returned_to_its_catch_all_is_tested_as_a_hit_of_it(
-    tmp_path, monkeypatch, caplog
-):
-    """G-Unclassified passed t and u on to Sub, which accepts both by score and
-    rejects both for their length. Returned to G-Unclassified, u is appended to
-    it; Sub scores t within 10 bits of G-Unclassified, so t is reported as
-    borderline and not written."""
+def test_a_catch_all_keeps_the_hits_that_it_matches_best(tmp_path, monkeypatch, caplog):
+    """G-Unclassified matches t and u best, and Sub, of the same group, would
+    accept both by score. u is appended to G-Unclassified; G-Unclassified
+    rejects t for its length, and t is appended nowhere."""
     group = tmp_path / "T" / "G"
     group.mkdir(parents=True)
     for name in ("Sub", "G-Unclassified"):
@@ -193,16 +210,16 @@ def test_a_hit_returned_to_its_catch_all_is_tested_as_a_hit_of_it(
     (tmp_path / "T_all.hmm").write_text("")
     (tmp_path / "target.fasta").write_text(">t\nKLMNPQ\n>u\nRSTVWY\n")
     rows = [
-        ("t", "G-Unclassified", 1e-60, 155.0),
+        ("t", "G-Unclassified", 1e-60, 200.0),
         ("t", "Sub", 1e-50, 150.0),
         ("u", "G-Unclassified", 1e-60, 200.0),
         ("u", "Sub", 1e-50, 150.0),
     ]
 
-    def accepted_hits(hmm, hits, min_score, index, _min_length):
-        if hmm.endswith("Sub.hmm"):
-            return []
-        return [index[name] for name, score in hits if score >= min_score]
+    def accepted_hits(_hmm, hits, min_score, index, _min_length):
+        return [
+            index[name] for name, score in hits if score >= min_score and name != "t"
+        ]
 
     monkeypatch.setattr(add, "get_hmm_rows", lambda *_args: rows)
     monkeypatch.setattr(add, "acceptance_thresholds", lambda *_args: lambda _: 100.0)
@@ -210,49 +227,11 @@ def test_a_hit_returned_to_its_catch_all_is_tested_as_a_hit_of_it(
     args = add_args(tmp_path / "T", tmp_path / "target.fasta")
     with caplog.at_level("WARNING"):
         add.cmd_add(args)
-    assert [r.getMessage() for r in caplog.records] == [
-        "* borderline t for G-Unclassified (155.0 vs. 100.0 bits; Sub 150.0)"
-    ]
+    assert caplog.records == []
     assert (group / "G-Unclassified.fasta").read_text() == (
         ">G-Unclassified-m\nACDEFG\n>u\nRSTVWY\n"
     )
     assert (group / "Sub.fasta").read_text() == ">Sub-m\nACDEFG\n"
-
-
-def test_a_score_equal_to_the_threshold_is_accepted():
-    rows = [("s", "G-Unclassified", 1e-60, 200.0), ("s", "Sub1", 1e-40, 100.0)]
-    assert assigned(rows) == {"s": "Sub1"}
-
-
-def test_a_catch_all_keeps_a_hit_that_no_subfamily_of_its_group_accepts():
-    """Below a threshold, without a threshold, accepted only by another
-    catch-all, or accepted only by a subfamily of another group, the hit stays
-    with the catch-all that matched it best."""
-    rows = [
-        ("s", "G-Unclassified", 1e-60, 200.0),
-        ("s", "Sub1", 1e-40, 99.9),
-        ("s", "Weak", 1e-50, 190.0),
-        ("s", "H-Unique", 1e-55, 195.0),
-        ("s", "Other", 1e-58, 199.0),
-    ]
-    assert assigned(rows) == {"s": "G-Unclassified"}
-
-
-def test_a_catch_all_hit_may_go_to_a_subfamily_below_its_directory():
-    rows = [("s", "G-Unclassified", 1e-60, 200.0), ("s", "Nested", 1e-40, 150.0)]
-    assert assigned(rows) == {"s": "Nested"}
-
-
-def test_a_name_that_only_contains_a_catch_all_suffix_is_a_subfamily():
-    """A name that merely contains a catch-all suffix, such as ROPK-Unclass-like,
-    is a subfamily."""
-    rows = [
-        ("s", "ROPK-Unclass-like", 1e-60, 200.0),
-        ("s", "Sub1", 1e-40, 150.0),
-        ("t", "ROPK-Eten1", 1e-60, 200.0),
-        ("t", "Sub1", 1e-40, 150.0),
-    ]
-    assert assigned(rows) == {"s": "ROPK-Unclass-like", "t": "ROPK-Eten1"}
 
 
 @pytest.fixture
@@ -391,13 +370,18 @@ def test_the_threshold_applies_to_catch_alls_and_needs_a_weakest_member(
 
 # The catch-all members of the promotion tree, each with the rows of its scan:
 # x goes to the subfamily Sub; y-consensus would too; z is assigned to Other,
-# in another group; w is accepted by no subfamily; and s is skipped.
+# in another group; v matches H-Unique, the catch-all of that group, best, and
+# goes to Other, though Sub would accept it too; w is accepted by no subfamily;
+# and s is skipped.
 PROMOTION_ROWS = [
     ("x", "G-Unclassified", 1e-60, 200.0),
     ("x", "Sub", 1e-50, 150.0),
     ("y-consensus", "Sub", 1e-60, 300.0),
     ("z", "G-Unclassified", 1e-60, 200.0),
     ("z", "Other", 1e-70, 250.0),
+    ("v", "H-Unique", 1e-70, 250.0),
+    ("v", "Other", 1e-50, 200.0),
+    ("v", "Sub", 1e-60, 150.0),
     ("w", "G-Unclassified", 1e-60, 200.0),
     ("w", "Sub", 1e-50, 50.0),
     ("s", "Sub", 1e-60, 300.0),
@@ -406,7 +390,7 @@ PROMOTION_ROWS = [
 
 @pytest.fixture
 def promotion_tree(tmp_path, monkeypatch):
-    """A group G with a subfamily and a catch-all, and a group H.
+    """A group G with a subfamily and a catch-all, and a group H with both.
 
     The scan returns the rows of PROMOTION_ROWS for the sequences searched,
     and a profile accepts every hit at or above its threshold.
@@ -415,13 +399,19 @@ def promotion_tree(tmp_path, monkeypatch):
         (tmp_path / directory).mkdir()
     (tmp_path / "G" / "Sub.fasta").write_text(">m\nACDEFG\n")
     (tmp_path / "G" / "G-Unclassified.fasta").write_text(
-        "".join(f">{name} the {name} kinase\nACD\nEFG\n" for name in "xzw")
+        "".join(f">{name} the {name} kinase\nACD\nEFG\n" for name in "xzvw")
         + ">y-consensus\nACDEFG\n>s\nACDEFG\n"
     )
     (tmp_path / "H" / "Other.fasta").write_text(">o\nACDEFG\n")
+    (tmp_path / "H" / "H-Unique.fasta").write_text(">h\nACDEFG\n")
     profiles = {
         name: (str(tmp_path / directory / f"{name}.fasta"), name)
-        for directory, name in [("G", "Sub"), ("G", "G-Unclassified"), ("H", "Other")]
+        for directory, name in [
+            ("G", "Sub"),
+            ("G", "G-Unclassified"),
+            ("H", "Other"),
+            ("H", "H-Unique"),
+        ]
     }
 
     def get_hmm_rows(_hmmdb, seqfname, _evalue):
@@ -440,9 +430,10 @@ def promotion_tree(tmp_path, monkeypatch):
 def test_promotions_are_reported_for_members_of_the_group_and_nothing_moves(
     tmp_path, promotion_tree, caplog
 ):
-    """Only x is reported: y-consensus is a consensus record, z is assigned to
-    a subfamily of another group, w reaches no subfamily's threshold, and s is
-    skipped. The catch-all has no alignment, so x has no held-out score."""
+    """Only x is reported: y-consensus is a consensus record, z and v are
+    assigned to a subfamily of another group, w reaches no subfamily's
+    threshold, and s is skipped. The catch-all has no alignment, so x has no
+    held-out score."""
     tree = [tmp_path / "G", tmp_path / "H"]
     before = {path: path.read_text() for top in tree for path in top.iterdir()}
     work = tmp_path / "work"

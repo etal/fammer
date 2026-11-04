@@ -458,18 +458,22 @@ def test_update_fasta_rewrites_stale_files_once(built_workspace):
 # The records that the recorded run of add appended and the first run of the
 # current code does not, by file. Most are rejected by the threshold, which a
 # hit must reach both by the weakest member of the profile and by the members
-# of the subfamilies of other groups; TGME49_291050, which the recorded run
-# appended to CAMK-Unclass, and TGME49_255710, which it appended to CDPK, are
-# reported as borderline instead. The current code appends no record that the
-# recorded run did not. See "Acceptance threshold of add", "Assignment of add
-# hits" and "Borderline hits of add" in tests/data/README.md.
+# of the subfamilies of other groups; TGME49_255710, which the recorded run
+# appended to CDPK, is reported as borderline instead. See "Acceptance
+# threshold of add", "Assignment of add hits" and "Borderline hits of add" in
+# tests/data/README.md.
 REMOVED_RECORDS = {
-    "SomeKinases/CAMK/CAMK-Unclass.fasta": {"TGME49_291050"},
     "SomeKinases/CAMK/CDPK.fasta": {"TGME49_255710"},
     "SomeKinases/CMGC/MAPK.fasta": {"TGME49_249260", "TGME49_254630"},
     "SomeKinases/STE/STE-Unclassified.fasta": {"TGME49_218400", "TGME49_272200"},
     "SomeKinases/STE/STE11.fasta": {"TGME49_209050", "TGME49_239130", "TGME49_244620"},
 }
+
+# The records that the first run of the current code appends and the recorded
+# run did not, by file: TGME49_233905, an SNF1-family kinase, matches the CAMK
+# group profile best, which the recorded code did not add anywhere, and
+# CAMK-Unclass best among the profiles with a FASTA file.
+ADDED_RECORDS = {"SomeKinases/CAMK/CAMK-Unclass.fasta": {"TGME49_233905"}}
 
 # The hits of the first run of add that clear their threshold by less than
 # _share.BORDERLINE_MARGIN bits, or that do not lead the closest other profile
@@ -477,11 +481,8 @@ REMOVED_RECORDS = {
 BORDERLINE_HITS = {
     "TGME49_204280",
     "TGME49_228750",
-    "TGME49_233905",
     "TGME49_237890",
     "TGME49_255710",
-    "TGME49_291050",
-    "TGME49_315190",
 }
 BORDERLINE = re.compile(
     r"add: \* borderline (\S+) for \S+ \([\d.]+ vs\. [\d.]+ bits.*\)"
@@ -494,15 +495,16 @@ def record_id(record):
 
 
 def test_add_appends_the_recorded_hits_once(scan_workspace):
-    """``add`` appends the recorded hits, less those listed, and a second run
-    changes nothing.
+    """``add`` appends the recorded hits, with the listed exceptions, and a
+    second run changes nothing.
 
     The first run appends to each FASTA file the records that the Python 2
     code base appended, except those in REMOVED_RECORDS, each on two lines
-    where the recorded run wrapped the sequence. The log lines are compared as
-    a multiset, since the tree is walked in file-system order; the borderline
-    hits are reported and not written. The second run finds each accepted hit
-    already in the tree, so it writes to no file.
+    where the recorded run wrapped the sequence, and the records named in
+    ADDED_RECORDS. The log lines are compared as a multiset, since the tree is
+    walked in file-system order; the borderline hits are reported and not
+    written. The second run finds each accepted hit already in the tree, so it
+    writes to no file.
     """
     require("fammer", "hmmsearch")
     run = recorded("add.json")
@@ -520,21 +522,32 @@ def test_add_appends_the_recorded_hits_once(scan_workspace):
             appended[name] = after[len(text) :]
 
     expected_files = set()
-    for name, text in run["appended"].items():
+    for name in run["appended"].keys() | ADDED_RECORDS.keys():
         removed = REMOVED_RECORDS.get(name, set())
+        added_ids = ADDED_RECORDS.get(name, set())
+        recorded_records = fasta_records(run["appended"].get(name, ""))
         kept = Counter(
             {
                 record: count
-                for record, count in fasta_records(text).items()
+                for record, count in recorded_records.items()
                 if record_id(record) not in removed
             }
         )
-        if not kept:
+        if not kept and not added_ids:
             continue
         expected_files.add(name)
-        records = fasta_records(appended.get(name, ""))
-        assert records == kept, name
-        assert len(appended[name].splitlines()) == 2 * records.total(), name
+        appended_text = appended.get(name, "")
+        records = fasta_records(appended_text)
+        added = Counter(
+            {
+                record: count
+                for record, count in records.items()
+                if record_id(record) in added_ids
+            }
+        )
+        assert {record_id(record) for record in added} == added_ids, name
+        assert records - added == kept, name
+        assert len(appended_text.splitlines()) == 2 * records.total(), name
     assert appended.keys() == expected_files
     messages = log_messages(proc.stderr)
     reported = [match[1] for line in messages if (match := BORDERLINE.fullmatch(line))]
