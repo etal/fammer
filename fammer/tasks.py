@@ -6,6 +6,15 @@ from os.path import exists, isfile
 
 logger = logging.getLogger(__name__)
 
+# A Git checkout writes files in index order and gives each the time at which
+# it was written, so a tracked target can be written about a millisecond before
+# the dependency it was built from (profiles/ROPK/PKL.aln before PKL.fasta).
+# Within this many seconds, modification times say nothing about which file
+# changed last, and a task's matches_dep decides instead. A fammer command
+# takes about 0.2 seconds to start, so a dependency that update-fasta rewrites
+# after an edit of the target is newer by more than this.
+CHECKOUT_SKEW = 0.1
+
 
 def ext(path, extension):
     """Replace the extension on a path (or iterable of paths)."""
@@ -94,6 +103,11 @@ class Task:
             to build self.target. Converted to a list automatically, if needed.
         `cleans`: iterable of strings
             File names to be removed later. Converted to a list automatically.
+        `matches_dep`: callable
+            Optional function of (target, dependency) file names, true if the
+            target still corresponds to the dependency. A target older than a
+            dependency by less than CHECKOUT_SKEW seconds is up to date if this
+            holds; without it, any older target is out of date.
     """
 
     @staticmethod
@@ -105,7 +119,13 @@ class Task:
         return list(x)
 
     def __init__(
-        self, target, action=lambda x: None, depends=None, cleans=None, kwargs=None
+        self,
+        target,
+        action=lambda x: None,
+        depends=None,
+        cleans=None,
+        kwargs=None,
+        matches_dep=None,
     ):
         # Filename or directory to build
         assert callable(action)
@@ -114,12 +134,15 @@ class Task:
         self.depends = self._enlist(depends)
         self.kwargs = kwargs or {}
         self.cleans = self._enlist(cleans)
+        self.matches_dep = matches_dep
 
     def build(self):
         for dep in self.depends:
             if isinstance(dep, Task) and not dep.is_up_to_date():
                 dep.build()
-        if exists(self.target) and all(self.is_newer_than(dep) for dep in self.depends):
+        if exists(self.target) and all(
+            self.is_current_for(dep) for dep in self.depends
+        ):
             logger.info("%s: Up to date.", self.target)
         else:
             logger.info("%s: Building...", self.target)
@@ -129,16 +152,29 @@ class Task:
                 logger.warning("*** Failed action @ %s", self.target)
                 raise
 
-    def is_newer_than(self, dep):
+    def is_current_for(self, dep):
+        """True if the target need not be rebuilt on account of one dependency.
+
+        A target at least as new as the dependency is current; one older by
+        less than CHECKOUT_SKEW seconds is current if matches_dep holds.
+        """
         if not exists(self.target):
             return False
-        return os.stat(self.target).st_mtime >= os.stat(str(dep)).st_mtime
+        dep_name = str(dep)
+        lag = os.stat(dep_name).st_mtime - os.stat(self.target).st_mtime
+        if lag <= 0:
+            return True
+        return (
+            lag < CHECKOUT_SKEW
+            and self.matches_dep is not None
+            and self.matches_dep(self.target, dep_name)
+        )
 
     def is_up_to_date(self):
         """True if the target does not need to be rebuilt."""
         return exists(self.target) and all(
             (dep.is_up_to_date() if isinstance(dep, Task) else exists(dep))
-            and self.is_newer_than(dep)
+            and self.is_current_for(dep)
             for dep in self.depends
         )
 

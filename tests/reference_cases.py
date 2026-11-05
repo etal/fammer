@@ -785,7 +785,7 @@ def ungap_file(relpath):
 
 
 def same_aln_fasta(aln_text, fasta_text):
-    """update_fasta.is_same_aln_fasta on scratch files with the given text."""
+    """_share.is_same_aln_fasta on scratch files with the given text."""
     with tempfile.TemporaryDirectory(prefix="fammer-update-") as workdir:
         aln_path = os.path.join(workdir, "x.aln")
         fa_path = os.path.join(workdir, "x.fasta")
@@ -793,7 +793,7 @@ def same_aln_fasta(aln_text, fasta_text):
             handle.write(aln_text)
         with open(fa_path, "w", encoding="ascii") as handle:
             handle.write(fasta_text)
-        return update_fasta.is_same_aln_fasta(aln_path, fa_path)
+        return _share.is_same_aln_fasta(aln_path, fa_path)
 
 
 def update_fasta_cases():

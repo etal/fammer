@@ -194,6 +194,24 @@ def ungapped(seq):
     return str(seq).replace("-", "").replace(".", "").upper()
 
 
+def is_same_aln_fasta(aln_fn, fasta_fn):
+    """True if an alignment and a FASTA file hold the same records.
+
+    Records are compared as sets of identifier and sequence, in upper case,
+    with the gaps of the alignment removed.
+    """
+
+    def rec2tuple(rec, do_ungap):
+        strseq = ungapped(rec.seq) if do_ungap else str(rec.seq).upper()
+        return (rec.id, strseq)
+
+    with SeqIO.parse(aln_fn, "clustal") as parsed:
+        aln_hash = {rec2tuple(rec, True) for rec in parsed}
+    with SeqIO.parse(fasta_fn, "fasta") as parsed:
+        fa_hash = {rec2tuple(rec, False) for rec in parsed}
+    return aln_hash == fa_hash
+
+
 def as_target(record):
     """A record of the ungapped sequence under its identifier alone, to search."""
     return SeqRecord(Seq(ungapped(record.seq)), id=record.id, description="")

@@ -219,6 +219,13 @@ if ``subfam1_Group1.aln`` is edited, then only ``Group1.aln`` and
 Superfamily`` is called because the consensus sequences that constitute those
 alignments may have changed. (It's like Make.)
 
+Git does not record modification times.
+A checkout gives each file the time at which it writes it, in order of path, so a tracked ``fam.aln`` file is written about a millisecond before its ``fam.fasta`` file.
+``fammer build`` therefore keeps a family ``.aln`` file that is older than its ``.fasta`` file by less than 0.1 seconds if its identifiers and sequences, without gaps and regardless of case, are exactly those of the ``.fasta`` file, as for ``profiles/ROPK/PKL.aln``.
+A ``.fasta`` file that a later command writes, such as ``update-fasta`` or ``add``, is newer than that, since a ``fammer`` command takes about 0.2 seconds to start, and the family is realigned.
+A tracked alignment that does not hold the sequences of its ``.fasta`` file, such as one edited by hand before ``update-fasta`` was run, is realigned after a checkout, as is any alignment where the checkout leaves a longer interval, for example on slow storage.
+To keep such an alignment, update its modification time after the checkout, for example with ``touch Superfamily/Group1/subfam1_Group1.aln``.
+
 Finally, use the option ``--hmmer`` to build profiles::
 
     Superfamily/
@@ -503,11 +510,10 @@ Bundled modules
 tasks
 `````
 
-Serves the basic purpose of a build tool like Make or Rake: compare the time
-stamps of input and output files at each step of the `build`_ process, and only
-rebuild the outputs that are out of date. Also track intermediate files to clean
-up after the process successfully completes. See `this blog post about it
-<http://etalog.blogspot.com/2012/01/building-analysis-how-to-avoid.html>`_.
+Serves the basic purpose of a build tool like Make or Rake: compare the time stamps of input and output files at each step of the `build`_ process, and only rebuild the outputs that are out of date.
+A task may also be given a content check, which decides whether an output older than an input by less than 0.1 seconds is out of date (see `build`_).
+Also track intermediate files to clean up after the process successfully completes.
+See `this blog post about it <http://etalog.blogspot.com/2012/01/building-analysis-how-to-avoid.html>`_.
 
 
 How to curate profiles
@@ -633,7 +639,7 @@ Alignments in this convention come from ``hmmalign`` and ``hmmsearch -A``, and f
 BLAST and PSI-BLAST use lowercase for masking instead: with ``-lcase_masking``, lowercase residues in a query or subject sequence are masked, so convert such residues to uppercase before placing them in an alignment.
 
 MAFFT writes protein residues in uppercase, so every ``.aln`` file that ``fammer build`` creates is in uppercase, whatever the case of the input sequences.
-A family ``.aln`` file that you edit by hand is used unchanged by ``fammer build`` as long as it is newer than its ``.fasta`` file.
+A family ``.aln`` file that you edit by hand is used unchanged by ``fammer build`` as long as it is newer than its ``.fasta`` file (see `build`_ for alignments kept under version control).
 In such a file, Fammer reads letter case as HMMER does: a column whose residues are all lowercase is an insert column, and the family consensus has a gap there; a column that mixes lowercase and uppercase residues is read as uppercase, with a warning.
 An alignment that holds no uppercase residue at all, such as the nucleotide alignments that MAFFT writes, marks nothing by case and is read without regard to it.
 ``fammer cluster`` builds its tree only from columns that hold an aligned residue, so it leaves out the insert columns of an alignment given to it, whatever their proportion of residues.

@@ -178,6 +178,46 @@ def test_family_aln_tasks_depend_on_their_own_fasta(tree):
         assert task.depends == [fasta]
 
 
+@pytest.mark.parametrize(
+    "case, lag, current",
+    [
+        ("checked-out", 0.001, True),
+        ("rewritten-by-update-fasta", 0.19, False),
+        ("record-added", 0.001, False),
+        ("not-clustal", 0.001, False),
+        ("ragged-rows", 0.001, False),
+    ],
+)
+def test_family_aln_is_kept_after_checkout_only_if_it_matches_its_fasta(
+    tmp_path, case, lag, current
+):
+    """A family alignment a moment older than its FASTA file is kept if it matches.
+
+    A Git checkout writes ``fam.aln`` just before ``fam.fasta``. The alignment
+    is still current if its ungapped records are those of the FASTA file, and
+    only then: a FASTA file rewritten after the alignment by a later command,
+    even with the same records, one with a record more, and an alignment that
+    cannot be read are realigned.
+    """
+    top = tmp_path / "top"
+    top.mkdir()
+    aln, fasta = top / "fam.aln", top / "fam.fasta"
+    rows = "a AC-DE\nb ACK\n" if case == "ragged-rows" else "a AC-DE\nb ACKDE\n"
+    header = "CLUSTAL X (-like) multiple sequence alignment\n\n"
+    aln.write_text(("" if case == "not-clustal" else header) + rows)
+    fasta.write_text(
+        ">a\nACDE\n>b\nACKDE\n" + (">c\nMMM\n" if case == "record-added" else "")
+    )
+    os.utime(aln, (1_000_000_000, 1_000_000_000))
+    os.utime(fasta, (1_000_000_000 + lag, 1_000_000_000 + lag))
+
+    result = taskify_subdirs(
+        str(top), hmmer=False, mapgaps=False, use_pdb=False, level=0
+    )
+    (task,) = [t for t in walk(result.aln) if t.target == str(aln)]
+    assert task.is_up_to_date() is current
+
+
 def test_align_pdbs_takes_the_structure_of_a_directory_without_an_alignment(
     tmp_path, monkeypatch
 ):

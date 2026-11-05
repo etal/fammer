@@ -8,7 +8,7 @@ from os.path import isdir, isfile, join
 from Bio import SeqIO
 from Bio.Seq import Seq
 
-from ._share import UsageError, ungapped, write_fasta
+from ._share import UsageError, is_same_aln_fasta, ungapped, write_fasta
 from .tasks import Task
 
 logger = logging.getLogger(__name__)
@@ -104,17 +104,3 @@ def ungap_and_unique(records, target_name):
     if counter:
         msg += f" (purged {counter} sequence{'' if counter == 1 else 's'})"
     logger.info(msg)
-
-
-def is_same_aln_fasta(aln_fn, fasta_fn):
-    """Compare ungapped seqs in aln and fasta; are they all the same?"""
-
-    def rec2tuple(rec, do_ungap):
-        strseq = ungapped(rec.seq) if do_ungap else str(rec.seq).upper()
-        return (rec.id, strseq)
-
-    with SeqIO.parse(aln_fn, "clustal") as parsed:
-        aln_hash = {rec2tuple(rec, True) for rec in parsed}
-    with SeqIO.parse(fasta_fn, "fasta") as parsed:
-        fa_hash = {rec2tuple(rec, False) for rec in parsed}
-    return aln_hash == fa_hash

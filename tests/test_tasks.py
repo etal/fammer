@@ -3,9 +3,11 @@
 The tests state general properties of ``is_up_to_date``, ``build`` and
 ``clean`` and check them against a small model: a target is stale exactly when
 it is missing or strictly older than some dependency. A target whose
-modification time equals a dependency's counts as up to date. The few scenarios
-recorded from the Python 2 code base are compared separately, in the reference
-tests.
+modification time equals a dependency's counts as up to date. The one
+exception is a task given ``matches_dep``, whose target may be older than a
+dependency by the time a Git checkout leaves between two files. The few
+scenarios recorded from the Python 2 code base are compared separately, in the
+reference tests.
 
 ``ends_with_newline`` is true for a file that ends with a line ending or holds
 no bytes.
@@ -206,6 +208,57 @@ def test_single_string_or_task_dependency_is_not_iterated(tmp_path):
     assert not from_string.is_up_to_date()
     from_task.build()
     assert recorder.calls == ["a", "b"]
+
+
+@pytest.mark.parametrize(
+    "matches", [None, False, True], ids=["no-check", "differs", "matches"]
+)
+@pytest.mark.parametrize(
+    "lag, within_checkout_skew",
+    [
+        # Measured: a checkout writes PKL.fasta 0.6 to 1.9 ms after PKL.aln.
+        (0.0007, True),
+        (0.09, True),
+        # Measured: update-fasta run right after an edit of the alignment
+        # writes the FASTA file 0.19 s later, and add after build 1.4 s later.
+        (0.19, False),
+        (1.4, False),
+        (10, False),
+    ],
+)
+def test_matches_dep_decides_only_within_the_checkout_skew(
+    tmp_path, lag, within_checkout_skew, matches
+):
+    """A slightly older target is current only if it still matches its input.
+
+    Further apart, or without a check, the older target is rebuilt, and the
+    check is not made at all.
+    """
+    target_mtime = BASE + 100
+    source = make_file(tmp_path / "source", target_mtime + lag)
+    target = make_file(tmp_path / "target", target_mtime)
+    checked = []
+
+    def matches_dep(target_name, dep_name):
+        checked.append((target_name, dep_name))
+        return matches
+
+    recorder = Recorder()
+    task = Task(
+        target,
+        action=recorder.action,
+        depends=source,
+        matches_dep=None if matches is None else matches_dep,
+    )
+    current = within_checkout_skew and matches is True
+
+    assert task.is_up_to_date() is current
+    if within_checkout_skew and matches is not None:
+        assert checked == [(target, source)]
+    else:
+        assert checked == []
+    task.build()
+    assert recorder.calls == ([] if current else ["target"])
 
 
 @pytest.mark.parametrize(

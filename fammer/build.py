@@ -14,7 +14,7 @@ from Bio.SeqRecord import SeqRecord
 from biofrills import alnutils, consensus
 
 from . import tmalign
-from ._share import UsageError, build_hmm, write_fasta
+from ._share import UsageError, build_hmm, is_same_aln_fasta, write_fasta
 from .tasks import Task, ext, is_empty, noext, sh, which
 
 logger = logging.getLogger(__name__)
@@ -127,6 +127,7 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
                 action=align_fasta_mafft,
                 depends=subfa,
                 cleans=ext(subfa, "seq"),
+                matches_dep=aln_matches_fasta,
             )
         )
         if hmmer:
@@ -202,6 +203,16 @@ def taskify_subdirs(topdir, hmmer, mapgaps, use_pdb, level):
         )
 
     return result
+
+
+def aln_matches_fasta(aln, fasta):
+    """True if a Clustal alignment holds exactly the sequences of a FASTA file."""
+    try:
+        return is_same_aln_fasta(aln, fasta)
+    except (ValueError, AssertionError):
+        # Not a Clustal alignment, so not one built from this FASTA file;
+        # Biopython's Clustal parser reports most malformed rows by assert.
+        return False
 
 
 # Actions
