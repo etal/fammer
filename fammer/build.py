@@ -286,6 +286,13 @@ def align_pdbs(task, use_pdb=None):
                     best_pdb = rec.id
         if best_pdb is None:
             logger.warning("Empty PDB alignment: %s", sub_pdb_fname)
+        elif not isfile(best_pdb):
+            # Identifiers are paths from the directory of the build that wrote
+            # the alignment, so they go stale with it.
+            raise UsageError(
+                f"Structure {best_pdb!r} of the alignment {sub_pdb_fname} is not "
+                f"a file; delete {sub_pdb_fname} so that it is rebuilt"
+            )
         else:
             logger.info("Best PDB of %s: %s", sub_pdb_fname, best_pdb)
             pdbs.append(best_pdb)

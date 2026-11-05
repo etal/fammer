@@ -10,11 +10,13 @@ directory that has no structure alignment of its own.
 
 import io
 import os
+import re
 
 import pytest
 from Bio import Phylo
 from reference_cases import copy_tracked, is_checkout
 
+from fammer._share import UsageError
 from fammer.build import align_pdbs, taskify_subdirs, treeify_subdirs
 from fammer.tasks import Task
 
@@ -218,8 +220,21 @@ def test_family_aln_is_kept_after_checkout_only_if_it_matches_its_fasta(
     assert task.is_up_to_date() is current
 
 
+@pytest.fixture
+def align_structs_calls(monkeypatch):
+    """Record the calls to tmalign.align_structs instead of running TM-align."""
+    calls = []
+
+    def align_structs(pdb_fnames, seed_fnames):
+        calls.append((list(pdb_fnames), list(seed_fnames)))
+        return []
+
+    monkeypatch.setattr("fammer.tmalign.align_structs", align_structs)
+    return calls
+
+
 def test_align_pdbs_takes_the_structure_of_a_directory_without_an_alignment(
-    tmp_path, monkeypatch
+    tmp_path, align_structs_calls
 ):
     """A group directory with one structure leaves its ``.pdb.seq`` empty.
 
@@ -228,21 +243,14 @@ def test_align_pdbs_takes_the_structure_of_a_directory_without_an_alignment(
     """
     write_files(tmp_path, ["top/grp/single.pdb"])
     (tmp_path / "top" / "grp.pdb.seq").write_text("")
-    calls = []
-
-    def align_structs(pdb_fnames, seed_fnames):
-        calls.append((list(pdb_fnames), list(seed_fnames)))
-        return []
-
-    monkeypatch.setattr("fammer.tmalign.align_structs", align_structs)
     target = tmp_path / "top.pdb.seq"
     task = Task(str(target), depends=[str(tmp_path / "top" / "grp.pdb.seq")])
     align_pdbs(task, use_pdb=True)
-    assert calls == [([str(tmp_path / "top" / "grp" / "single.pdb")], [])]
+    assert align_structs_calls == [([str(tmp_path / "top" / "grp" / "single.pdb")], [])]
 
 
 def test_align_pdbs_seeds_with_each_alignment_and_its_best_structure(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, align_structs_calls
 ):
     """Each non-empty ``.pdb.seq`` is a seed and gives its best-scored structure.
 
@@ -260,13 +268,33 @@ def test_align_pdbs_seeds_with_each_alignment_and_its_best_structure(
         ">c.pdb\nACDE\n"
     )
     empty.write_text("")
-    calls = []
-
-    def align_structs(pdb_fnames, seed_fnames):
-        calls.append((list(pdb_fnames), list(seed_fnames)))
-        return []
-
-    monkeypatch.setattr("fammer.tmalign.align_structs", align_structs)
+    # Identifiers are file names relative to the directory the build runs in.
+    monkeypatch.chdir(tmp_path)
+    write_files(tmp_path, ["a.pdb", "b.pdb"])
     task = Task(str(tmp_path / "top.pdb.seq"), depends=[str(empty), str(aligned)])
     align_pdbs(task, use_pdb=True)
-    assert calls == [(["b.pdb"], [str(aligned)])]
+    assert align_structs_calls == [(["b.pdb"], [str(aligned)])]
+
+
+def test_align_pdbs_names_an_alignment_whose_best_structure_is_gone(
+    tmp_path, monkeypatch, align_structs_calls
+):
+    """A ``.pdb.seq`` whose best structure is no longer a file is named.
+
+    Such an alignment was left by an earlier build, from another working
+    directory or before the structure was removed; the error names it, so that
+    it can be deleted and rebuilt, and nothing is aligned.
+    """
+    aligned = tmp_path / "top" / "grp.pdb.seq"
+    aligned.parent.mkdir()
+    aligned.write_text(
+        ">a.pdb TMalign TM-score=0.500000\nAC-D\n"
+        ">gone.pdb TMalign TM-score=0.900000\nACED\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    write_files(tmp_path, ["a.pdb"])
+    task = Task(str(tmp_path / "top.pdb.seq"), depends=[str(aligned)])
+    with pytest.raises(UsageError, match=re.escape(str(aligned))) as excinfo:
+        align_pdbs(task, use_pdb=True)
+    assert "'gone.pdb'" in str(excinfo.value)
+    assert align_structs_calls == []
