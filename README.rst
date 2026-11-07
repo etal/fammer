@@ -420,12 +420,17 @@ Leave-one-out validation of the subfamily profiles in one directory, so that eac
 Unlike the other commands, this is non-recursive.
 
 Given a directory and its set of unclassified sequences (``-u``; by default *dirname*/*dirname*-Unique.fasta), ``refine`` tests each subfamily profile in the directory except the unclassified set, any catch-all profile, and the profile named by ``-x``.
+``-x`` takes one profile, and is meant for a profile that is not a subfamily, such as an outgroup.
+In ``profiles/ROPK``, ``PKL`` holds protein kinases other than rhoptry kinases, as an outgroup to root the tree of the rhoptry kinases and to test whether their subfamilies are monophyletic.
+Whether ``PKL`` separates its members from the unclassified rhoptry kinases says nothing about such a profile, so the rhoptry kinase subfamilies are refined with ``fammer refine profiles/ROPK -x PKL``.
 Each sequence of a profile is held out in turn: an HMM is built from the profile's alignment without it, and the held-out sequence and the unclassified sequences are scored against that HMM, in bits, counting the hits at an E-value of 0.001 or better.
 A sequence fails if it scores no higher than the highest-scoring unclassified sequence, or if the HMM misses it while it hits an unclassified sequence.
 The lowest-scoring sequence that fails is dropped and joins the unclassified sequences, and the remaining ones are tested again, until none fails or two remain.
 Each drop must rest on a different unclassified sequence of best score: if one sequence has the best score against two sequences that would be dropped from a profile, it more likely belongs with them in a profile than they belong in the unclassified set.
 ``refine`` then drops nothing from that profile, warns that the drops it has logged for the profile are not made, names the three sequences, and goes on to the next profile; the sequences it would have dropped do not join the unclassified set for later profiles.
 The sequence of best score may itself be one dropped earlier from the same profile, and the warning then says so.
+If ``PKL`` is not excluded, ``refine`` keeps it whole and warns, naming one sequence of ``ROPK-Unique``.
+Without the rule it would drop 56 of the 631 sequences of ``PKL``, all because the same sequence of ``ROPK-Unique`` has the best score among the unclassified sequences against the held-out HMM of each; for 15 of the 56, the held-out HMM does not hit the sequence at all.
 Each dropped sequence is logged with its score, the unclassified sequence that scores highest against the same HMM, and that score, and so is the kept sequence of lowest score; a drop whose score is within 10 bits of the best unclassified score is marked ``-- borderline``, but still made.
 With ``-n`` (``--dry-run``) nothing is written; otherwise the dropped records are moved, with their text unchanged, from the profile's FASTA file to the unclassified file, and ``fammer build`` then realigns both.
 ``refine`` reads the alignments of the last build, so a profile whose ``.aln`` file does not hold exactly the sequences of its FASTA file is an error until the tree is rebuilt, as is a sequence that is both in a profile and in the unclassified set; both are checked before any file changes.
