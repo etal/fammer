@@ -741,7 +741,7 @@ def test_refine_dry_run_keeps_every_sequence_and_writes_nothing(built_workspace)
 
     The recorded run logged one kept seed per profile, chosen in dictionary
     order; the current one logs, for each profile, the kept sequence of lowest
-    held-out score against the best score of the unclassified set.
+    held-out score against the unclassified sequence of best score.
     """
     require("fammer", "hmmsearch", "hmmbuild")
     run = recorded("refine.json")
@@ -753,12 +753,11 @@ def test_refine_dry_run_keeps_every_sequence_and_writes_nothing(built_workspace)
         "refine: Refining SomeKinases/Aurora.fasta ...",
         "refine: Refining SomeKinases/ULK.fasta ...",
     ]
-    kept = [
-        line.split(": * keep ")[1].split()[0]
-        for line in messages
-        if ": * keep " in line
-    ]
-    assert sorted(kept) == ["13031_Tt", "GK043_Gl"]
+    kept = [line.split(": * keep ")[1] for line in messages if ": * keep " in line]
+    assert sorted(line.split()[0] for line in kept) == ["13031_Tt", "GK043_Gl"]
+    outsiders = {line.split(" vs. ")[1].split()[0] for line in kept}
+    unclassified = built_workspace / "SomeKinases" / "Testfam-Unclassified.fasta"
+    assert outsiders <= set(dict(read_records(unclassified, "fasta")))
     assert not any(": * drop " in line for line in messages)
     assert tree_state(built_workspace) == written
 

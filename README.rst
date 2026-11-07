@@ -53,7 +53,9 @@ The procedures of these papers, and the rules below that follow from them, defin
   [Kannan2007]_ examined by hand every sequence with a borderline score, that is, a weak best match or a small difference between its best two models.
   A missed member costs one more round of curation; a wrong member changes the profile, and with it every later search.
   A command that writes to curated sequence sets should therefore report a borderline case for the curator to examine instead of writing it, and should be able to show its changes without making them.
-  ``add`` reports borderline hits instead of adding them, ``refine`` marks its borderline drops in the log but still makes them, and both show their changes without making them with ``-n``.
+  ``add`` reports borderline hits instead of adding them, and ``refine`` marks its borderline drops in the log but still makes them.
+  ``refine`` also makes no drop from a profile in which one unclassified sequence has the best score against two of the sequences it would drop.
+  Both commands show their changes without making them with ``-n``.
 - **Iteration converges.**
   Alternating ``build`` and ``add`` repeats the build, search and refine cycle of [Kannan2007]_; as a requirement of Fammer's own, the rounds should reach one that adds nothing, rather than grow without end.
 
@@ -421,14 +423,17 @@ Given a directory and its set of unclassified sequences (``-u``; by default *dir
 Each sequence of a profile is held out in turn: an HMM is built from the profile's alignment without it, and the held-out sequence and the unclassified sequences are scored against that HMM, in bits, counting the hits at an E-value of 0.001 or better.
 A sequence fails if it scores no higher than the highest-scoring unclassified sequence, or if the HMM misses it while it hits an unclassified sequence.
 The lowest-scoring sequence that fails is dropped and joins the unclassified sequences, and the remaining ones are tested again, until none fails or two remain.
-Each dropped sequence is logged with its score and the best unclassified score, and so is the kept sequence of lowest score; a drop whose score is within 10 bits of the best unclassified score is marked ``-- borderline``, but still made.
+Each drop must rest on a different unclassified sequence of best score: if one sequence has the best score against two sequences that would be dropped from a profile, it more likely belongs with them in a profile than they belong in the unclassified set.
+``refine`` then drops nothing from that profile, warns that the drops it has logged for the profile are not made, names the three sequences, and goes on to the next profile; the sequences it would have dropped do not join the unclassified set for later profiles.
+The sequence of best score may itself be one dropped earlier from the same profile, and the warning then says so.
+Each dropped sequence is logged with its score, the unclassified sequence that scores highest against the same HMM, and that score, and so is the kept sequence of lowest score; a drop whose score is within 10 bits of the best unclassified score is marked ``-- borderline``, but still made.
 With ``-n`` (``--dry-run``) nothing is written; otherwise the dropped records are moved, with their text unchanged, from the profile's FASTA file to the unclassified file, and ``fammer build`` then realigns both.
 ``refine`` reads the alignments of the last build, so a profile whose ``.aln`` file does not hold exactly the sequences of its FASTA file is an error until the tree is rebuilt, as is a sequence that is both in a profile and in the unclassified set; both are checked before any file changes.
 Each round of testing builds one HMM per remaining sequence, so a profile that loses many sequences takes correspondingly longer.
 
-Note that if a member of a known subfamily was mistakenly placed in the unclassified set (i.e. was missed by the initial classification), then many of the legitimate members of the subfamily profile could score worse than this high-scoring "unclassified" sequence and be erroneously marked for removal from the profile.
-This is easy to spot in the logged output, where nearly the same unclassified score recurs against many dropped sequences.
-Run with ``-n`` first, and move such a sequence into its subfamily before refining; ``fammer add --report-promotions`` lists the members of a catch-all that a subfamily of its group would accept.
+A member of a known subfamily that was placed in the unclassified set, having been missed by the initial classification, is a likely cause of the warning above, since it outscores many legitimate members of its subfamily's profile.
+Move such a sequence into its subfamily before refining again; ``fammer add --report-promotions`` lists the members of a catch-all that a subfamily of its group would accept.
+Run with ``-n`` first, to see the drops and warnings before any file changes.
 A consensus record in the unclassified set, one whose identifier ends with ``consensus``, is not an unclassified sequence and is left out of the comparison, since it would outscore many members of the subfamily it summarizes.
 
 cluster

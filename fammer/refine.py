@@ -118,8 +118,13 @@ def refine_profile(fasta, unclassified):
     dropped and joins the unclassified sequences, and the remaining sequences
     are tested again, until none fails or MIN_MEMBERS remain.
 
+    Each drop must rest on a different unclassified sequence of best score. If
+    one sequence has the best score against two sequences that would be
+    dropped, it more likely belongs with them in a profile, so the profile is
+    kept whole and the sequence is named in a warning.
+
     Returns the dropped sequences, as ungapped records, in the order they were
-    dropped.
+    dropped; an empty list if the profile is kept whole.
     """
     with SeqIO.parse(ext(fasta, "aln"), "clustal") as parsed:
         rows = list(parsed)
@@ -133,6 +138,8 @@ def refine_profile(fasta, unclassified):
         return []
     targets = list(unclassified)
     dropped = []
+    # The sequence dropped on account of each target of best score
+    drivers = {}
     with tempfile.TemporaryDirectory(prefix="fammer-") as workdir:
         seqfname = join(workdir, "targets.fasta")
         while True:
@@ -142,22 +149,44 @@ def refine_profile(fasta, unclassified):
                 write_fasta([as_target(by_name[name]), *targets], seqfname)
                 hits = get_hmm_scores(hmm, seqfname)
                 own = hits.pop(name, None)
-                scores[name] = (own, max(hits.values(), default=None))
+                outsider, best_out = best_hit(hits)
+                scores[name] = (own, best_out, outsider)
             failing = [
                 name
-                for name, (own, best_out) in scores.items()
+                for name, (own, best_out, _outsider) in scores.items()
                 if best_out is not None and (own is None or own <= best_out)
             ]
             if not failing:
                 log_closest_keeper(fasta, scores)
                 break
             worst = min(failing, key=lambda name: own_score(scores[name][0]))
-            own, best_out = scores[worst]
+            own, best_out, outsider = scores[worst]
+            if outsider in drivers:
+                if outsider in {record.id for record in dropped}:
+                    culprit = f"{outsider}, which would be dropped from it,"
+                    advice = "the three belong together"
+                else:
+                    culprit = f"the unclassified sequence {outsider}"
+                    advice = "it belongs in a profile"
+                logger.warning(
+                    "Keeping all %d sequences of %s, and making none of the drops "
+                    "above: %s has the best score against both %s and %s; "
+                    "check whether %s before refining again",
+                    len(rows) + len(dropped),
+                    fasta,
+                    culprit,
+                    drivers[outsider],
+                    worst,
+                    advice,
+                )
+                return []
+            drivers[outsider] = worst
             borderline = own is not None and best_out - own < BORDERLINE_MARGIN
             logger.info(
-                "* drop %s (%s vs. %.1f bits)%s",
+                "* drop %s (%s vs. %s %.1f bits)%s",
                 worst,
                 describe(own),
+                outsider,
                 best_out,
                 " -- borderline" if borderline else "",
             )
@@ -173,9 +202,21 @@ def refine_profile(fasta, unclassified):
     return dropped
 
 
+def best_hit(hits):
+    """The identifier and bit score of the best hit, or (None, None) if none.
+
+    Of equal scores, the identifier that sorts first is taken, so that the
+    order of hmmsearch's table does not decide which sequence is named.
+    """
+    if not hits:
+        return None, None
+    name = min(hits, key=lambda name: (-hits[name], name))
+    return name, hits[name]
+
+
 def log_closest_keeper(fasta, scores):
     """Log the kept sequence of lowest score, or that nothing unclassified scored."""
-    compared = {name: pair for name, pair in scores.items() if pair[1] is not None}
+    compared = {name: entry for name, entry in scores.items() if entry[1] is not None}
     if not compared:
         logger.warning(
             "No unclassified sequence scores at e-value %s or better against %s",
@@ -184,8 +225,10 @@ def log_closest_keeper(fasta, scores):
         )
         return
     name = min(compared, key=lambda name: own_score(compared[name][0]))
-    own, best_out = compared[name]
-    logger.info("* keep %s (%s vs. %.1f bits)", name, describe(own), best_out)
+    own, best_out, outsider = compared[name]
+    logger.info(
+        "* keep %s (%s vs. %s %.1f bits)", name, describe(own), outsider, best_out
+    )
 
 
 def own_score(score):
