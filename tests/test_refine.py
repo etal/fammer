@@ -39,21 +39,19 @@ def rival(name):
 def scores(monkeypatch):
     """Replace hmmbuild and hmmsearch in refine by a table of scores.
 
-    The HMM built without a row is named after that row. A target scores its
+    refine writes the held-out sequence first in the file it searches, so the
+    HMM searched is the one built without that sequence. A target scores its
     own entry in OWN against the HMM that holds it out, RIVAL against the HMM
     that holds out the sequence it is the rival of, and the score set in the
-    returned dict of (HMM, target) pairs; any other pair is not a hit.
+    returned dict of (HMM, target) pairs, where the HMM is named after the
+    sequence it holds out; any other pair is not a hit.
     """
     extra = {}
 
-    def leave_one_out_hmms(rows, held_out, _workdir):
-        for row in rows:
-            if row.id in held_out:
-                yield row.id, row.id
-
-    def get_hmm_scores(hmm, seqfname):
+    def get_hmm_scores(_hmmfname, seqfname):
         with open(seqfname) as handle:
             names = [rec.id for rec in SeqIO.parse(handle, "fasta")]
+        hmm = names[0]
         result = {}
         for name in names:
             if name == hmm and name in OWN:
@@ -64,7 +62,7 @@ def scores(monkeypatch):
                 result[name] = extra[hmm, name]
         return result
 
-    monkeypatch.setattr(refine, "leave_one_out_hmms", leave_one_out_hmms)
+    monkeypatch.setattr(refine, "build_hmm", lambda records, hmmfname: None)
     monkeypatch.setattr(refine, "get_hmm_scores", get_hmm_scores)
     return extra
 

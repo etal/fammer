@@ -429,7 +429,7 @@ The sequence of best score may itself be one dropped earlier from the same profi
 Each dropped sequence is logged with its score, the unclassified sequence that scores highest against the same HMM, and that score, and so is the kept sequence of lowest score; a drop whose score is within 10 bits of the best unclassified score is marked ``-- borderline``, but still made.
 With ``-n`` (``--dry-run``) nothing is written; otherwise the dropped records are moved, with their text unchanged, from the profile's FASTA file to the unclassified file, and ``fammer build`` then realigns both.
 ``refine`` reads the alignments of the last build, so a profile whose ``.aln`` file does not hold exactly the sequences of its FASTA file is an error until the tree is rebuilt, as is a sequence that is both in a profile and in the unclassified set; both are checked before any file changes.
-Each round of testing builds one HMM per remaining sequence, so a profile that loses many sequences takes correspondingly longer.
+Each round of testing builds one HMM per remaining sequence, so a profile that loses many sequences takes correspondingly longer; the sequences of a round are tested in parallel, one per processor core, with the same result as one at a time.
 
 A member of a known subfamily that was placed in the unclassified set, having been missed by the initial classification, is a likely cause of the warning above, since it outscores many legitimate members of its subfamily's profile.
 Move such a sequence into its subfamily before refining again; ``fammer add --report-promotions`` lists the members of a catch-all that a subfamily of its group would accept.

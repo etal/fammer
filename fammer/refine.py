@@ -1,7 +1,10 @@
 "Refine: Leave-one-out validation and refinement of each profile."
 
 import logging
+import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from glob import glob
 from os.path import abspath, basename, isdir, isfile, join, samefile
 
@@ -12,10 +15,10 @@ from ._share import (
     MEMBER_EVALUE,
     UsageError,
     as_target,
+    build_hmm,
     get_hmm_scores,
     is_catch_all,
     is_consensus,
-    leave_one_out_hmms,
     member_names,
     move_records,
     write_fasta,
@@ -26,6 +29,10 @@ logger = logging.getLogger(__name__)
 
 # refine leaves at least this many sequences in a profile.
 MIN_MEMBERS = 2
+
+# refine scores the sequences of a round on this many threads, each waiting on
+# hmmbuild and hmmsearch; the result does not depend on the number.
+WORKERS = os.cpu_count() or 1
 
 
 def cmd_refine(args):
@@ -140,17 +147,14 @@ def refine_profile(fasta, unclassified):
     dropped = []
     # The sequence dropped on account of each target of best score
     drivers = {}
-    with tempfile.TemporaryDirectory(prefix="fammer-") as workdir:
-        seqfname = join(workdir, "targets.fasta")
+    with (
+        tempfile.TemporaryDirectory(prefix="fammer-") as workdir,
+        ThreadPoolExecutor(max_workers=WORKERS) as pool,
+    ):
         while True:
-            scores = {}
-            by_name = {row.id: row for row in rows}
-            for name, hmm in leave_one_out_hmms(rows, by_name.keys(), workdir):
-                write_fasta([as_target(by_name[name]), *targets], seqfname)
-                hits = get_hmm_scores(hmm, seqfname)
-                own = hits.pop(name, None)
-                outsider, best_out = best_hit(hits)
-                scores[name] = (own, best_out, outsider)
+            # map keeps row order, on which the choice among equal scores rests
+            compare = partial(held_out_comparison, rows, targets, workdir)
+            scores = dict(pool.map(compare, range(len(rows))))
             failing = [
                 name
                 for name, (own, best_out, _outsider) in scores.items()
@@ -190,7 +194,7 @@ def refine_profile(fasta, unclassified):
                 best_out,
                 " -- borderline" if borderline else "",
             )
-            record = as_target(by_name[worst])
+            record = as_target(next(row for row in rows if row.id == worst))
             rows = [row for row in rows if row.id != worst]
             dropped.append(record)
             targets.append(record)
@@ -200,6 +204,29 @@ def refine_profile(fasta, unclassified):
                 )
                 break
     return dropped
+
+
+def held_out_comparison(rows, targets, workdir, index):
+    """Score one row, and the unclassified sequences, against the other rows.
+
+    An HMM is built from the aligned rows without the row at index, and the
+    row's sequence and the targets are scored against it. The files are
+    written to a new directory in workdir, so that several rows can be scored
+    at the same time.
+
+    Returns (identifier, (own score, best target score, best target's
+    identifier)), where a score is None for no hit.
+    """
+    row = rows[index]
+    with tempfile.TemporaryDirectory(dir=workdir) as subdir:
+        hmmfname = join(subdir, "held-out.hmm")
+        build_hmm(rows[:index] + rows[index + 1 :], hmmfname)
+        seqfname = join(subdir, "targets.fasta")
+        write_fasta([as_target(row), *targets], seqfname)
+        hits = get_hmm_scores(hmmfname, seqfname)
+    own = hits.pop(row.id, None)
+    outsider, best_out = best_hit(hits)
+    return row.id, (own, best_out, outsider)
 
 
 def best_hit(hits):

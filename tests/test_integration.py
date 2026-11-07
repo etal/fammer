@@ -12,6 +12,7 @@ its own copy of it.
 """
 
 import hashlib
+import logging
 import os
 import re
 import shutil
@@ -20,6 +21,8 @@ from collections import Counter
 
 import pytest
 from Bio import Phylo, SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from reference_cases import (
     REPO,
     copy_tracked,
@@ -28,7 +31,7 @@ from reference_cases import (
     log_messages,
 )
 
-from fammer import _share, add, cluster, tasks
+from fammer import _share, add, cluster, refine, tasks
 
 pytestmark = pytest.mark.integration
 
@@ -795,6 +798,36 @@ def test_refine_moves_a_member_that_an_unclassified_sequence_matches(built_works
     proc = run_fammer(built_workspace, [*argv, "-n"])
     assert proc.returncode == 1
     assert "ULK.aln does not hold exactly the sequences" in proc.stderr
+
+
+def test_refine_drops_the_same_on_any_number_of_threads(
+    built_workspace, monkeypatch, caplog
+):
+    """Each thread scores its rows in files of its own, and rows keep their order.
+
+    With a copy of 13031_Tt in the unclassified set, ULK loses 13031_Tt and is
+    tested again; one thread, four, and more threads than ULK has rows drop
+    the same sequences and log the same scores and identifiers.
+    """
+    require("hmmsearch", "hmmbuild")
+    tree = built_workspace / "SomeKinases"
+    ulk = str(tree / "ULK.fasta")
+    with open(tree / "Testfam-Unclassified.fasta") as handle:
+        unclassified = [_share.as_target(rec) for rec in SeqIO.parse(handle, "fasta")]
+    weakest = dict(read_records(ulk, "fasta"))["13031_Tt"]
+    unclassified.append(SeqRecord(Seq(weakest), id="decoy", description=""))
+    outcomes = []
+    for workers in (1, 4, 64):
+        monkeypatch.setattr(refine, "WORKERS", workers)
+        caplog.clear()
+        with caplog.at_level(logging.INFO):
+            dropped = refine.refine_profile(ulk, unclassified)
+        lines = [m for m in caplog.messages if m.startswith("* ")]
+        outcomes.append(([rec.id for rec in dropped], lines))
+    drops, _lines = outcomes[0]
+    assert drops[0] == "13031_Tt"
+    assert outcomes[1] == outcomes[0]
+    assert outcomes[2] == outcomes[0]
 
 
 @pytest.mark.parametrize("name", ["DYRK.fasta", "CDK.fasta"])
